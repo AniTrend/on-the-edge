@@ -1,0 +1,11 @@
+{
+  "name": "@anitrend/configuration",
+  "version": "1.0.0",
+  "description": "Client configuration server",
+  "type": "module",
+  "scripts": {
+    "dev": "deno run --import-map=../import_map.json --allow-net index.ts",
+    "check": "deno check index.ts",
+    "test": "deno test index.test.ts"
+  }
+}
