@@ -1,15 +1,12 @@
-import { serve } from "std/server"
+import factory from "../_core/factory.ts";
+import port from "../_core/spec.ts";
 
-console.log("Hello from Functions!")
-
-serve(async (req) => {
-  const { name } = await req.json()
-  const data = {
-    message: `Hello ${name}!`,
+await factory({
+  methods: ["GET"],
+  handler: async (ctx, next) => {
+    ctx.response.body = {
+      "key": "demo",
+    };
+    await next()
   }
-
-  return new Response(
-    JSON.stringify(data),
-    { headers: { "Content-Type": "application/json" } },
-  )
-})
+}).listen({port});

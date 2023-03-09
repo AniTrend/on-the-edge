@@ -1,66 +1,18 @@
-import {
-	Application,
-	Router,
-	Status
-} from "x/oak"
-import {
-	OpenGraphData
-} from "open-graph-scraper"
-import ogs from "open-graph-scraper"
-import loggerMiddleware from "../_middleware/logger.ts"
-import timingMiddleware from "../_middleware/timing.ts"
-import errorMiddleware from "../_middleware/error.ts"
-import logger from "../_core/logger.ts"
+import mapper from "./mapper.ts";
+import ogs from "open-graph-scraper";
 
+import factory from "../_core/factory.ts";
+import port from "../_core/spec.ts";
 
-const app = new Application();
-const port = 8000;
+await factory({
+  methods: ["POST"],
+  handler: async ({ request, response }) => {
+    const body = request.body();
 
-const router = new Router();
+    const { url } = await body.value;
 
+    const { result: data } = await ogs({ url });
 
-app.use(loggerMiddleware);
-app.use(timingMiddleware);
-app.use(errorMiddleware);
-
-
-app.addEventListener("error", (evt) => {
-	logger.error(evt.error);
-});
-
-app.use(async (ctx) => {
-	const {
-		request
-	} = ctx
-
-	const body = request.body({
-		contentTypes: {
-			bytes: ["text"],
-		},
-	})
-
-	const url = await body.value
-
-	ogs({
-			url: url,
-			timeout: {
-				request: 10000,
-			},
-		})
-		.then((data: {
-			result: OpenGraphData
-		}) => {
-			ctx.response.body = data.result
-		})
-		.catch((err: Error) => {
-			logger.error(err);
-			ctx.response.status = Status.InternalServerError
-		});
-});
-
-app.use(router.routes());
-app.use(router.allowedMethods());
-
-await app.listen({
-	port
-});
+    response.body = mapper(data);
+  },
+}).listen({ port });
