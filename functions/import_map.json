@@ -7,6 +7,7 @@
         "std/log": "https://deno.land/std@0.178.0/log/mod.ts",
         "std/collections": "https://deno.land/std@0.178.0/collections/mod.ts",
         "std/media_types": "https://deno.land/std@0.178.0/media_types/mod.ts",
+        "std/testing/asserts": "https://deno.land/std@0.178.0/testing/asserts.ts",
         "std/testing/bdd": "https://deno.land/std@0.178.0/testing/bdd.ts",
         "std/testing/mock": "https://deno.land/std@0.178.0/testing/mock.ts",
         "std/testing/types": "https://deno.land/std@0.178.0/testing/types.ts",

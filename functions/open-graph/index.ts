@@ -1,4 +1,4 @@
-import mapper from "./mapper.ts";
+import mapper from "./mapper/mapper.ts";
 import ogs from "open-graph-scraper";
 
 import factory from "../_core/factory.ts";
