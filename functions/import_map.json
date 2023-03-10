@@ -16,6 +16,6 @@
         "x/opengraph": "https://deno.land/x/opengraph@v0.1.0/mod.ts",
         "x/oak": "https://deno.land/x/oak@v12.1.0/mod.ts",
         "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.7.1",
-        "open-graph-scraper": "npm:open-graph-scraper@^5.1.1"
+        "open-graph-scraper": "https://esm.sh/open-graph-scraper@^5.1.1"
     }
 }
