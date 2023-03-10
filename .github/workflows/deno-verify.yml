@@ -17,15 +17,18 @@ jobs:
           deno-version: v1.x
 
       - name: Check formatting
-        run: |
-          deno fmt --check > /dev/null || echo "::set-output name=fix_formatting::true"
+        run: deno fmt --check
 
       - name: Auto-format code
-        if: steps.check.outputs.fix_formatting == 'true'
-        run: deno fmt
+        id: fmt
+        run: |
+          if ! deno fmt --check --unstable; then
+            echo "::set-output name=changes::true"
+            deno fmt --unstable
+          fi
 
       - name: Create pull request with formatting fixes
-        if: steps.check.outputs.fix_formatting == 'true'
+        if: steps.fmt.outputs.changes == 'true'
         uses: peter-evans/create-pull-request@v3
         with:
           branch: "${{ github.base_ref }}/auto-formatting"
