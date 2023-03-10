@@ -10,7 +10,7 @@ export default async (ctx: Context, next: () => Promise<unknown>) => {
     if (isHttpError(err)) {
       logger.error(err);
       const status = err.status;
-      ctx.response.status = err.status;
+      ctx.response.status = status;
       ctx.response.body = <Error> { message: STATUS_TEXT[status] };
     } else {
       logger.error(err);

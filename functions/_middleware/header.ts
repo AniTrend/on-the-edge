@@ -11,6 +11,6 @@ export default async (ctx: Context, next: () => Promise<unknown>) => {
     await next();
   } else {
     ctx.response.status = Status.Forbidden;
-    logger.error("Client did not specify mandatory headers")
+    logger.error("Client did not specify mandatory headers");
   }
 };

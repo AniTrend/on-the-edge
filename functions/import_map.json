@@ -1,21 +1,21 @@
 {
-    "imports": {
-        "std/async": "https://deno.land/std@0.178.0/async/mod.ts",
-        "std/server": "https://deno.land/std@0.178.0/http/mod.ts",
-        "std/semver": "https://deno.land/std@0.178.0/semver/mod.ts",
-        "std/uuid": "https://deno.land/std@0.178.0/uuid/mod.ts",
-        "std/log": "https://deno.land/std@0.178.0/log/mod.ts",
-        "std/collections": "https://deno.land/std@0.178.0/collections/mod.ts",
-        "std/media_types": "https://deno.land/std@0.178.0/media_types/mod.ts",
-        "std/testing/asserts": "https://deno.land/std@0.178.0/testing/asserts.ts",
-        "std/testing/bdd": "https://deno.land/std@0.178.0/testing/bdd.ts",
-        "std/testing/mock": "https://deno.land/std@0.178.0/testing/mock.ts",
-        "std/testing/types": "https://deno.land/std@0.178.0/testing/types.ts",
-        "std/dotenv": "https://deno.land/std@0.178.0/dotenv/mod.ts",
-        "x/mongo": "https://deno.land/x/mongo@0.31.1/mod.ts",
-        "x/opengraph": "https://deno.land/x/opengraph@v0.1.0/mod.ts",
-        "x/oak": "https://deno.land/x/oak@v12.1.0/mod.ts",
-        "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.7.1",
-        "open-graph-scraper": "https://esm.sh/open-graph-scraper@^5.1.1"
-    }
+  "imports": {
+    "std/async": "https://deno.land/std@0.178.0/async/mod.ts",
+    "std/server": "https://deno.land/std@0.178.0/http/mod.ts",
+    "std/semver": "https://deno.land/std@0.178.0/semver/mod.ts",
+    "std/uuid": "https://deno.land/std@0.178.0/uuid/mod.ts",
+    "std/log": "https://deno.land/std@0.178.0/log/mod.ts",
+    "std/collections": "https://deno.land/std@0.178.0/collections/mod.ts",
+    "std/media_types": "https://deno.land/std@0.178.0/media_types/mod.ts",
+    "std/testing/asserts": "https://deno.land/std@0.178.0/testing/asserts.ts",
+    "std/testing/bdd": "https://deno.land/std@0.178.0/testing/bdd.ts",
+    "std/testing/mock": "https://deno.land/std@0.178.0/testing/mock.ts",
+    "std/testing/types": "https://deno.land/std@0.178.0/testing/types.ts",
+    "std/dotenv": "https://deno.land/std@0.178.0/dotenv/mod.ts",
+    "x/mongo": "https://deno.land/x/mongo@0.31.1/mod.ts",
+    "x/opengraph": "https://deno.land/x/opengraph@v0.1.0/mod.ts",
+    "x/oak": "https://deno.land/x/oak@v12.1.0/mod.ts",
+    "esm/supabase": "https://esm.sh/@supabase/supabase-js@2.7.1",
+    "npm/open-graph": "npm:open-graph-scraper@^5.1.1"
+  }
 }

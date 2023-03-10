@@ -2,9 +2,6 @@
 # Edit at https://www.toptal.com/developers/gitignore?templates=deno,visualstudiocode,node
 
 ### Deno ###
-/.idea/
-/.vscode/
-
 /node_modules
 
 .env

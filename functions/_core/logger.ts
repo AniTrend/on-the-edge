@@ -1,17 +1,18 @@
-import { setup, handlers, getLogger, LogConfig } from "std/log"
+import { getLogger, handlers, LogConfig, setup } from "std/log";
 
 const config: LogConfig = {
   handlers: {
     functionFmt: new handlers.ConsoleHandler("DEBUG", {
-        formatter: (logRecord) => {
-          let msg = `${logRecord.datetime.toISOString()} | ${logRecord.loggerName} | ${logRecord.levelName} - ${logRecord.msg}`
+      formatter: (logRecord) => {
+        let msg =
+          `${logRecord.datetime.toISOString()} | ${logRecord.loggerName} | ${logRecord.levelName} - ${logRecord.msg}`;
 
-          logRecord.args.forEach((arg, index) => {
-            msg += `, arg${index}: ${arg}`
-          })
+        logRecord.args.forEach((arg, index) => {
+          msg += `, arg${index}: ${arg}`;
+        });
 
-          return msg
-      }
+        return msg;
+      },
     }),
   },
 
@@ -21,8 +22,8 @@ const config: LogConfig = {
       handlers: ["functionFmt"],
     },
   },
-}
+};
 
-setup(config)
+setup(config);
 
-export default getLogger("default")
+export default getLogger("default");

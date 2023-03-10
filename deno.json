@@ -24,7 +24,7 @@
     }
   },
   "tasks": {
-    "dev:configuration": "deno run --allow-net --watch ./configuration/index.ts",
-    "dev:open-graph": "deno run --allow-net --watch=./open-graph/ ./open-graph/index.ts"
+    "dev:configuration": "deno run --allow-net --watch=./functions/configuration/src ./functions/configuration/src/index.ts",
+    "dev:open-graph": "deno run --allow-net --watch=./functions/open-graph/src/ ./functions/open-graph/src/index.ts"
   }
 }
