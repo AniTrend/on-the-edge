@@ -1,0 +1,18 @@
+{
+  "folders": [
+    {
+      "name": "root",
+      "path": "./"
+    },
+    {
+      "name": "edges",
+      "path": "functions"
+    }
+  ],
+  "settings": {
+    "files.exclude": {
+      "node_modules/": true,
+      "functions/": true
+    }
+  }
+}

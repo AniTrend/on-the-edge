@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "importMap": "./functions/import_map.json",
+  "lint": {
+    "files": {
+      "include": ["functions"],
+      "exclude": [".github", "README.md"]
+    },
+    "rules": {
+      "tags": ["recommended"]
+    }
+  },
+  "fmt": {
+    "files": {
+      "include": ["functions"],
+      "exclude": [".github", "README.md"]
+    },
+    "options": {
+      "useTabs": false,
+      "lineWidth": 80,
+      "indentWidth": 2,
+      "singleQuote": false,
+      "proseWrap": "preserve"
+    }
+  },
+  "tasks": {
+    "dev:configuration": "deno run --allow-net --watch=./functions/configuration/src ./functions/configuration/src/index.ts",
+    "dev:open-graph": "deno run --allow-net --watch=./functions/open-graph/src/ ./functions/open-graph/src/index.ts"
+  }
+}
