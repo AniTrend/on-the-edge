@@ -29,7 +29,7 @@ jobs:
 
       - name: Create pull request with formatting fixes
         if: steps.fmt.outputs.changes == 'true'
-        uses: peter-evans/create-pull-request@v3
+        uses: peter-evans/create-pull-request@v4
         with:
           branch: "${{ github.base_ref }}/auto-formatting"
           title: "${{ github.base_ref }}/auto-formatting"
