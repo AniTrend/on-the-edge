@@ -1,0 +1,24 @@
+{
+  "imports": {
+    "std/async": "https://deno.land/std@0.178.0/async/mod.ts",
+    "std/server": "https://deno.land/std@0.178.0/http/mod.ts",
+    "std/semver": "https://deno.land/std@0.178.0/semver/mod.ts",
+    "std/uuid": "https://deno.land/std@0.178.0/uuid/mod.ts",
+    "std/log": "https://deno.land/std@0.178.0/log/mod.ts",
+    "std/dotenv": "https://deno.land/std@0.178.0/dotenv/mod.ts",
+    "std/collections": "https://deno.land/std@0.178.0/collections/mod.ts",
+    "std/media_types": "https://deno.land/std@0.178.0/media_types/mod.ts",
+    "std/testing/asserts": "https://deno.land/std@0.178.0/testing/asserts.ts",
+    "std/testing/bdd": "https://deno.land/std@0.178.0/testing/bdd.ts",
+    "std/testing/mock": "https://deno.land/std@0.178.0/testing/mock.ts",
+    "std/testing/types": "https://deno.land/std@0.178.0/testing/types.ts",
+    "x/cache": "https://deno.land/x/cache@0.2.13/mod.ts",
+    "x/mongo": "https://deno.land/x/mongo@0.31.1/mod.ts",
+    "x/opengraph": "https://deno.land/x/opengraph@v0.1.0/mod.ts",
+    "x/oak": "https://deno.land/x/oak@v12.1.0/mod.ts",
+    "x/oak_rate_limit": "https://deno.land/x/oak_rate_limit@v0.1.1/mod.ts",
+    "x/xml": "https://deno.land/x/xml@2.1.0/mod.ts",
+    "esm/supabase": "https://esm.sh/@supabase/supabase-js@2.7.1",
+    "esm/open-graph": "https://esm.sh/open-graph-scraper@5.2.1"
+  }
+}

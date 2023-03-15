@@ -1,0 +1,28 @@
+{
+  "folders": [
+    {
+      "name": "root",
+      "path": "./"
+    },
+    {
+      "name": "scripts",
+      "path": "./.github/scripts"
+    },
+    {
+      "name": "workflows",
+      "path": "./.github/workflows"
+    },
+    {
+      "name": "edges",
+      "path": "supabase/functions"
+    }
+  ],
+  "settings": {
+    "files.exclude": {
+      "node_modules/": true,
+      "functions/": true,
+      "supabase/functions/": true,
+      ".github": true,
+    }
+  }
+}
