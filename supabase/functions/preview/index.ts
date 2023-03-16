@@ -1,24 +1,24 @@
-import { Router } from "x/oak";
-import transformer from "./transformers/info-transformer.ts";
-import ogs from "esm/open-graph";
+import { Router } from 'x/oak';
+import transformer from './transformers/info-transformer.ts';
+import ogs from 'esm/open-graph';
 
-import factory from "../_core/factory.ts";
-import { port } from "../_core/utils.ts";
-import { Payload } from "./types.d.ts";
+import factory from '../_shared/core/factory.ts';
+import { port } from '../_shared/core/utils.ts';
+import { Payload } from './types.d.ts';
 
 const router = new Router({
-  methods: ["POST"],
+  methods: ['POST'],
   strict: true,
 });
 
-router.post("/preview", async ({ request, response }) => {
-  const body = request.body({ type: "json" });
+router.post('/preview', async ({ request, response }) => {
+  const body = request.body({ type: 'json' });
 
   const { url } = await body.value as Payload;
 
   const { result: data } = await ogs({ url });
 
-  response.type = "application/json";
+  response.type = 'application/json';
   response.body = transformer(data);
 });
 

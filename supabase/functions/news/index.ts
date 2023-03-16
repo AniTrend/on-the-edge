@@ -1,29 +1,33 @@
-import { Router } from "x/oak";
-import { parse } from "x/xml";
+import { Router } from 'x/oak';
 
-import type { AppContext } from "../_types/core.d.ts";
-import factory from "../_core/factory.ts";
-import { port } from "../_core/utils.ts";
-import { NewsTransformer } from "./transformers/news-transformer.ts";
+import type { AppContext } from '../_shared/types/core.d.ts';
+import factory from '../_shared/core/factory.ts';
+import { newsApiv2 } from '../_shared/experiment/index.ts';
+import { port } from '../_shared/core/utils.ts';
+import NewsRepository, {} from './repository.ts';
+import RemoteSource from './remote.ts';
+import LocalSource from './local.ts';
 
 const router = new Router({
-  methods: ["GET"],
+  methods: ['GET'],
   strict: true,
 });
 
-router.get("/news", async ({ request, response, state }: AppContext) => {
-  const _params = request.url.searchParams;
+router.get('/news', async ({ response, state }: AppContext) => {
+  const { service, envrionment, supabase, growth } = state;
+  const repository = new NewsRepository(
+    new LocalSource(supabase),
+    new RemoteSource(service.feed),
+    envrionment.namespace,
+  );
 
-  const result = await fetch(`${state.envrionment.config.feed.url}/animenews`);
-
-  const content = await result.text();
-
-  const document = parse(content, { flatten: true });
-
-  const transformer = new NewsTransformer(state.envrionment.namespace);
-
-  response.type = "application/json";
-  response.body = await transformer.apply(document);
+  if (newsApiv2(growth)) {
+    response.type = 'application/json';
+    response.body = await repository.getLatest();
+  } else {
+    response.type = 'application/xml';
+    response.body = await repository.getLatestLegacy();
+  }
 });
 
 await factory({

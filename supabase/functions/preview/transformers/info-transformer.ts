@@ -1,5 +1,5 @@
-import { OpenGraphData } from "../types.d.ts";
-import type { OpenGraphInfo } from "./types.d.ts";
+import { OpenGraphData } from '../types.d.ts';
+import type { OpenGraphInfo } from './types.d.ts';
 
 export default (data: OpenGraphData): OpenGraphInfo => {
   return {

@@ -19,15 +19,18 @@
       "useTabs": false,
       "lineWidth": 80,
       "indentWidth": 2,
-      "singleQuote": false,
+      "singleQuote": true,
       "proseWrap": "preserve"
     }
   },
   "tasks": {
-    "config": "deno run --allow-env --allow-net ./supabase/functions/config/index.ts",
-    "preview": "deno run --allow-env --allow-net ./supabase/functions/preview/index.ts",
-    "news": "deno run --allow-env --allow-net ./supabase/functions/news/index.ts",
-    "setup": "deno run --allow-env --allow-net ./supabase/functions/setup/index.ts",
-    "settings": "deno run --allow-env --allow-net ./supabase/functions/settings/index.ts"
+    "config": "deno run --allow-read --allow-env --allow-net ./supabase/functions/config/index.ts",
+    "news": "deno run --allow-read --allow-env --allow-net ./supabase/functions/news/index.ts",
+    "news-sync": "deno run --allow-read --allow-env --allow-net ./supabase/functions/news-sync/index.ts",
+    "preview": "deno run --allow-read --allow-env --allow-net ./supabase/functions/preview/index.ts",
+    "series": "deno run --allow-read --allow-env --allow-net ./supabase/functions/series/index.ts",
+    "studio": "deno run --allow-read --allow-env --allow-net ./supabase/functions/studio/index.ts",
+    "character": "deno run --allow-read --allow-env --allow-net ./supabase/functions/character/index.ts",
+    "actor": "deno run --allow-read --allow-env --allow-net ./supabase/functions/actor/index.ts"
   }
 }
