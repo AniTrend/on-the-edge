@@ -14,7 +14,7 @@ const router = new Router({
 router.post('/preview', async ({ request, response }) => {
   const body = request.body({ type: 'json' });
 
-  const { url } = await body.value as Payload;
+  const { url }: Payload = await body.value;
 
   const { result: data } = await ogs({ url });
 
