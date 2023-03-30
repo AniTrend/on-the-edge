@@ -15,10 +15,10 @@ export default async (
     logger.mark('load-features-end');
     logger.measure(between('load-features-start', 'load-features-end'));
     await next();
-  }
 
-  logger.mark('destory-growth-start');
-  state.growth.destroy();
-  logger.mark('destory-growth-end');
-  logger.measure(between('destory-growth-start', 'destory-growth-end'));
+    logger.mark('destory-growth-start');
+    state.growth.destroy();
+    logger.mark('destory-growth-end');
+    logger.measure(between('destory-growth-start', 'destory-growth-end'));
+  }
 };

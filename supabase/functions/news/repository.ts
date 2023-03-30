@@ -1,5 +1,5 @@
 import { News } from './types.d.ts';
-import RemoteSource from './remote.ts';
+import { latestNews } from './remote.ts';
 import LocalSource from './local.ts';
 import { IPaging } from '../_shared/types/paging.d.ts';
 import { transform } from './transformer.ts';
@@ -11,7 +11,6 @@ import { logger } from '../_shared/core/logger.ts';
 export default class NewsRepository {
   constructor(
     private readonly local: LocalSource,
-    private readonly remote: RemoteSource,
     private readonly namespace: string,
   ) {}
 
@@ -21,7 +20,7 @@ export default class NewsRepository {
       const params = new URLSearchParams({
         locale: 'enGB',
       });
-      const content = await this.remote.latestNews(params);
+      const content = await latestNews(params);
       const document = parse(content, { flatten: true });
       const news = await transform(this.namespace, document);
       this.local.saveAll(news);
@@ -41,7 +40,7 @@ export default class NewsRepository {
     const params = new URLSearchParams({
       locale: 'enGB',
     });
-    const result = await this.remote.latestNews(params);
+    const result = await latestNews(params);
     return result;
   };
 

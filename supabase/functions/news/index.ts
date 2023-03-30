@@ -5,7 +5,6 @@ import factory from '../_shared/core/factory.ts';
 import { newsApiv2 } from '../_shared/experiment/index.ts';
 import { port } from '../_shared/core/utils.ts';
 import NewsRepository, {} from './repository.ts';
-import RemoteSource from './remote.ts';
 import LocalSource from './local.ts';
 
 const router = new Router({
@@ -14,10 +13,9 @@ const router = new Router({
 });
 
 router.get('/news', async ({ response, state }: AppContext) => {
-  const { service, envrionment, supabase, growth } = state;
+  const { envrionment, supabase, growth } = state;
   const repository = new NewsRepository(
     new LocalSource(supabase),
-    new RemoteSource(service.feed),
     envrionment.namespace,
   );
 

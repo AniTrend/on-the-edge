@@ -1,3 +1,4 @@
+import parser from 'esm/ua-agent-parser';
 import { HTTPMethods, Status } from 'x/oak';
 import { logger } from '../core/logger.ts';
 import type { AppContext, Error } from '../types/core.d.ts';
@@ -43,6 +44,10 @@ const pass = async (ctx: AppContext, next: () => Promise<unknown>) => {
     forwarded: headers.get('x-forwarded-for')!,
     language: headers.get('accept-language')!,
   };
+
+  const identifier = parser(state.contextHeader.agent);
+  logger.debug(identifier);
+
   state.growth.setAttributes({
     'host': headers.get('host'),
   });

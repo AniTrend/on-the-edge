@@ -1,3 +1,3 @@
-export type ExperimentId = string;
-
-export type AppFeatures = Record<string, string>;
+export interface AppFeatures {
+  'news-refactor-api': boolean;
+}

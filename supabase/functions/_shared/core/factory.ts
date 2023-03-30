@@ -17,10 +17,6 @@ export default (opts: FactoryOptions): Application => {
   logger.mark('factory-start');
   const router = opts.router ?? new Router();
 
-  if (opts.rateLimit) {
-    //  app.use(limiter(opts.rateLimit));
-  }
-
   app.use(
     timing,
     header,

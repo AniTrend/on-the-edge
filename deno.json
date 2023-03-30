@@ -24,6 +24,7 @@
     }
   },
   "tasks": {
+    "test": "deno test --allow-read --allow-env --allow-net",
     "config": "deno run --allow-read --allow-env --allow-net ./supabase/functions/config/index.ts",
     "news": "deno run --allow-read --allow-env --allow-net ./supabase/functions/news/index.ts",
     "news-sync": "deno run --allow-read --allow-env --allow-net ./supabase/functions/news-sync/index.ts",

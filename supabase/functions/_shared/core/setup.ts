@@ -14,53 +14,11 @@ const applicationState: State = {
       key: env<string>('SUPABASE_API_KEY'),
     },
   },
-  service: {
-    feed: {
-      url: env<string>('FEED'),
-      credential: {},
-    },
-    yuna: {
-      url: env<string>('YUNA'),
-      credential: {},
-    },
-    themes: {
-      url: env<string>('THEMES'),
-      credential: {},
-    },
-    mal: {
-      url: env<string>('MAL'),
-      credential: {},
-    },
-    notify: {
-      url: env<string>('NOTIFY'),
-      credential: {},
-    },
-    skyhook: {
-      url: env<string>('SKYHOOK'),
-      credential: {},
-    },
-    tmdb: {
-      url: env<string>('TMDB'),
-      credential: {
-        key: env<string>('TMDB_KEY'),
-      },
-    },
-    trakt: {
-      url: env<string>('TRAKT'),
-      credential: {
-        id: env<string>('TRAKT_ID'),
-      },
-    },
-  },
   supabase: createClient<Database>(
     `https://${env<string>('SUPABASE_ID')}.supabase.co`,
     env<string>('SUPABASE_API_KEY'),
   ),
   envrionment: {
-    limitter: {
-      window: env<number>('RATE_LIMIT_WINDOW'),
-      limit: env<number>('RATE_LIMIT_REQUESTS'),
-    },
     namespace: env<string>('NAMESPACE'),
   },
   growth: new GrowthBook({

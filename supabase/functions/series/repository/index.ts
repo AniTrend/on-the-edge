@@ -1,70 +1,36 @@
-import { Growth } from '../../_shared/types/core.d.ts';
 import { IResponse } from '../../_shared/types/response.d.ts';
-import Arm from '../service/arm/remote.ts';
-import Jikan from '../service/jikan/remote.ts';
-import Notify from '../service/notify/remote.ts';
-import Skyhook from '../service/skyhook/remote.ts';
-import Theme from '../service/theme/remote.ts';
-import Tmdb from '../service/tmdb/remote.ts';
-import Trakt from '../service/trakt/remote.ts';
-import { type SeriesRelation } from '../types.d.ts';
-import LocalSource from './local.ts';
+import { getAniListRelationId } from '../service/arm/index.ts';
+import { getJikanAnime } from '../service/jikan/index.ts';
+import { getNotifyAnime } from '../service/notify/index.ts';
+import { getSkyhookShow } from '../service/skyhook/index.ts';
+import { getThemesForAnime } from '../service/theme/index.ts';
+import { getTmdbShow } from '../service/tmdb/index.ts';
+import { getTraktShow } from '../service/trakt/index.ts';
 import { transform } from './tranformer.ts';
+import { Media } from '../types.d.ts';
+import LocalSource from '../local/index.ts';
 
 export default class Repository {
   constructor(
-    private readonly arm: Arm,
-    private readonly jikan: Jikan,
-    private readonly notify: Notify,
-    private readonly skyhook: Skyhook,
-    private readonly theme: Theme,
-    private readonly tmdb: Tmdb,
-    private readonly trakt: Trakt,
     private readonly local: LocalSource,
-    private readonly growth: Growth,
   ) {}
 
-  getById = async (anilist: number): Promise<IResponse<SeriesRelation>> => {
-    const relation = await this.arm.getRelation(anilist);
-    let skyhook, tmdb, themes, notify, mal, trakt;
+  getById = async (anilist: number): Promise<IResponse<Media>> => {
+    const relation = await getAniListRelationId(anilist);
 
-    if (relation?.notify) {
-      notify = await this.notify.anime(
-        relation?.notify,
-      );
-    }
+    const notify = await getNotifyAnime(relation?.notify);
 
-    if (relation?.myanimelist) {
-      mal = await this.jikan.anime(
-        relation?.myanimelist,
-      );
-    }
-    if (relation?.myanimelist) {
-      themes = await this.theme.songs(
-        relation?.myanimelist,
-      );
-    }
+    const mal = await getJikanAnime(relation?.myanimelist);
 
-    if (relation?.thetvdb) {
-      skyhook = await this.skyhook.show(
-        relation?.thetvdb,
-      );
-    }
-    if (skyhook?.slug) {
-      trakt = await this.trakt.show(
-        skyhook?.slug,
-      );
-    }
+    const themes = await getThemesForAnime(relation?.myanimelist);
 
-    if (relation?.themoviedb) {
-      tmdb = await this.tmdb.details(
-        relation?.themoviedb,
-      );
-    } else if (trakt?.ids.tmdb) {
-      tmdb = await this.tmdb.details(
-        trakt?.ids.tmdb,
-      );
-    }
+    const skyhook = await getSkyhookShow(relation?.thetvdb);
+
+    const trakt = await getTraktShow(skyhook?.slug);
+
+    const tmdb = await getTmdbShow(
+      relation?.themoviedb ?? trakt?.mediaId.tmdb,
+    );
 
     return await transform(relation, skyhook, tmdb, themes, notify, mal, trakt);
   };

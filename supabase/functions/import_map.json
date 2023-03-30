@@ -23,6 +23,7 @@
     "x/oak": "https://deno.land/x/oak@v12.1.0/mod.ts",
     "x/oak_rate_limit": "https://deno.land/x/oak_rate_limit@v0.1.1/mod.ts",
     "x/xml": "https://deno.land/x/xml@2.1.0/mod.ts",
+    "esm/ua-agent-parser": "https://esm.sh/ua-parser-js@1.0.34",
     "esm/supabase": "https://esm.sh/@supabase/supabase-js@2.7.1",
     "esm/open-graph": "https://esm.sh/open-graph-scraper@5.2.1",
     "esm/growthbook": "https://esm.sh/@growthbook/growthbook@0.23.0"

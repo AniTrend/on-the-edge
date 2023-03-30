@@ -10,11 +10,6 @@ export type ContextHeader = {
   language: string;
 };
 
-export type LimiterOptions = {
-  window: number;
-  limit: number;
-};
-
 export type Credential = {
   id?: string;
   key?: string;
@@ -26,7 +21,6 @@ export type Service = {
 };
 
 export type Environment = {
-  limitter: LimiterOptions;
   namespace: string;
 };
 
@@ -35,16 +29,6 @@ export interface State {
     supabase: Credential;
   };
   contextHeader: ContextHeader;
-  service: {
-    feed: Service;
-    yuna: Service;
-    themes: Service;
-    mal: Service;
-    notify: Service;
-    skyhook: Service;
-    tmdb: Service;
-    trakt: Service;
-  };
   supabase: Client;
   growth: Growth;
   envrionment: Environment;
