@@ -7,7 +7,7 @@ export const getNotifyAnime = async (
   notify?: string,
 ): Promise<NotifyAnime | undefined> => {
   if (!notify) {
-    logger.warn('notify id is not valid');
+    logger.warn('The parameter `notify` is undefined');
     return undefined;
   }
   return await getAnime(notify)

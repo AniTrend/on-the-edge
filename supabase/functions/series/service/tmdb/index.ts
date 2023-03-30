@@ -7,7 +7,7 @@ export const getTmdbShow = async (
   tmdb?: number | null,
 ): Promise<TmdbShow | undefined> => {
   if (!tmdb) {
-    logger.warn('tmdb id is not valid');
+    logger.warn('The parameter `tmdb` is undefined');
     return undefined;
   }
 

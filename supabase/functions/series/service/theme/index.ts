@@ -7,7 +7,7 @@ export const getThemesForAnime = async (
   mal?: number,
 ): Promise<AnimeTheme[] | undefined> => {
   if (!mal) {
-    logger.warn('mal id is not valid');
+    logger.warn('The parameter `mal` is undefined');
     return undefined;
   }
   return await getThemesByMalId(mal)

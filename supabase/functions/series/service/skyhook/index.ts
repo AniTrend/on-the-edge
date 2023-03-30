@@ -7,7 +7,7 @@ export const getSkyhookShow = async (
   tmdb?: number,
 ): Promise<SkyhookShow | undefined> => {
   if (!tmdb) {
-    logger.warn('tmdb id is not valid');
+    logger.warn('The parameter `tmdb` is undefined');
     return undefined;
   }
   return await getShowByTvdb(tmdb)

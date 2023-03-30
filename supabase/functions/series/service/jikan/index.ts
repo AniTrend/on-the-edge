@@ -7,7 +7,7 @@ export const getJikanAnime = async (
   mal?: number | null,
 ): Promise<JikanAnime | undefined> => {
   if (!mal) {
-    logger.warn('mal id is not valid');
+    logger.warn('The parameter `mal` is undefined');
     return undefined;
   }
   return await getAnime(mal)
@@ -22,7 +22,7 @@ export const getJikanManga = async (
   mal?: number | null,
 ): Promise<JikanManga | undefined> => {
   if (!mal) {
-    logger.warn('mal id is not valid');
+    logger.warn('The parameter `mal` is undefined');
     return undefined;
   }
   return await getManga(mal)
