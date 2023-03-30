@@ -19,7 +19,7 @@ logger.addStream(
   new ConsoleStream()
     .withFormat(
       new TokenReplacer()
-        .withFormat('{msg}')
+        .withFormat('{msg} {metadata}')
         .withColor(),
     ),
 );

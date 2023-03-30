@@ -1,3 +1,3 @@
-import { Anime } from './transformer/types.d.ts';
+import { Anime } from './transformer/types.ts';
 
 export type NotifyAnime = Anime;

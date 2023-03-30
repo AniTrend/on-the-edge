@@ -6,7 +6,7 @@ import {
   MappingModel,
   TrailerModel,
 } from '../remote/types.d.ts';
-import type {
+import {
   Anime,
   Format,
   MediaId,
@@ -14,7 +14,7 @@ import type {
   Source,
   Status,
   Trailer,
-} from './types.d.ts';
+} from './types.ts';
 
 const mapMediaId = (input: MappingModel[]): MediaId => {
   const mappings: MediaId = {};

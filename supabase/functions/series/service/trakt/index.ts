@@ -13,7 +13,7 @@ export const getTraktShow = async (
   return await getTraktShowByIdOrSlug(trakt)
     .then(transform)
     .catch((e) => {
-      logger.error('Unable to get ids anilist from remote', e);
+      logger.error('Unable to trakt show from remote', e);
       return undefined;
     });
 };
