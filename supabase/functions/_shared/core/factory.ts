@@ -1,7 +1,7 @@
 import { Application, Router } from 'x/oak';
 import { FactoryOptions } from '../types/options.d.ts';
 import state from '../core/setup.ts';
-//import limit from '../middleware/limit.ts';
+import limit from '../middleware/limit.ts';
 import timing from '../middleware/timing.ts';
 import error from '../middleware/error.ts';
 import header from '../middleware/header.ts';
@@ -21,7 +21,7 @@ export default (opts: FactoryOptions): Application => {
   app.use(
     timing,
     header,
-    //limit,
+    limit,
     growth,
     error,
   );
