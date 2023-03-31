@@ -1,4 +1,4 @@
-import { Transform } from '../../../transformer/types.d.ts';
+import { Transform } from '../../../../_shared/transformer/types.d.ts';
 import { SkyhookModel } from '../remote/types.d.ts';
 import { Show } from './types.d.ts';
 import { toFuzzyDate } from '../../../../_shared/helpers/date.ts';

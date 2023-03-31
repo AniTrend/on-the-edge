@@ -1,4 +1,4 @@
-import { Transform } from '../transformer/types.d.ts';
+import { Transform } from '../../_shared/transformer/types.d.ts';
 import { Media } from '../types.d.ts';
 import { AnimeRelation } from './types.d.ts';
 

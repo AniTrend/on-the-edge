@@ -1,6 +1,6 @@
 import { Model } from '../remote/types.d.ts';
 import { AnimeRelationId } from '../types.d.ts';
-import { Transform } from '../../../transformer/types.d.ts';
+import { Transform } from '../../../../_shared/transformer/types.d.ts';
 
 export const transform: Transform<Model, AnimeRelationId> = (
   sourceData,

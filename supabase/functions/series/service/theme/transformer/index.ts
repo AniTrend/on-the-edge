@@ -1,5 +1,5 @@
 import { env } from '../../../../_shared/core/env.ts';
-import { Transform } from '../../../transformer/types.d.ts';
+import { Transform } from '../../../../_shared/transformer/types.d.ts';
 import { ThemeMetaModel, ThemeModel } from '../remote/types.d.ts';
 import { Theme, ThemeType } from './types.d.ts';
 

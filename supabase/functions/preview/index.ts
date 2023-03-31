@@ -1,5 +1,5 @@
 import { Router } from 'x/oak';
-import transformer from './transformers/info-transformer.ts';
+import { transform } from './transform/index.ts';
 import ogs from 'esm/open-graph';
 
 import factory from '../_shared/core/factory.ts';
@@ -19,7 +19,7 @@ router.post('/preview', async ({ request, response }) => {
   const { result: data } = await ogs({ url });
 
   response.type = 'application/json';
-  response.body = transformer(data);
+  response.body = transform(data);
 });
 
 await factory({

@@ -1,4 +1,4 @@
-import { Transform } from '../../../transformer/types.d.ts';
+import { Transform } from '../../../../_shared/transformer/types.d.ts';
 import { Show } from '../remote/types.d.ts';
 import { TmdbShow } from '../types.d.ts';
 
