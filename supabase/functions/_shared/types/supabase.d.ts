@@ -50,7 +50,6 @@ export interface Database {
           anilist: number | null;
           anime_planet: string | null;
           anisearch: number | null;
-          created_at: string | null;
           id: string;
           imdb: string | null;
           livechart: number | null;
@@ -60,13 +59,13 @@ export interface Database {
           tmdb: number | null;
           trakt: number | null;
           tvdb: number | null;
+          updated_at: string;
         };
         Insert: {
           anidb?: number | null;
           anilist?: number | null;
           anime_planet?: string | null;
           anisearch?: number | null;
-          created_at?: string | null;
           id?: string;
           imdb?: string | null;
           livechart?: number | null;
@@ -76,13 +75,13 @@ export interface Database {
           tmdb?: number | null;
           trakt?: number | null;
           tvdb?: number | null;
+          updated_at?: string;
         };
         Update: {
           anidb?: number | null;
           anilist?: number | null;
           anime_planet?: string | null;
           anisearch?: number | null;
-          created_at?: string | null;
           id?: string;
           imdb?: string | null;
           livechart?: number | null;
@@ -92,54 +91,55 @@ export interface Database {
           tmdb?: number | null;
           trakt?: number | null;
           tvdb?: number | null;
+          updated_at?: string;
         };
       };
       navigation_group: {
         Row: {
           authenticated: boolean;
           created_at: string;
-          i18n: string | null;
+          i18n: string;
           id: number;
-          name: string;
         };
         Insert: {
           authenticated?: boolean;
           created_at?: string;
-          i18n?: string | null;
+          i18n: string;
           id?: number;
-          name: string;
         };
         Update: {
           authenticated?: boolean;
           created_at?: string;
-          i18n?: string | null;
+          i18n?: string;
           id?: number;
-          name?: string;
         };
       };
       navigation_item: {
         Row: {
           created_at: string;
-          criteria: Json | null;
+          criteria: Json;
           destination: string;
           group: number | null;
-          icon: string | null;
+          i18n: string;
+          icon: string;
           id: number;
         };
         Insert: {
           created_at?: string;
-          criteria?: Json | null;
+          criteria: Json;
           destination: string;
           group?: number | null;
-          icon?: string | null;
+          i18n: string;
+          icon: string;
           id?: number;
         };
         Update: {
           created_at?: string;
-          criteria?: Json | null;
+          criteria?: Json;
           destination?: string;
           group?: number | null;
-          icon?: string | null;
+          i18n?: string;
+          icon?: string;
           id?: number;
         };
       };

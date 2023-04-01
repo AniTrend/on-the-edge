@@ -1,54 +1,38 @@
-// automated task to fetch genres and save them into our DB
-const genreMediaMap = {
-  'Action': 0,
-  'Adventure': 0,
-  'Comedy': 0,
-  'Drama': 0,
-  'Ecchi': 0,
-  'Fantasy': 0,
-  'Hentai': 0,
-  'Horror': 0,
-  'Mahou Shoujo': 0,
-  'Mecha': 0,
-  'Music': 0,
-  'Mystery': 0,
-  'Psychological': 0,
-  'Romance': 0,
-  'Sci-Fi': 0,
-  'Slice of Life': 0,
-  'Sports': 0,
-  'Supernatural': 0,
-  'Thriller': 0,
-};
+import { Growth } from '../../_shared/types/core.d.ts';
+import {
+  getPlatformSource,
+  isAnalyticsEnabled,
+} from '../../_shared/experiment/index.ts';
+import { ClientConfiguration } from '../transform/types.d.ts';
+import { Local } from '../local/index.ts';
+import { transform } from '../transform/index.ts';
 
-// fetch infomation from growth
-const enabledFeatures = (): string[] => {
-  return [];
-};
+export class Repository {
+  constructor(
+    private growth: Growth,
+    private local: Local,
+  ) {}
 
-// get settings from our database or something based on an app version?
-export const config = {
-  // extract this from database
-  image: {
-    banner: 'https://anitrend.co/media/image/banner/default.webp',
-    poster: 'https://anitrend.co/media/image/poster/default.webp',
-  },
-  // extract this from database
-  icon: {
-    error: 'https://anitrend.co/media/icons/error.svg',
-    loading: 'https://anitrend.co/media/icons/loading.svg',
-  },
-  // extract this from database
-  release: {
-    version: '2.0.0-alpha40',
-    code: '200000040',
-  },
-  // extract this from database
-  info: {
-    faq: 'https://docs.anitrend.co/faq',
-    patreon: 'https://patreon.com/wax911',
-    discord: 'https://discord.gg/2wzTqnF',
-  },
-  genres: genreMediaMap,
-  features: enabledFeatures(),
-};
+  // get settings from our database or something based on an app version?
+  getConfiguration = async (): Promise<ClientConfiguration> => {
+    const defaultNavigation = await this.local.getDefaultNavigation();
+    const genreMappings = await this.local.getContent(
+      'android/content/anime_genre_relation.json',
+    );
+
+    return {
+      settings: {
+        analyticsEnabled: isAnalyticsEnabled(this.growth),
+        platformSource: getPlatformSource(this.growth),
+      },
+      image: {
+        banner: this.local.getMediaPublicUrl(
+          'banner/156cc9127eb16c7fd645a9ba0fb3a4e21678353995_main.jpg',
+        ).data.publicUrl,
+        poster: undefined,
+      },
+      navigation: defaultNavigation.map(transform),
+      genres: genreMappings,
+    };
+  };
+}

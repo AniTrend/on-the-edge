@@ -2,7 +2,7 @@ import type { OpenGraphInfo } from './types.d.ts';
 import { describe, it } from 'std/testing/bdd';
 
 import { assertEquals } from 'std/testing/asserts';
-import { tranform } from './index.ts';
+import { transform } from './index.ts';
 
 describe('info transformer test', () => {
   it('given open graph data, transformer should produce custom entity', () => {
@@ -21,7 +21,7 @@ describe('info transformer test', () => {
       requestUrl: 'http://ogp.me/',
       success: true,
     };
-    const actual = tranform(given);
+    const actual = transform(given);
 
     const expected: OpenGraphInfo = {
       title: 'Open Graph protocol',

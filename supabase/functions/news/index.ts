@@ -2,7 +2,7 @@ import { Router } from 'x/oak';
 
 import type { AppContext } from '../_shared/types/core.d.ts';
 import factory from '../_shared/core/factory.ts';
-import { newsApiv2 } from '../_shared/experiment/index.ts';
+import { isNewsApiv2Enabled } from '../_shared/experiment/index.ts';
 import { port } from '../_shared/core/utils.ts';
 import NewsRepository, {} from './repository.ts';
 import LocalSource from './local.ts';
@@ -19,7 +19,7 @@ router.get('/news', async ({ response, state }: AppContext) => {
     envrionment.namespace,
   );
 
-  if (newsApiv2(growth)) {
+  if (isNewsApiv2Enabled(growth)) {
     response.type = 'application/json';
     response.body = await repository.getLatest();
   } else {
