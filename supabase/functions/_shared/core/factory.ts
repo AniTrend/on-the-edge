@@ -6,6 +6,7 @@ import timing from '../middleware/timing.ts';
 import error from '../middleware/error.ts';
 import header from '../middleware/header.ts';
 import growth from '../middleware/growth.ts';
+import attribute from '../middleware/attribute.ts';
 import { logger } from './logger.ts';
 import { between } from 'x/optic';
 
@@ -23,6 +24,7 @@ export default (opts: FactoryOptions): Application => {
     header,
     limit,
     growth,
+    attribute,
     error,
   );
 

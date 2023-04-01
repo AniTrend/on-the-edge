@@ -25,6 +25,9 @@ const applicationState: State = {
     apiHost: env<string>('GROWTH'),
     clientKey: env<string>('GROWTH_KEY'),
     enableDevMode: true,
+    log: (msg, ctx) => {
+      logger.info(msg, ctx);
+    },
     trackingCallback: (experiment, result) => {
       logger.info('Experiemnt tracked', {
         experimentId: experiment.key,

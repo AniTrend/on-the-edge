@@ -1,3 +1,4 @@
+import { IBrowser, ICPU, IDevice, IEngine, IOS } from 'esm/ua-agent-parser';
 import { Client, Growth } from './core.d.ts';
 
 export type ContextHeader = {
@@ -8,6 +9,21 @@ export type ContextHeader = {
   acceptEncoding: string;
   forwarded: string;
   language: string;
+  device?: {
+    browser: IBrowser;
+    cpu: ICPU;
+    device: IDevice;
+    engine: IEngine;
+    os: IOS;
+  };
+  application?: {
+    locale: string | null;
+    version: string | null;
+    source: string | null;
+    code: string | null;
+    label: string | null;
+    buildType: string | null;
+  };
 };
 
 export type Credential = {
