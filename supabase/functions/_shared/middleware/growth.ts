@@ -7,7 +7,10 @@ export default async (
   next: () => Promise<unknown>,
 ) => {
   logger.mark('load-features-start');
-  await state.growth.loadFeatures()
+  await state.growth.loadFeatures({
+    autoRefresh: true,
+    timeout: 2000,
+  })
     .then(() => {
       logger.mark('load-features-end');
       logger.measure(between('load-features-start', 'load-features-end'));
