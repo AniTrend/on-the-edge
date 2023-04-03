@@ -30,6 +30,17 @@ jobs:
         with:
           deno-version: v1.x
 
+      - name: Load properties file
+        run: |
+          declare -A properties
+          while IFS='=' read -r key value; do
+            properties["$key"]="$value"
+          done < supabase/.env.defaults
+
+          for key in "${!properties[@]}"; do
+            echo "::set-env name=$key::${properties[$key]}"
+          done
+
       - name: Run linter
         run: deno lint
 
