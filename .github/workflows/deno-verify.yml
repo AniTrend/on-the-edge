@@ -26,7 +26,7 @@ jobs:
 
       - name: create pull request with formatting corrections
         if: ${{contains(steps.git_status.outputs.status, ' ')}}
-        uses: peter-evans/create-pull-request@v4
+        uses: peter-evans/create-pull-request@v5
         with:
           branch: "${{ github.base_ref }}/auto-formatting"
           title: "${{ github.base_ref }}/auto-formatting"
