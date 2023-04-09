@@ -19,10 +19,3 @@ export type NavigationItem = {
   icon: string;
   id: number;
 };
-
-export type GenreItems = {
-  [key: string]: {
-    id: number;
-    image: string;
-  };
-};

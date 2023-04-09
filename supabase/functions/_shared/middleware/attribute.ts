@@ -2,17 +2,6 @@ import { logger } from '../core/logger.ts';
 import { AppContext } from '../types/core.d.ts';
 import { State } from '../types/state.d.ts';
 
-const guessSource = (source: string | null): string | null => {
-  if (source) {
-    if (source == 'StandAloneInstall') {
-      return 'github';
-    } else {
-      return 'playstore';
-    }
-  }
-  return null;
-};
-
 const setApplicationAttributes = (state: State) => {
   const { contextHeader } = state;
 
@@ -24,7 +13,7 @@ const setApplicationAttributes = (state: State) => {
       'app_locale': locale,
       'app_version': version,
       'app_code': code,
-      'app_source': guessSource(source),
+      'app_source': source,
       'app_build_type': buildType,
     });
   }

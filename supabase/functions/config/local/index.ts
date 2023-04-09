@@ -1,6 +1,6 @@
 import { logger } from '../../_shared/core/logger.ts';
 import { Client } from '../../_shared/types/core.d.ts';
-import { GenreItems, NavigationItem, PublicUrl } from './types.d.ts';
+import { NavigationItem, PublicUrl } from './types.d.ts';
 
 export class Local {
   constructor(
@@ -28,7 +28,7 @@ export class Local {
 
   getContent = async (
     resource: string,
-  ): Promise<GenreItems | undefined> => {
+  ): Promise<Map<string, number> | undefined> => {
     const { data, error } = await this.client.storage
       .from('app')
       .download(resource);

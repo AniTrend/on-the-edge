@@ -4,7 +4,7 @@ export interface ClientConfiguration {
   settings: Settings;
   image: Image;
   navigation: Navigation[];
-  genres?: { [key: string]: { id: number; image: string } };
+  genres?: Map<string, number>;
 }
 
 export interface Image {
