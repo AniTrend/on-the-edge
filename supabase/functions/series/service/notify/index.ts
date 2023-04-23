@@ -13,7 +13,7 @@ export const getNotifyAnime = async (
   return await getAnime(notify)
     .then(transform)
     .catch((e) => {
-      logger.error('Unable to get notify anime from remote', e);
+      logger.warn('Unable to get notify anime from remote', e);
       return undefined;
     });
 };

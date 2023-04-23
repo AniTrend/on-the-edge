@@ -13,7 +13,7 @@ export const getThemesForAnime = async (
   return await getThemesByMalId(mal)
     .then(transform)
     .catch((e) => {
-      logger.error('Unable to get themes from remote', e);
+      logger.warn('Unable to get themes from remote', e);
       return undefined;
     });
 };

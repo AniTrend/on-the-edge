@@ -1,3 +1,5 @@
+import { MalType } from './enums.ts';
+
 interface Period {
   from: string;
   to: string;
@@ -41,7 +43,7 @@ interface MalResource {
   title: string;
   title_english: string;
   title_japanese: string;
-  type: string | 'Manga' | 'TV';
+  type: MalType;
   score: number;
   scored_by: number;
   rank: number;
@@ -50,6 +52,8 @@ interface MalResource {
   favorites: number;
   synopsis: string;
   background: string;
+  rating?: string;
+  title_synonyms?: string[];
 }
 
 export interface AnimeResource extends MalResource {
@@ -58,14 +62,12 @@ export interface AnimeResource extends MalResource {
     url: string;
     embed_url: string;
   };
-  title_synonyms: string[];
   source: string;
   episodes: number;
   status: string | 'Finished' | 'Airing';
   airing: boolean;
   aired: Period;
   duration: string;
-  rating: string;
   season: string;
   year: number;
 }

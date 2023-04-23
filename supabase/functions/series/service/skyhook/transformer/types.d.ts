@@ -1,4 +1,4 @@
-import { FuzzyDate } from '../../../../_shared/helpers/date.d.ts';
+import { Instant } from '../../../../_shared/helpers/date.d.ts';
 
 interface Episode {
   tvdbShowId: number;
@@ -6,9 +6,10 @@ interface Episode {
   seasonNumber: number;
   episodeNumber: number;
   absoluteEpisodeNumber?: number;
+  airedBeforeSeasonNumber?: number;
+  airedBeforeEpisodeNumber?: number;
   title?: string;
-  airDate: FuzzyDate;
-  airDateUtc: FuzzyDate;
+  airDate: Instant;
   runtime?: number;
   overview?: string;
   image?: string;
@@ -17,6 +18,8 @@ interface Episode {
 interface Season {
   seasonNumber: number;
   poster?: string;
+  banner?: string;
+  fanart?: string;
 }
 
 export interface Show {
@@ -25,8 +28,8 @@ export interface Show {
   title: string;
   overview: string;
   slug: string;
-  firstAired: FuzzyDate;
-  lastUpdated: FuzzyDate;
+  firstAired: Instant;
+  lastUpdated: Instant;
   status: string;
   runtime: number;
   originalNetwork: string;

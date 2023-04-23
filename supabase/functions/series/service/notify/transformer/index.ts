@@ -1,4 +1,4 @@
-import { toFuzzyDate } from '../../../../_shared/helpers/date.ts';
+import { toInstant } from '../../../../_shared/helpers/date.ts';
 import { Transform } from '../../../../_shared/transformer/types.d.ts';
 import {
   AnimeModel,
@@ -6,15 +6,8 @@ import {
   MappingModel,
   TrailerModel,
 } from '../remote/types.d.ts';
-import {
-  Anime,
-  Format,
-  MediaId,
-  Poster,
-  Source,
-  Status,
-  Trailer,
-} from './types.ts';
+import { Anime, MediaId, Poster, Trailer } from './types.d.ts';
+import { Format, Source, Status } from './enums.ts';
 
 const mapMediaId = (input: MappingModel[]): MediaId => {
   const mappings: MediaId = {};
@@ -48,36 +41,18 @@ const mapTrailer = (trailers: TrailerModel[]): Trailer[] => {
 };
 
 const mapHSLToHex = (
-  hue: number,
-  saturation: number,
-  lightness: number,
+  h: number,
+  s: number,
+  l: number,
 ): string => {
-  const h = hue * 360;
-  const s = saturation * 100;
-  const l = lightness * 100;
-
-  const c = (1 - Math.abs(2 * l - 1)) * (s / 100);
-  const x = c * (1 - Math.abs((h / 60) % 2 - 1));
-  const m = l - c / 2;
-
-  const hueToRgbMap: number[][] = [
-    [c, x, 0],
-    [x, c, 0],
-    [0, c, x],
-    [0, x, c],
-    [x, 0, c],
-    [c, 0, x],
-  ];
-
-  const [r, g, b] = hueToRgbMap[Math.floor(h / 60) % 6].map((val) =>
-    Math.round((val + m) * 255)
-  );
-
-  const red = r.toString(16).padStart(2, '0');
-  const green = g.toString(16).padStart(2, '0');
-  const blue = b.toString(16).padStart(2, '0');
-
-  return `#${red}${green}${blue}`;
+  l /= 100;
+  const a = s * Math.min(l, 1 - l) / 100;
+  const f = (n: number) => {
+    const k = (n + h / 30) % 12;
+    const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+    return Math.round(255 * color).toString(16).padStart(2, '0');
+  };
+  return `#${f(0)}${f(8)}${f(4)}`;
 };
 
 const mapPoster = (image: ImageModel): Poster => ({
@@ -139,8 +114,8 @@ export const transform: Transform<AnimeModel, Anime> = (sourceData) => ({
   format: mapFormat(sourceData.type),
   summary: sourceData.summary,
   status: mapStatus(sourceData.status),
-  startDate: toFuzzyDate(sourceData.startDate),
-  endDate: toFuzzyDate(sourceData.endDate),
+  startDate: toInstant(sourceData.startDate),
+  endDate: toInstant(sourceData.endDate),
   episodeCount: sourceData.episodeCount,
   episodeLength: sourceData.episodeLength,
   source: mapSource(sourceData.source),

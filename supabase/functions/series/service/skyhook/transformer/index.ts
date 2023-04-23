@@ -1,7 +1,7 @@
 import { Transform } from '../../../../_shared/transformer/types.d.ts';
 import { SkyhookModel } from '../remote/types.d.ts';
 import { Show } from './types.d.ts';
-import { toFuzzyDate } from '../../../../_shared/helpers/date.ts';
+import { toInstant } from '../../../../_shared/helpers/date.ts';
 
 export const transform: Transform<SkyhookModel, Show> = (
   sourceData,
@@ -11,8 +11,8 @@ export const transform: Transform<SkyhookModel, Show> = (
   title: sourceData.title,
   overview: sourceData.overview,
   slug: sourceData.slug,
-  firstAired: toFuzzyDate(sourceData.firstAired),
-  lastUpdated: toFuzzyDate(sourceData.lastUpdated),
+  firstAired: toInstant(sourceData.firstAired),
+  lastUpdated: toInstant(sourceData.lastUpdated),
   status: sourceData.status,
   runtime: sourceData.runtime,
   originalNetwork: sourceData.originalNetwork,
@@ -23,7 +23,7 @@ export const transform: Transform<SkyhookModel, Show> = (
   poster: sourceData.images.find((item) => item.coverType == 'Poster')?.url,
   fanart: sourceData.images.find((item) => item.coverType == 'Fanart')?.url,
   seasons: sourceData.seasons.map((season) => ({
-    poster: season.images.find((item) => item.coverType == 'Poster')?.url,
+    poster: season?.images?.find((item) => item.coverType == 'Poster')?.url,
     seasonNumber: season.seasonNumber,
   })),
   episodes: sourceData.episodes.map((episode) => ({
@@ -33,8 +33,7 @@ export const transform: Transform<SkyhookModel, Show> = (
     episodeNumber: episode.episodeNumber,
     absoluteEpisodeNumber: episode.absoluteEpisodeNumber,
     title: episode.title,
-    airDate: toFuzzyDate(episode.airDate),
-    airDateUtc: toFuzzyDate(episode.airDateUtc),
+    airDate: toInstant(episode.airDateUtc),
     runtime: episode.runtime,
     overview: episode.overview,
     image: episode.image,

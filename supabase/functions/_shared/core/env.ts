@@ -1,3 +1,13 @@
+import { loadSync } from 'std/dotenv';
+
+try {
+  loadSync({
+    export: true,
+  });
+} catch (_e) {
+  // do nothing
+}
+
 export class MissingKeyError extends Error {
   constructor(key: string) {
     super(

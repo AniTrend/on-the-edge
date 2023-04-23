@@ -9,6 +9,8 @@ interface EpisodeModel {
   seasonNumber: number;
   episodeNumber: number;
   absoluteEpisodeNumber?: number;
+  airedBeforeSeasonNumber?: number;
+  airedBeforeEpisodeNumber?: number;
   title?: string;
   airDate: Date;
   airDateUtc: Date;
@@ -24,7 +26,8 @@ interface ImageModel {
 
 interface SeasonModel {
   seasonNumber: number;
-  images: ImageModel[];
+  name?: string;
+  images?: ImageModel[];
 }
 
 interface TimeOfDayModel {

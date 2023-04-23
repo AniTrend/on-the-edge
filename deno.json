@@ -32,6 +32,7 @@
     "series": "deno run --allow-read --allow-env --allow-net ./supabase/functions/series/index.ts",
     "studio": "deno run --allow-read --allow-env --allow-net ./supabase/functions/studio/index.ts",
     "character": "deno run --allow-read --allow-env --allow-net ./supabase/functions/character/index.ts",
-    "actor": "deno run --allow-read --allow-env --allow-net ./supabase/functions/actor/index.ts"
+    "actor": "deno run --allow-read --allow-env --allow-net ./supabase/functions/actor/index.ts",
+    "graphql": "deno run --allow-read --allow-env --allow-net ./supabase/functions/graphql/index.ts"
   }
 }

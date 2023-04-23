@@ -13,7 +13,7 @@ export const getTraktShow = async (
   return await getTraktShowByIdOrSlug(trakt)
     .then(transform)
     .catch((e) => {
-      logger.error('Unable to trakt show from remote', e);
+      logger.info('Unable to transform show from remote', e);
       return undefined;
     });
 };

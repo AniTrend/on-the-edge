@@ -13,7 +13,7 @@ export const getSkyhookShow = async (
   return await getShowByTvdb(tmdb)
     .then(transform)
     .catch((e) => {
-      logger.error('Unable to get skyhook show from remote', e);
+      logger.warn('Unable to get skyhook show from remote', e);
       return undefined;
     });
 };

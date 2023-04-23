@@ -13,7 +13,7 @@ export const getJikanAnime = async (
   return await getAnime(mal)
     .then(animeTransform)
     .catch((e) => {
-      logger.error('Unable to get jikan show from remote', e);
+      logger.warn('Unable to get jikan show from remote', e);
       return undefined;
     });
 };
@@ -28,7 +28,7 @@ export const getJikanManga = async (
   return await getManga(mal)
     .then(mangaTransform)
     .catch((e) => {
-      logger.error('Unable to get jikan manga from remote', e);
+      logger.warn('Unable to get jikan manga from remote', e);
       return undefined;
     });
 };

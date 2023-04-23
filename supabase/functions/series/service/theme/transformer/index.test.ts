@@ -3,8 +3,10 @@ import { describe, it } from 'std/testing/bdd';
 import { ThemeModel } from '../remote/types.d.ts';
 import { transform } from './index.ts';
 import { Theme } from './types.d.ts';
+import { env } from '../../../../_shared/core/env.ts';
 
 describe('theme transformer test', () => {
+  const baseUrl: string = env('THEMES');
   it('given theme models return theme collection', () => {
     const given: ThemeModel[] = [
       {
@@ -62,7 +64,7 @@ describe('theme transformer test', () => {
         'id': 'OP1',
         'name': 'MUKANJYO',
         'video': 'https://animethemes.moe/video/VinlandSaga-OP1-NCBD1080.webm',
-        'audio': 'https://themes.moe/api/themes/37521/OP1/audio',
+        'audio': `${baseUrl}/themes/37521/OP1/audio`,
         'meta': {
           'type': 'OP',
           'number': 1,
@@ -73,7 +75,7 @@ describe('theme transformer test', () => {
         'id': 'OP2',
         'name': 'Dark Crow',
         'video': 'https://animethemes.moe/video/VinlandSaga-OP2-NCBD1080.webm',
-        'audio': 'https://themes.moe/api/themes/37521/OP2/audio',
+        'audio': `${baseUrl}/themes/37521/OP2/audio`,
         'meta': {
           'type': 'OP',
           'number': 2,
@@ -84,7 +86,7 @@ describe('theme transformer test', () => {
         'id': 'ED1',
         'name': 'Torches',
         'video': 'https://animethemes.moe/video/VinlandSaga-ED1-NCBD1080.webm',
-        'audio': 'https://themes.moe/api/themes/37521/ED1/audio',
+        'audio': `${baseUrl}/themes/37521/ED1/audio`,
         'meta': {
           'type': 'ED',
           'number': 1,
@@ -95,7 +97,7 @@ describe('theme transformer test', () => {
         'id': 'ED2',
         'name': 'Drown',
         'video': 'https://animethemes.moe/video/VinlandSaga-ED2-NCBD1080.webm',
-        'audio': 'https://themes.moe/api/themes/37521/ED2/audio',
+        'audio': `${baseUrl}/themes/37521/ED2/audio`,
         'meta': {
           'type': 'ED',
           'number': 2,

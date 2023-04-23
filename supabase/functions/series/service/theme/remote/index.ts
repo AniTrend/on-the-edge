@@ -14,7 +14,12 @@ export const getThemesByMalId = async (
 ): Promise<ThemeModel[]> => {
   const service = getService();
   return await request<string>(`${service.url}/themes/${malId}`)
-    .then((content) => JSON.parse(content))
+    .then((content) => {
+      if (!content) {
+        return [];
+      }
+      return JSON.parse(content);
+    })
     .catch((e) => {
       logger.error('Unable to convert body to JSON', e);
       return [];

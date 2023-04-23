@@ -1,4 +1,4 @@
-import { FuzzyDate } from '../../../../_shared/helpers/date.d.ts';
+import { Instant } from '../../../../_shared/helpers/date.d.ts';
 
 interface MediaId {
   trakt: number;
@@ -9,19 +9,28 @@ interface MediaId {
   tvrage?: string;
 }
 
+interface Airs {
+  day: string;
+  time: string;
+  timezone: string;
+}
+
 export interface Show {
   title: string;
   year: number;
   mediaId: MediaId;
   overview: string;
-  firstAired: FuzzyDate;
+  firstAired: Instant;
+  airs: Airs;
   runtime: number;
   certification: string;
   network: string;
+  country: string;
   trailer: string;
   homepage: string;
   status: string;
   rating: number;
-  updatedAt: FuzzyDate;
+  updatedAt: Instant;
+  language: string;
   airedEpisodes: number;
 }

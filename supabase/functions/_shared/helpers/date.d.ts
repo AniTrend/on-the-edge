@@ -3,3 +3,5 @@ export interface FuzzyDate {
   month: number;
   day: number;
 }
+
+export type Instant = number;

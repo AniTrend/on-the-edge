@@ -1,6 +1,19 @@
 import { between } from 'x/optic';
 import { logger } from './logger.ts';
 
+const sanitize = (url: string): string => {
+  const urlObject = new URL(url);
+
+  const queryParams = urlObject.searchParams;
+  for (const key of queryParams.keys()) {
+    if (key.includes('api_key') || key.includes('api_secret')) {
+      queryParams.set(key, '********');
+    }
+  }
+
+  return urlObject.toString();
+};
+
 export const defaults: RequestInit = {
   method: 'GET',
   cache: 'default',
@@ -14,14 +27,17 @@ export const request = async <T>(
   url: string,
   options: RequestInit = defaults,
 ): Promise<T> => {
-  logger.debug(`----> ${options.method}: ${url}`);
+  const sanitizedUrl = sanitize(url);
+  logger.debug(`----> ${options.method}: ${sanitizedUrl}`);
   logger.mark('request-start');
   return await fetch(url, options).then((response) => {
-    logger.debug(`<---- ${response.status} ${options.method}: ${url}`);
+    logger.debug(`<---- ${response.status} ${options.method}: ${sanitizedUrl}`);
     logger.mark('request-end');
-    logger.measure(between('request-start', 'request-end'), url);
+    logger.measure(between('request-start', 'request-end'), sanitizedUrl);
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      throw new Error(
+        `<---- HTTP/${response.status} ${options.method}: ${sanitizedUrl}`,
+      );
     }
     const contentType = response.headers.get('Content-Type');
     if (contentType && contentType.includes('application/json')) {
@@ -30,6 +46,6 @@ export const request = async <T>(
       return response.text();
     }
   }).catch((error) => {
-    logger.warn(error.message, error);
+    logger.warn(error);
   });
 };
