@@ -24,7 +24,7 @@ jobs:
           title: Update dependencies
           body: >
             Dependencies updated by [udd](https://github.com/hayd/deno-udd).
-          branch: deno-dependency-updates
+          branch: dependencies/deno-dependency-updates
           author: GitHub <noreply@github.com>
           delete-branch: true
       - name: Retrieve commit sha
@@ -35,19 +35,27 @@ jobs:
         uses: Sibz/github-status-action@v1
         with:
           authToken: ${{ secrets.GITHUB_TOKEN }}
-          context: "Basic tests"
+          context: "Unit tests"
           state: "pending"
           sha: ${{ steps.commit.outputs.sha }}
-      - name: Basic tests
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+      - name: Config properties file
+        run: |
+          cp .env.defaults .env
+          rm deno.lock
+      - name: Unit tests
         id: test
         continue-on-error: true
         run: |
-          deno test --allow-read --allow-write
+          deno test -A
       - name: Set commit status with outcome
         uses: Sibz/github-status-action@v1
         with:
           authToken: ${{ secrets.GITHUB_TOKEN }}
-          context: "Basic tests"
+          context: "Unit tests"
           description: "To run other CI actions close/reopen this PR"
           state: ${{ steps.test.outcome }}
           sha: ${{ steps.commit.outputs.sha }} 
