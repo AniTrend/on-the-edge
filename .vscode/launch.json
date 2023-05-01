@@ -59,6 +59,20 @@
                 "--allow-all"
             ],
             "attachSimplePort": 9229
+        },
+        {
+            "request": "launch",
+            "name": "graphql",
+            "type": "node",
+            "program": "${workspaceFolder}/supabase/functions/graphql/index.ts",
+            "cwd": "${workspaceFolder}",
+            "runtimeExecutable": "/home/max/.deno/bin/deno",
+            "runtimeArgs": [
+                "run",
+                "--inspect-wait",
+                "--allow-all"
+            ],
+            "attachSimplePort": 9229
         }
     ]
 }
