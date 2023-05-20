@@ -1,9 +1,0 @@
-{
-  "name": "@anitrend/middleware",
-  "version": "1.0.0",
-  "description": "Middleware for edge functions",
-  "type": "module",
-  "scripts": {
-    "check": "deno check index.ts",
-    "test": "deno test index.test.ts"
-  }

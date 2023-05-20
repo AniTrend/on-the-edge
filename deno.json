@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "importMap": "./supabase/functions/import_map.json",
+  "lint": {
+    "files": {
+      "include": ["supabase/functions"],
+      "exclude": [".github", "README.md"]
+    },
+    "rules": {
+      "tags": ["recommended"]
+    }
+  },
+  "fmt": {
+    "files": {
+      "include": ["supabase/functions"],
+      "exclude": [".github", "README.md"]
+    },
+    "options": {
+      "useTabs": false,
+      "lineWidth": 80,
+      "indentWidth": 2,
+      "singleQuote": true,
+      "proseWrap": "preserve"
+    }
+  },
+  "tasks": {
+    "test": "deno test --allow-read --allow-env --allow-net",
+    "config": "deno run --allow-read --allow-env --allow-net ./supabase/functions/config/index.ts",
+    "news": "deno run --allow-read --allow-env --allow-net ./supabase/functions/news/index.ts",
+    "news-sync": "deno run --allow-read --allow-env --allow-net ./supabase/functions/news-sync/index.ts",
+    "preview": "deno run --allow-read --allow-env --allow-net ./supabase/functions/preview/index.ts",
+    "series": "deno run --allow-read --allow-env --allow-net ./supabase/functions/series/index.ts",
+    "studio": "deno run --allow-read --allow-env --allow-net ./supabase/functions/studio/index.ts",
+    "character": "deno run --allow-read --allow-env --allow-net ./supabase/functions/character/index.ts",
+    "actor": "deno run --allow-read --allow-env --allow-net ./supabase/functions/actor/index.ts",
+    "graphql": "deno run --allow-read --allow-env --allow-net ./supabase/functions/graphql/index.ts"
+  }
+}
