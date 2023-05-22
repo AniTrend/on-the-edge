@@ -6,6 +6,7 @@ import {
 import { ClientConfiguration } from '../transform/types.d.ts';
 import { Local } from '../local/index.ts';
 import { transform } from '../transform/index.ts';
+import { env } from '../../_shared/core/env.ts';
 
 export class Repository {
   constructor(
@@ -21,6 +22,7 @@ export class Repository {
     );
 
     return {
+      token: env('SUPABASE_API_KEY'),
       settings: {
         analyticsEnabled: isAnalyticsEnabled(this.growth),
         platformSource: getPlatformSource(this.growth),
@@ -29,7 +31,11 @@ export class Repository {
         banner: this.local.getMediaPublicUrl(
           'banner/156cc9127eb16c7fd645a9ba0fb3a4e21678353995_main.jpg',
         ).data.publicUrl,
-        poster: undefined,
+        poster: '',
+        loading: '',
+        error: '',
+        info: '',
+        default: '',
       },
       navigation: defaultNavigation.map(transform),
       genres: genreMappings,

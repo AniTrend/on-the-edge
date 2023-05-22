@@ -1,6 +1,7 @@
 import { PlatformSource } from '../../_shared/experiment/types.d.ts';
 
 export interface ClientConfiguration {
+  token: string;
   settings: Settings;
   image: Image;
   navigation: Navigation[];
@@ -9,7 +10,11 @@ export interface ClientConfiguration {
 
 export interface Image {
   banner: string;
-  poster?: string;
+  poster: string;
+  loading: string;
+  error: string;
+  info: string;
+  default: string;
 }
 
 export interface Navigation {
