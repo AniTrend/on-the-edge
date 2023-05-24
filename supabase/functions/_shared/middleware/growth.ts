@@ -8,7 +8,7 @@ export default async (
 ) => {
   logger.mark('load-features-start');
   await state.growth.loadFeatures({
-    autoRefresh: true,
+    autoRefresh: false,
     timeout: 2000,
   })
     .then(() => {
