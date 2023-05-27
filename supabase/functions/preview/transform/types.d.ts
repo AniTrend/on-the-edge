@@ -1,8 +1,15 @@
+export type OpenGraphImage = {
+  height?: number;
+  type: string;
+  url: string;
+  width?: number;
+};
+
 export type OpenGraphInfo = {
-  title?: string;
-  summary?: string;
-  url?: string;
-  site?: string;
-  image?: string;
-  locale?: string;
+  title: string | null;
+  summary: string | null;
+  url: string | null;
+  site: string | null;
+  images: OpenGraphImage[];
+  locale: string | null;
 };
