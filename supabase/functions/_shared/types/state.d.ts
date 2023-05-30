@@ -7,7 +7,7 @@ export type ContextHeader = {
   authorization: string | null;
   contentType: string | null;
   acceptEncoding: string;
-  forwarded: string;
+  forwarded: string | null;
   language: string;
   device?: {
     browser: IBrowser;

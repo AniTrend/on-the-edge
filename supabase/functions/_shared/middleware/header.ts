@@ -17,6 +17,7 @@ const optional: string[] = [
   'x-app-source',
   'x-app-locale',
   'x-app-build-type',
+  'x-forwarded-for',
 ];
 
 const enforced: string[] = [
@@ -24,7 +25,6 @@ const enforced: string[] = [
   'accept',
   'accept-encoding',
   'accept-language',
-  'x-forwarded-for',
   'user-agent',
 ];
 
@@ -52,7 +52,7 @@ const pass = async (ctx: AppContext, next: () => Promise<unknown>) => {
     agent: ua,
     contentType: headers.get('content-type'),
     acceptEncoding: headers.get('accept-encoding')!,
-    forwarded: headers.get('x-forwarded-for')!,
+    forwarded: headers.get('x-forwarded-for'),
     language: headers.get('accept-language')!,
     device: {
       browser: browser,
