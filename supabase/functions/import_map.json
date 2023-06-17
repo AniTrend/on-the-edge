@@ -21,8 +21,6 @@
     "x/deepmerge": "https://deno.land/x/deepmergets@v5.1.0/dist/deno/index.ts",
     "esm/ua-agent-parser": "https://esm.sh/ua-parser-js@2.0.0-alpha.2/",
     "esm/supabase": "https://esm.sh/@supabase/supabase-js@2.25.0",
-    "esm/open-graph": "https://esm.sh/open-graph-scraper@6.1.0/",
-    "esm/open-graph/types": "https://esm.sh/open-graph-scraper@6.1.0/dist/lib/types.js",
     "esm/growthbook": "https://esm.sh/@growthbook/growthbook@0.27.0",
     "skypack/upstash/ratelimit": "https://cdn.skypack.dev/@upstash/ratelimit@latest"
   }
