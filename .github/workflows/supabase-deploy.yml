@@ -19,6 +19,9 @@ jobs:
 
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 1.28.3
 
-      - run: supabase functions deploy --project-ref $PROJECT_ID
+      - run: supabase functions deploy config --project-ref $PROJECT_ID
+      - run: supabase functions deploy news-sync --project-ref $PROJECT_ID
+      - run: supabase functions deploy news --project-ref $PROJECT_ID
+      - run: supabase functions deploy series --project-ref $PROJECT_ID
