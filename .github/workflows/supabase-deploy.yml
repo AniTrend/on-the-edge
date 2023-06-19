@@ -21,7 +21,7 @@ jobs:
         with:
           version: 1.28.3
 
-      - run: supabase functions deploy config --project-ref $PROJECT_ID
-      - run: supabase functions deploy news-sync --project-ref $PROJECT_ID
-      - run: supabase functions deploy news --project-ref $PROJECT_ID
-      - run: supabase functions deploy series --project-ref $PROJECT_ID
+      - run: supabase functions deploy config --project-ref vzujgysigfwbabgsqcse
+      - run: supabase functions deploy news-sync --project-ref vzujgysigfwbabgsqcse
+      - run: supabase functions deploy news --project-ref vzujgysigfwbabgsqcse
+      - run: supabase functions deploy series --project-ref vzujgysigfwbabgsqcse
