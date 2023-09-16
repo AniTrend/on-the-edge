@@ -10,18 +10,12 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
 
-    env:
-      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      PROJECT_ID: ${{ secrets.PROJECT_ID }}
-
     steps:
       - uses: actions/checkout@v3
-
       - uses: supabase/setup-cli@v1
         with:
-          version: 1.28.3
-
-      - run: supabase functions deploy config --project-ref vzujgysigfwbabgsqcse
-      - run: supabase functions deploy news-sync --project-ref vzujgysigfwbabgsqcse
-      - run: supabase functions deploy news --project-ref vzujgysigfwbabgsqcse
-      - run: supabase functions deploy series --project-ref vzujgysigfwbabgsqcse
+          version: latest
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          PROJECT_ID: ${{ secrets.PROJECT_ID }}
+      - run: ./.github/scripts/deploy-all.sh
