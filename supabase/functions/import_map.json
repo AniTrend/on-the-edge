@@ -17,7 +17,7 @@
     "x/mongo": "https://deno.land/x/mongo@v0.32.0/mod.ts",
     "x/oak": "https://deno.land/x/oak@v12.6.1/mod.ts",
     "x/xml": "https://deno.land/x/xml@2.1.1/mod.ts",
-    "x/upstash_redis": "https://deno.land/x/upstash_redis@v1.22.1/mod.ts",
+    "x/upstash_redis": "https://deno.land/x/upstash_redis@v1.23.3/mod.ts",
     "x/deepmerge": "https://deno.land/x/deepmergets@v5.1.0/dist/deno/index.ts",
     "esm/ua-agent-parser": "https://esm.sh/ua-parser-js@2.0.0-beta.1/",
     "esm/supabase": "https://esm.sh/@supabase/supabase-js@2.38.0",
