@@ -9,8 +9,8 @@ const themeMetaData = (theme: ThemeMetaModel) => {
   const version = parts?.at(4);
   return {
     type: parts?.at(1) as ThemeType,
-    number: (number) ? parseInt(number, 10) : 1,
-    version: (version) ? parseInt(version, 10) : 1,
+    number: number ? parseInt(number, 10) : 1,
+    version: version ? parseInt(version, 10) : 1,
   };
 };
 
