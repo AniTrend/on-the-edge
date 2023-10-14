@@ -20,6 +20,6 @@
     "x/deepmerge": "https://deno.land/x/deepmergets@v5.1.0/dist/deno/index.ts",
     "esm/ua-agent-parser": "https://esm.sh/ua-parser-js@2.0.0-beta.1/",
     "esm/supabase": "https://esm.sh/@supabase/supabase-js@2.38.1",
-    "esm/growthbook": "https://esm.sh/@growthbook/growthbook@0.29.0",
+    "esm/growthbook": "https://esm.sh/@growthbook/growthbook@0.29.0"
   }
 }
