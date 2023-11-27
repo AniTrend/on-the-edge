@@ -17,19 +17,6 @@
           "reveal": "always"
         },
         "group": "build"
-      },
-      {
-        "label": "Generate database types",
-        "command": "./.github/scripts/generate-types.sh",
-        "type": "shell",
-        "args": [],
-        "problemMatcher": [
-          "$tsc"
-        ],
-        "presentation": {
-          "reveal": "always"
-        },
-        "group": "build"
       }
     ]
   },
@@ -39,8 +26,8 @@
       "path": "./"
     },
     {
-      "name": "supabase",
-      "path": "./supabase"
+      "name": "app",
+      "path": "./src"
     },
     {
       "name": "scripts",
@@ -50,17 +37,12 @@
       "name": "workflows",
       "path": "./.github/workflows"
     },
-    {
-      "name": "edges",
-      "path": "supabase/functions"
-    }
   ],
   "settings": {
     "files.exclude": {
       "node_modules/": true,
-      "functions/": true,
-      "supabase/": true,
-      "supabase/functions/": true,
+      "src/": true,
+      ".vscode": true,
       ".github": true,
     }
   }

@@ -6,11 +6,11 @@
     "configurations": [
         {
             "request": "launch",
-            "name": "config",
+            "name": "server",
             "type": "node",
-            "program": "${workspaceFolder}/supabase/functions/config/index.ts",
+            "program": "${workspaceFolder}/src/index.ts",
             "cwd": "${workspaceFolder}",
-            "runtimeExecutable": "/home/max/.deno/bin/deno",
+            "runtimeExecutable": "deno",
             "runtimeArgs": [
                 "run",
                 "--inspect-wait",
@@ -18,61 +18,5 @@
             ],
             "attachSimplePort": 9229
         },
-        {
-            "request": "launch",
-            "name": "news",
-            "type": "node",
-            "program": "${workspaceFolder}/supabase/functions/news/index.ts",
-            "cwd": "${workspaceFolder}",
-            "runtimeExecutable": "/home/max/.deno/bin/deno",
-            "runtimeArgs": [
-                "run",
-                "--inspect-wait",
-                "--allow-all"
-            ],
-            "attachSimplePort": 9229
-        },
-        {
-            "request": "launch",
-            "name": "preview",
-            "type": "node",
-            "program": "${workspaceFolder}/supabase/functions/preview/index.ts",
-            "cwd": "${workspaceFolder}",
-            "runtimeExecutable": "/home/max/.deno/bin/deno",
-            "runtimeArgs": [
-                "run",
-                "--inspect-wait",
-                "--allow-all"
-            ],
-            "attachSimplePort": 9229
-        },
-        {
-            "request": "launch",
-            "name": "series",
-            "type": "node",
-            "program": "${workspaceFolder}/supabase/functions/series/index.ts",
-            "cwd": "${workspaceFolder}",
-            "runtimeExecutable": "/home/max/.deno/bin/deno",
-            "runtimeArgs": [
-                "run",
-                "--inspect-wait",
-                "--allow-all"
-            ],
-            "attachSimplePort": 9229
-        },
-        {
-            "request": "launch",
-            "name": "graphql",
-            "type": "node",
-            "program": "${workspaceFolder}/supabase/functions/graphql/index.ts",
-            "cwd": "${workspaceFolder}",
-            "runtimeExecutable": "/home/max/.deno/bin/deno",
-            "runtimeArgs": [
-                "run",
-                "--inspect-wait",
-                "--allow-all"
-            ],
-            "attachSimplePort": 9229
-        }
     ]
 }
