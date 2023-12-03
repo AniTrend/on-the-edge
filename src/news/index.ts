@@ -8,7 +8,7 @@ import { getCollection } from '../common/mongo/index.ts';
 export const news = async ({ response, state }: AppContext, sync: boolean) => {
   const { local, features } = state;
   const repository = new NewsRepository(
-    new LocalSource(getCollection('news', local))
+    new LocalSource(getCollection('news', local)),
   );
 
   if (sync) {

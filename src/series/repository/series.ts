@@ -34,7 +34,10 @@ export default class SeriesRepository {
   ): Promise<MediaWithSeason> => {
     const relation = await getAniListRelationId(anilist);
 
-    const [notify, mal] = await Promise.all([getNotifyAnime(relation?.notify), getJikanAnime(relation?.myanimelist)]);
+    const [notify, mal] = await Promise.all([
+      getNotifyAnime(relation?.notify),
+      getJikanAnime(relation?.myanimelist),
+    ]);
 
     let themes: Theme[] | undefined,
       skyhook: SkyhookShow | undefined,
@@ -43,8 +46,14 @@ export default class SeriesRepository {
       relations: AnimeRelationId[],
       seasons: MergedSeason[] | undefined;
     if (!isManga(mal?.type)) {
-      [themes, skyhook] = await Promise.all([getThemesForAnime(relation?.myanimelist), getSkyhookShow(relation?.thetvdb)]);
-      [relations, trakt] = await Promise.all([getRelationsByTvdb(skyhook?.tvdbId), getTraktShow(relation?.animePlanet ?? skyhook?.slug)]);
+      [themes, skyhook] = await Promise.all([
+        getThemesForAnime(relation?.myanimelist),
+        getSkyhookShow(relation?.thetvdb),
+      ]);
+      [relations, trakt] = await Promise.all([
+        getRelationsByTvdb(skyhook?.tvdbId),
+        getTraktShow(relation?.animePlanet ?? skyhook?.slug),
+      ]);
 
       tmdb = await getTmdbShow(relation?.themoviedb ?? trakt?.mediaId.tmdb);
 
