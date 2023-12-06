@@ -1,12 +1,12 @@
-FROM denoland/deno:1.38.4
+FROM denoland/deno:1.38.5
 
-WORKDIR /app
+WORKDIR /usr/app
 
 # Copy the rest of the application code
-COPY . .
+COPY . /usr/app
 
 # Download and cache dependencies
-RUN deno cache --unstable --no-check src/index.ts
+RUN deno cache src/index.ts
 
 # Compile the Deno TypeScript code to a standalone executable
-RUN deno compile --unstable --no-check --output=server main.ts
+RUN deno compile --output=server src/index.ts
