@@ -16,12 +16,9 @@ export default class NewsRepository {
   sync = async () => {
     const latestDate = await this.local.getLatestPublishedDate();
     if (isOlderThan(currentDate(), latestDate, 4)) {
-      const params = new URLSearchParams({
-        locale: 'enGB',
-      });
-      const content = await latestNews(params);
+      const content = await latestNews('en-US');
       const document = parse(content, { flatten: true });
-      const news = await transform(document);
+      const news = transform(document);
       this.local.saveAll(news);
     } else {
       logger.info(
@@ -36,10 +33,7 @@ export default class NewsRepository {
   };
 
   getLatestLegacy = async (): Promise<string> => {
-    const params = new URLSearchParams({
-      locale: 'enGB',
-    });
-    const result = await latestNews(params);
+    const result = await latestNews('en-US');
     return result;
   };
 

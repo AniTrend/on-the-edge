@@ -3,7 +3,7 @@ services:
   anitrend-edge:
     build:
       context: .
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
     command: ["/usr/app/server", "--allow-all"]
     container_name: anitrend-edge
     networks:

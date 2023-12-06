@@ -12,12 +12,7 @@ export default class LocalSource {
   get = async (id: number): Promise<IResponse<MediaWithSeason>> => {
     const item = await this.collection
       ?.findOne({ 'mediaId.anilist': id })
-      ?.then((document) => {
-        if (!document) {
-          return undefined;
-        }
-        return transform(document);
-      })
+      ?.then((document) => transform(document))
       ?.catch((e) => {
         logger.error(`Unable to find '${id}' in collection`, e);
         return undefined;
@@ -29,8 +24,14 @@ export default class LocalSource {
   };
 
   save = async (media: MediaWithSeason) => {
-    await this.collection?.insertOne(
-      { ...media },
+    await this.collection?.findAndModify(
+      {
+        'mediaId.anilist': media.mediaId.anilist,
+      },
+      {
+        upsert: true,
+        update: media,
+      },
     ).then((result) => {
       logger.debug('ObjectId', result);
     }).catch((e) => {

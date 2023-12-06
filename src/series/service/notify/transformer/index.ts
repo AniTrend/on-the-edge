@@ -1,4 +1,4 @@
-import { toInstant } from '../../../../common/helpers/date.ts';
+import { toInstant } from '../../../../common/helpers/index.ts';
 import { Transform } from '../../../../common/transformer/types.d.ts';
 import {
   AnimeModel,

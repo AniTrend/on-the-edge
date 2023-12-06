@@ -8,11 +8,11 @@ const getService = (): Service => ({
 });
 
 export const latestNews = async (
-  searchParams: URLSearchParams,
+  locale: string,
 ): Promise<string> => {
   const service = getService();
   const result = await request<string>(
-    `${service.url}/animenews?${searchParams}`,
+    `${service.url}/${locale}/rss`,
     {
       ...defaults,
       headers: {
