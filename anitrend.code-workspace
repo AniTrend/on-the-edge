@@ -4,34 +4,7 @@
   },
   "tasks": {
     "version": "2.0.0",
-    "tasks": [
-      {
-        "label": "Deploy functions",
-        "command": "./.github/scripts/deploy-all.sh",
-        "type": "shell",
-        "args": [],
-        "problemMatcher": [
-          "$tsc"
-        ],
-        "presentation": {
-          "reveal": "always"
-        },
-        "group": "build"
-      },
-      {
-        "label": "Generate database types",
-        "command": "./.github/scripts/generate-types.sh",
-        "type": "shell",
-        "args": [],
-        "problemMatcher": [
-          "$tsc"
-        ],
-        "presentation": {
-          "reveal": "always"
-        },
-        "group": "build"
-      }
-    ]
+    "tasks": []
   },
   "folders": [
     {
@@ -39,28 +12,19 @@
       "path": "./"
     },
     {
-      "name": "supabase",
-      "path": "./supabase"
-    },
-    {
-      "name": "scripts",
-      "path": "./.github/scripts"
+      "name": "app",
+      "path": "./src"
     },
     {
       "name": "workflows",
       "path": "./.github/workflows"
     },
-    {
-      "name": "edges",
-      "path": "supabase/functions"
-    }
   ],
   "settings": {
     "files.exclude": {
       "node_modules/": true,
-      "functions/": true,
-      "supabase/": true,
-      "supabase/functions/": true,
+      "src/": true,
+      ".vscode": true,
       ".github": true,
     }
   }

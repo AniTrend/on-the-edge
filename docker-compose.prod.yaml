@@ -1,0 +1,14 @@
+version: '3'
+services:
+  anitrend-edge:
+    image: ghcr.io/anitrend/anitrend-on-the-edge:latest
+    command: ["/usr/app/server", "--allow-all"]
+    container_name: anitrend-edge
+    networks:
+      - default
+    env_file: .env
+
+networks:
+  default:
+    name: traefik
+    external: true
