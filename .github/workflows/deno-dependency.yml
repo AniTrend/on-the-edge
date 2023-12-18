@@ -11,8 +11,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: denoland/setup-deno@v1
-        with:
-          deno-version: 1.20.2
       - name: Update dependencies
         run: |
           deno run -A https://deno.land/x/udd/main.ts supabase/functions/import_map.json
@@ -20,8 +18,8 @@ jobs:
         uses: peter-evans/create-pull-request@v5
         id: pr
         with:
-          commit-message: "Update dependencies"
-          title: Update dependencies
+          commit-message: "chore(deps): update deno.lock"
+          title: "chore(deps): update deno.lock"
           body: >
             Dependencies updated by [udd](https://github.com/hayd/deno-udd).
           branch: dependencies/deno-dependency-updates
@@ -40,8 +38,6 @@ jobs:
           sha: ${{ steps.commit.outputs.sha }}
       - name: Setup Deno
         uses: denoland/setup-deno@v1
-        with:
-          deno-version: v1.x
       - name: Config properties file
         run: |
           cp .env.defaults .env

@@ -9,8 +9,8 @@ on:
         required: true
         default: 'latest'
   push:
-    branches:
-      - dev
+    # branches:
+    #   - dev
     tags: "*"
 
 jobs:
@@ -47,8 +47,8 @@ jobs:
           docker buildx create --use
           docker buildx build --platform linux/amd64 . \
           --output type=docker \
-          --tag ghcr.io/anitrend/anitrend-on-the-edge:${{ steps.set-tag.outputs.tag }} \
-          --cache-from type=registry,ref=ghcr.io/anitrend/anitrend-on-the-edge:cache,mode=max \
-          --cache-to type=registry,ref=ghcr.io/anitrend/anitrend-on-the-edge:cache
-          docker push ghcr.io/anitrend/anitrend-on-the-edge:${{ steps.set-tag.outputs.tag }}
+          --tag ghcr.io/anitrend/on-the-edge:${{ steps.set-tag.outputs.tag }} \
+          --cache-from type=registry,ref=ghcr.io/anitrend/on-the-edge:cache,mode=max \
+          --cache-to type=registry,ref=ghcr.io/anitrend/on-the-edge:cache
+          docker push ghcr.io/anitrend/on-the-edge:${{ steps.set-tag.outputs.tag }}
         working-directory: .
