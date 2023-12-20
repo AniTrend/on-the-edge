@@ -1,9 +1,11 @@
-FROM denoland/deno:1.39.0
-
+FROM denoland/deno:1.39.0 as base
 WORKDIR /usr/app
-
-# Copy the rest of the application code
 COPY . /usr/app
 
-# Compile the Deno TypeScript code to a standalone executable
-RUN deno compile --output=server src/index.ts
+FROM base AS cache
+RUN deno cache src/index.ts
+
+FROM cache AS build
+RUN deno compile --allow-net --allow-env --allow-read --output=server src/index.ts 
+
+ENTRYPOINT ["/usr/app/server"]

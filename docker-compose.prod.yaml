@@ -1,8 +1,7 @@
 version: '3'
 services:
   anitrend-edge:
-    image: ghcr.io/anitrend/anitrend-on-the-edge:latest
-    command: ["/usr/app/server", "--allow-all"]
+    image: ghcr.io/anitrend/on-the-edge:latest
     container_name: anitrend-edge
     networks:
       - default

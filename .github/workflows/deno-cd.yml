@@ -9,8 +9,8 @@ on:
         required: true
         default: 'latest'
   push:
-    # branches:
-    #   - dev
+    branches:
+      - dev
     tags: "*"
 
 jobs:
