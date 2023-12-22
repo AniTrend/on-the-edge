@@ -13,7 +13,7 @@ jobs:
       - uses: denoland/setup-deno@v1
       - name: Update dependencies
         run: |
-          deno run -A https://deno.land/x/udd/main.ts supabase/functions/import_map.json
+          deno run -A https://deno.land/x/udd/main.ts src/import_map.json
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
         id: pr
