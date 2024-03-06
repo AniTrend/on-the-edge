@@ -26,6 +26,7 @@
       "src/": true,
       ".vscode": true,
       ".github/workflows": true,
-    }
+    },
+    "files.autoSave": "afterDelay"
   }
 }
