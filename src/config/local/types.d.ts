@@ -1,7 +1,7 @@
 import { Document } from 'x/mongo';
 
 export interface NavigationConfig extends Document {
-  criteria: Record<string, string>;
+  criteria: string;
   destination: string;
   group: {
     authenticated: boolean;

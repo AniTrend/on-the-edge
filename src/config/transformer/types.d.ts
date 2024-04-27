@@ -1,5 +1,3 @@
-import { PlatformSource } from '../../common/experiment/types.d.ts';
-
 export interface ClientConfiguration {
   settings: Settings;
   image?: Image;
@@ -20,7 +18,7 @@ export interface Image {
 }
 
 export interface Navigation {
-  criteria: Record<string, string>;
+  criteria: string;
   destination: string;
   i18n: string;
   icon: string;
@@ -32,5 +30,5 @@ export interface Navigation {
 
 export interface Settings {
   analyticsEnabled: boolean;
-  platformSource?: PlatformSource;
+  platformSource?: string;
 }

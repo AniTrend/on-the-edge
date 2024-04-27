@@ -21,7 +21,7 @@ export class Repository {
       ...transform(config),
       settings: {
         analyticsEnabled: isAnalyticsEnabled(this.growth),
-        platformSource: getPlatformSource(this.growth),
+        platformSource: getPlatformSource(this.growth)?.url,
       },
     };
   };
