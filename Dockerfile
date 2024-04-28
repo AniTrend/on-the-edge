@@ -10,7 +10,10 @@ RUN apt-get install unzip
 FROM scaffold AS cache
 RUN deno cache src/index.ts
 
-FROM cache AS build
-RUN deno compile --allow-net --allow-env --allow-read --output=server src/index.ts 
+# Complilation broken in the latest version of deno
+# FROM cache AS final
+# RUN deno compile --allow-net --allow-env --allow-read --output=server src/index.ts 
 
-ENTRYPOINT ["/usr/app/server"]
+#ENTRYPOINT ["/usr/app/server"]
+
+ENTRYPOINT ["deno", "run", "--allow-net", "--allow-env", "--allow-read", "src/index.ts"]
