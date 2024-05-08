@@ -1,5 +1,6 @@
 export interface PlatformSource {
-  url: string;
+  api: string;
+  media: string;
 }
 
 export interface AppFeatures {

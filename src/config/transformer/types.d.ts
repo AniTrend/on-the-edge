@@ -1,4 +1,5 @@
 export interface ClientConfiguration {
+  id?: string,
   settings: Settings;
   image?: Image;
   navigation?: Navigation[];

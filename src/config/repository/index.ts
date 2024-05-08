@@ -1,8 +1,4 @@
 import { Features } from '../../common/types/core.d.ts';
-import {
-  getPlatformSource,
-  isAnalyticsEnabled,
-} from '../../common/experiment/index.ts';
 import { ClientConfiguration } from '../transformer/types.d.ts';
 import { LocalSource } from '../local/index.ts';
 import { transform } from '../transformer/index.ts';
@@ -18,11 +14,7 @@ export class Repository {
     const config = await this.local.getConfig();
 
     return {
-      ...transform(config),
-      settings: {
-        analyticsEnabled: isAnalyticsEnabled(this.growth),
-        platformSource: getPlatformSource(this.growth)?.url,
-      },
+      ...transform({ document: config, features: this.growth }),
     };
   };
 }
