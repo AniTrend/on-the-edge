@@ -1,5 +1,5 @@
 export interface ClientConfiguration {
-  id?: string,
+  id?: string;
   settings: Settings;
   image?: Image;
   navigation?: Navigation[];
