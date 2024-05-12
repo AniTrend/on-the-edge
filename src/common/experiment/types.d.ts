@@ -4,7 +4,7 @@ export interface PlatformSource {
 }
 
 export interface AppFeatures {
-  'api-platform-source'?: PlatformSource;
+  'platform-source'?: PlatformSource;
   'news-refactor-api': boolean;
   'enable-analytics': boolean;
 }

@@ -49,14 +49,13 @@ const pass = async (ctx: AppContext, next: () => Promise<unknown>) => {
     agent: userAgent,
     contentType: headers.get('content-type'),
     acceptEncoding: headers.get('accept-encoding')!,
-    forwarded: headers.get('x-forwarded-for'),
     language: headers.get('accept-language')!,
     application: {
-      locale: headers.get('x-app-name'),
+      locale: headers.get('x-app-locale'),
       version: headers.get('x-app-version'),
-      source: headers.get('x-app-code'),
-      code: headers.get('x-app-source'),
-      label: headers.get('x-app-locale'),
+      source: headers.get('x-app-source'),
+      code: headers.get('x-app-code'),
+      label: headers.get('x-app-name'),
       buildType: headers.get('x-app-build-type'),
     },
   };

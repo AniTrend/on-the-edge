@@ -7,8 +7,7 @@ export default async (
   next: () => Promise<unknown>,
 ) => {
   logger.mark('load-features-start');
-  await state.features.loadFeatures({
-    autoRefresh: false,
+  await state.features.init({
     timeout: 2000,
   })
     .then(() => {
