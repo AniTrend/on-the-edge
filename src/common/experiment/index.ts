@@ -19,7 +19,7 @@ export const isNewsApiv2Enabled = (growth: Features): boolean =>
 export const getPlatformSource = (
   growth: Features,
 ): PlatformSource | undefined =>
-  invoke(() => growth.getFeatureValue('api-platform-source', undefined));
+  invoke(() => growth.getFeatureValue('platform-source', undefined));
 
 export const isAnalyticsEnabled = (growth: Features): boolean =>
   invoke(() => growth.isOn('enable-analytics'));

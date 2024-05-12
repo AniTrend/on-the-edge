@@ -24,12 +24,12 @@ export const transform: Transform<
     },
     genres: data.document?.genres,
     image: {
-      banner: `${platformSource?.media}${image?.banner}`,
-      poster: `${platformSource?.media}${image?.poster}`,
-      loading: `${platformSource?.media}${image?.loading}`,
-      error: `${platformSource?.media}${image?.error}`,
-      info: `${platformSource?.media}${image?.info}`,
-      default: `${platformSource?.media}${image?.default}`,
+      banner: image?.banner ?? '',
+      poster: image?.poster ?? '',
+      loading: image?.loading ?? '',
+      error: image?.error ?? '',
+      info: image?.info ?? '',
+      default: image?.default ?? '',
     },
     navigation: data.document?.navigation,
   };
