@@ -35,7 +35,6 @@ const applicationState: State = {
     authorization: null,
     contentType: null,
     acceptEncoding: '',
-    forwarded: '',
     language: '',
   },
   local: await _localSourceFactory.connect(),
