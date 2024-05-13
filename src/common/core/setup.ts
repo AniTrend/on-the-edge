@@ -17,7 +17,7 @@ const applicationState: State = {
   features: new GrowthBook({
     apiHost: env<string>('GROWTH'),
     clientKey: env<string>('GROWTH_KEY'),
-    enableDevMode: true,
+    enableDevMode: env<boolean>('GROWTH_DEV_MODE'),
     log: (msg, ctx) => {
       logger.info(msg, ctx);
     },
@@ -27,6 +27,9 @@ const applicationState: State = {
         experimentId: experiment.key,
         variationId: result.key,
       });
+    },
+    onFeatureUsage: (featureKey, result) => {
+      logger.info('Feature used', { key: featureKey, value: result.value });
     },
   }),
   contextHeader: {

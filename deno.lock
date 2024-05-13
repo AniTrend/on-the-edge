@@ -1650,6 +1650,7 @@
     "https://esm.sh/open-graph-scraper@6.0.1/dist/lib/types.js": "aeaa90f2434db34940fc0dabae488c46dcfcf9a30b1633d567a9eac1a87cc432",
     "https://esm.sh/ua-parser-js@1.0.37": "df58c378812592f6c21b36b0e561f77db7799760b8438684862a1c081dcb3230",
     "https://esm.sh/ua-parser-js@2.0.0-alpha.2/": "66d8782afe6f810b3d36e64ac97b01f76ba6de74f77a800a00edbd45589999f7",
+    "https://esm.sh/ua-parser-js@2.0.0-beta.2": "116312292634081db94ccdce45cbfd3e9b9901864acb5d1426ff0fa61f723134",
     "https://esm.sh/v115/@sindresorhus/is@5.3.0/deno/is.mjs": "18fa660905bdfb48c75c6646e28bede9cb7ee0a1dc30bd57e20cfb59af55fc7a",
     "https://esm.sh/v115/@szmarczak/http-timer@5.0.1/deno/http-timer.mjs": "0944593affa807e13a92946f92d2f0699dd7fe65794f89e91754225370a02e90",
     "https://esm.sh/v115/base64-js@1.5.1/deno/base64-js.mjs": "f9be4e403cbf0341e4ce6b8a00c927dbd42c40b2d302563da3af8967056d9c41",
@@ -2051,6 +2052,7 @@
     "https://esm.sh/v135/@supabase/supabase-js@2.38.5/denonext/supabase-js.mjs": "02285942663267e951dff5110f49bbf17479198e0bfa0e5f723567327f4c535d",
     "https://esm.sh/v135/dom-mutator@0.6.0/denonext/dom-mutator.mjs": "da7f269f4a163fb780a3460148868ba2ba731e1e40e934313467684403b38a42",
     "https://esm.sh/v135/es5-ext@0.10.62/denonext/global.js": "2f51d9acef1f761faaa542da919b3c747744ea29fe709d0a904fd531716a93d6",
+    "https://esm.sh/v135/ua-parser-js@2.0.0-beta.2/denonext/ua-parser-js.mjs": "57292bcd19d5b0084294e8de9f6f3a2e6060cf3736d8904c42e7a03842e235cc",
     "https://esm.sh/v135/websocket@1.0.34/denonext/websocket.mjs": "dfe5d62007e9f7430d561e2376fe47caa9d04cb016d83d3386fcc2206a90296b",
     "https://esm.sh/xss@1.0.14?no-check": "e6e0fa18d2f1e7ff5d8d06e44738bf855f9ab5a2430efcf9eed280f6685f93c5"
   }

@@ -16,7 +16,6 @@ const optional: string[] = [
   'x-app-source',
   'x-app-locale',
   'x-app-build-type',
-  'x-forwarded-for',
 ];
 
 const enforced: string[] = [
@@ -41,12 +40,10 @@ const pass = async (ctx: AppContext, next: () => Promise<unknown>) => {
   const { state, request } = ctx;
   const { headers } = request;
 
-  const userAgent = headers.get('user-agent') ?? null;
-
   state.contextHeader = {
     authorization: headers.get('authorization'),
     accepts: ctx.request.accepts()!,
-    agent: userAgent,
+    agent: headers.get('user-agent')!,
     contentType: headers.get('content-type'),
     acceptEncoding: headers.get('accept-encoding')!,
     language: headers.get('accept-language')!,

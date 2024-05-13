@@ -1,6 +1,7 @@
 import { between } from 'x/optic';
 import { logger } from '../core/logger.ts';
 import type { AppContext } from '../types/core.d.ts';
+import { env } from '../core/env.ts';
 
 export default async (
   { state }: AppContext,
@@ -8,9 +9,14 @@ export default async (
 ) => {
   logger.mark('load-features-start');
   await state.features.init({
-    timeout: 2000,
+    timeout: env<number>('GROWTH_TIME_OUT'),
   })
-    .then(() => {
+    .then((data) => {
+      if (data.error) {
+        logger.error('GrowthBook init error', data.error);
+      } else {
+        logger.info('GrowthBook init complete', data.source);
+      }
       logger.mark('load-features-end');
       logger.measure(between('load-features-start', 'load-features-end'));
     })
