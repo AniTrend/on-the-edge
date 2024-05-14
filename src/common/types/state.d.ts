@@ -6,7 +6,6 @@ export type ContextHeader = {
   authorization: string | null;
   contentType: string | null;
   acceptEncoding: string;
-  language: string;
   application?: {
     locale: string | null;
     version: string | null;

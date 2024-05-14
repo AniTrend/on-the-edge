@@ -13,15 +13,15 @@ export default async (
   })
     .then((data) => {
       if (data.error) {
-        logger.error('GrowthBook init error', data.error);
+        logger.error('common.middleware.growth: GrowthBook init error', data.error);
       } else {
-        logger.info('GrowthBook init complete', data.source);
+        logger.info('common.middleware.growth: GrowthBook init complete', data.source);
       }
       logger.mark('load-features-end');
       logger.measure(between('load-features-start', 'load-features-end'));
     })
     .catch((e) => {
-      logger.error('Failed to load features from GrowthBook', e);
+      logger.error('common.middleware.growth: Failed to load features from GrowthBook', e);
     })
     .finally(async () => {
       await next();
@@ -33,6 +33,6 @@ export default async (
       logger.measure(between('destory-growth-start', 'destory-growth-end'));
     })
     .catch((e) => {
-      logger.error('Failed to destory GrowthBook', e);
+      logger.error('common.middleware.growth: Failed to destory GrowthBook', e);
     });
 };

@@ -23,13 +23,13 @@ const applicationState: State = {
     },
     trackingCallback: (experiment, result) => {
       // substitute with segment or something else for exp tracking
-      logger.info('Experiemnt tracked', {
+      logger.debug('Experiemnt tracked', {
         experimentId: experiment.key,
         variationId: result.key,
       });
     },
     onFeatureUsage: (featureKey, result) => {
-      logger.info('Feature used', { key: featureKey, value: result.value });
+      logger.debug('Feature used', { key: featureKey, value: result.value });
     },
   }),
   contextHeader: {
