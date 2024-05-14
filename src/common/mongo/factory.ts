@@ -7,7 +7,7 @@ import { Local } from '../types/core.d.ts';
 class LocalSourceFactory {
   constructor(
     private readonly options: string,
-    private readonly client = new MongoClient(),
+    private readonly client: MongoClient,
   ) {
     logger.mark('mongo_connection_start');
   }
@@ -21,19 +21,26 @@ class LocalSourceFactory {
       );
       return db;
     } catch (e) {
-      logger.error(e);
+      logger.error('common.mongo.factory:connect:', e);
       return undefined;
     }
   };
 
   disconnect = () => {
     logger.mark('mongo_close_start');
-    this.client.close();
+    try {
+      this.client.close();
+    } catch (e) {
+      logger.error('common.mongo.factory:disconnect:', e);
+    }
     logger.mark('mongo_close_end');
     logger.measure(between('mongo_close_start', 'mongo_close_end'));
   };
 }
 
-const _localSourceFactory = new LocalSourceFactory(env<string>('MONGO_URL'));
+const _localSourceFactory = new LocalSourceFactory(
+  env<string>('MONGO_URL'),
+  new MongoClient(),
+);
 
 export default _localSourceFactory;

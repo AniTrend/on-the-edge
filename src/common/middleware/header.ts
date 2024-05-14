@@ -16,14 +16,12 @@ const optional: string[] = [
   'x-app-source',
   'x-app-locale',
   'x-app-build-type',
-  'x-forwarded-for',
 ];
 
 const enforced: string[] = [
   'host',
   'accept',
   'accept-encoding',
-  'accept-language',
   'user-agent',
 ];
 
@@ -34,22 +32,21 @@ const fail = (header: string, ctx: AppContext) => {
   response.body = <Error> {
     message: 'Missing required header',
   };
-  logger.error(`Required header is missing from request: ${header}`);
+  logger.error(
+    `common.middleware.header:fail: Required header is missing from request: ${header}`,
+  );
 };
 
 const pass = async (ctx: AppContext, next: () => Promise<unknown>) => {
   const { state, request } = ctx;
   const { headers } = request;
 
-  const userAgent = headers.get('user-agent') ?? null;
-
   state.contextHeader = {
     authorization: headers.get('authorization'),
     accepts: ctx.request.accepts()!,
-    agent: userAgent,
+    agent: headers.get('user-agent')!,
     contentType: headers.get('content-type'),
     acceptEncoding: headers.get('accept-encoding')!,
-    language: headers.get('accept-language')!,
     application: {
       locale: headers.get('x-app-locale'),
       version: headers.get('x-app-version'),
@@ -59,6 +56,7 @@ const pass = async (ctx: AppContext, next: () => Promise<unknown>) => {
       buildType: headers.get('x-app-build-type'),
     },
   };
+  logger.debug('common.middleware.header:pass: ->', state.contextHeader);
   await next();
 };
 

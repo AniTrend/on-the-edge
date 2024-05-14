@@ -6,6 +6,6 @@ export default async (
 ) => {
   const start = Date.now();
   await next();
-  const ms = Date.now() - start;
-  response.headers.set('x-response-time', `${ms}ms`);
+  const duration = Date.now() - start;
+  response.headers.set('x-response-time', `${duration}ms`);
 };

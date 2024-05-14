@@ -5,7 +5,7 @@ try {
     export: true,
   });
 } catch (_e) {
-  // do nothing
+  throw _e;
 }
 
 export class MissingKeyError extends Error {

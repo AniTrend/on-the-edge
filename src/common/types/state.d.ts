@@ -1,12 +1,11 @@
 import { Features, Local } from './core.d.ts';
 
 export type ContextHeader = {
-  agent: string | null;
+  agent: string;
   accepts: string[];
   authorization: string | null;
   contentType: string | null;
   acceptEncoding: string;
-  language: string;
   application?: {
     locale: string | null;
     version: string | null;

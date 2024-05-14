@@ -1,4 +1,4 @@
-import { Collection, Document } from 'x/mongo';
+import { Collection, Document, Filter, FindAndModifyOptions } from 'x/mongo';
 import { logger } from '../../common/core/logger.ts';
 import { IResponse } from '../../common/types/response.d.ts';
 import { MediaWithSeason } from '../types.d.ts';
@@ -14,7 +14,10 @@ export default class LocalSource {
       ?.findOne({ 'mediaId.anilist': id })
       ?.then((document) => transform(document))
       ?.catch((e) => {
-        logger.error(`Unable to find '${id}' in collection`, e);
+        logger.error(
+          `seriese.local.index.LocalSource:get: Unable to find '${id}' in collection`,
+          e,
+        );
         return undefined;
       });
 
@@ -24,19 +27,20 @@ export default class LocalSource {
   };
 
   save = async (media: MediaWithSeason) => {
-    await this.collection?.findAndModify(
-      {
-        'mediaId.anilist': media.mediaId.anilist,
-      },
-      {
-        upsert: true,
-        update: media,
-      },
-    ).then((result) => {
-      logger.debug('ObjectId', result);
+    const filter: Filter<Document> = {
+      'mediaId.anilist': media.mediaId.anilist,
+    };
+    const options: FindAndModifyOptions<Document> = {
+      upsert: true,
+      update: media,
+    };
+    await this.collection?.findAndModify(filter, options).then((result) => {
+      logger.debug('seriese.local.index.LocalSource:save: ObjectId', result);
     }).catch((e) => {
-      logger.error('Unable to save media to collection', e);
-      return undefined;
+      logger.error(
+        'seriese.local.index.LocalSource:save: Unable to save media to collection',
+        e,
+      );
     });
   };
 }
