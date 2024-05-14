@@ -13,8 +13,13 @@ export const transform = (
 ): News[] => {
   const items = document.rss.channel.item;
   if (!Array.isArray(items)) {
-    logger.critical('news.transformer:transform: Unexpected output in news.transformers', document);
-    throw Error('news.transformer:transform: Expected array for `document.rss.channel.item`');
+    logger.critical(
+      'news.transformer:transform: Unexpected output in news.transformers',
+      document,
+    );
+    throw Error(
+      'news.transformer:transform: Expected array for `document.rss.channel.item`',
+    );
   }
   return items.map((item) => {
     return {

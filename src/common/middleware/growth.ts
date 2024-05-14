@@ -13,15 +13,24 @@ export default async (
   })
     .then((data) => {
       if (data.error) {
-        logger.error('common.middleware.growth: GrowthBook init error', data.error);
+        logger.error(
+          'common.middleware.growth: GrowthBook init error',
+          data.error,
+        );
       } else {
-        logger.info('common.middleware.growth: GrowthBook init complete', data.source);
+        logger.info(
+          'common.middleware.growth: GrowthBook init complete',
+          data.source,
+        );
       }
       logger.mark('load-features-end');
       logger.measure(between('load-features-start', 'load-features-end'));
     })
     .catch((e) => {
-      logger.error('common.middleware.growth: Failed to load features from GrowthBook', e);
+      logger.error(
+        'common.middleware.growth: Failed to load features from GrowthBook',
+        e,
+      );
     })
     .finally(async () => {
       await next();

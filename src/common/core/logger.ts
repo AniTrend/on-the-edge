@@ -13,7 +13,7 @@ const consoleLogger = new ConsoleStream()
   );
 
 const betterStackLogger = new LogtailStream(
-  env<string>('LOGTAIL_KEY')
+  env<string>('LOGTAIL_KEY'),
 );
 
 const logLevel = (level: MinLogLevel): Level => {

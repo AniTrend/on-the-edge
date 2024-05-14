@@ -29,12 +29,18 @@ export default (opts: FactoryOptions): Application => {
 
   app.addEventListener('close', (event) => {
     _localSourceFactory.disconnect();
-    logger.info('common:core:factory:close: Request application stop by user', event.type);
+    logger.info(
+      'common:core:factory:close: Request application stop by user',
+      event.type,
+    );
   });
 
   app.addEventListener('error', (event) => {
     _localSourceFactory.disconnect();
-    logger.critical('common.core.factory:error: Uncaught application exception', event.error);
+    logger.critical(
+      'common.core.factory:error: Uncaught application exception',
+      event.error,
+    );
   });
 
   app.use(router.routes());

@@ -32,7 +32,9 @@ const fail = (header: string, ctx: AppContext) => {
   response.body = <Error> {
     message: 'Missing required header',
   };
-  logger.error(`common.middleware.header:fail: Required header is missing from request: ${header}`);
+  logger.error(
+    `common.middleware.header:fail: Required header is missing from request: ${header}`,
+  );
 };
 
 const pass = async (ctx: AppContext, next: () => Promise<unknown>) => {

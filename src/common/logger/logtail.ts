@@ -1,4 +1,4 @@
-import { Logtail } from "esm/logtail";
+import { Logtail } from 'esm/logtail';
 import { TokenReplacer } from 'x/optic/formatters';
 import { BaseStream, Level, LogRecord } from 'x/optic';
 
@@ -14,22 +14,22 @@ export class LogtailStream extends BaseStream {
     this.logtail.log(msg);
     this.logtail.flush();
   }
-  
+
   override handle(logRecord: LogRecord): boolean {
     const { level, metadata } = logRecord;
     if (this.minLevel > level) return false;
     const msg = this.format(logRecord);
 
-    switch (level) { 
+    switch (level) {
       case Level.Info:
         this.logtail.info(msg, { ...metadata });
-        break; 
+        break;
       case Level.Warn:
         this.logtail.warn(msg, { ...metadata });
-        break; 
+        break;
       case Level.Error:
         this.logtail.error(msg, { ...metadata });
-        break; 
+        break;
       case Level.Critical:
         this.logtail.log(msg, 'fatal', { ...metadata });
         break;
