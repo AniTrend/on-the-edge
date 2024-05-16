@@ -38,10 +38,23 @@ const applicationState: State = {
     authorization: null,
     contentType: null,
     acceptEncoding: '',
-    language: '',
   },
   local: await _localSourceFactory.connect(),
 };
+
+const onTerminationRequest = (signal: Deno.Signal): void => {
+  logger.debug(
+    `common.core.setup:onTerminationRequest: OS dispatched signal '${signal}'`,
+  );
+  _localSourceFactory.disconnect();
+  logger.debug(
+    `common.core.setup:onTerminationRequest: Attempting to exit Deno process`,
+  );
+  Deno.exit();
+};
+
+Deno.addSignalListener('SIGINT', () => onTerminationRequest('SIGINT'));
+Deno.addSignalListener('SIGTERM', () => onTerminationRequest('SIGTERM'));
 
 logger.mark('setup-end');
 logger.measure(between('setup-start', 'setup-end'));

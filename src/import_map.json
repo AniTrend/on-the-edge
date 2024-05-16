@@ -5,7 +5,7 @@
     "std/json": "https://deno.land/std@0.224.0/json/mod.ts",
     "std/dotenv": "https://deno.land/std@0.224.0/dotenv/mod.ts",
     "std/collections": "https://deno.land/std@0.224.0/collections/mod.ts",
-    "std/testing/asserts": "https://deno.land/std@0.224.0/testing/asserts.ts",
+    "std/testing/asserts": "https://deno.land/std@0.224.0/assert/mod.ts",
     "std/testing/bdd": "https://deno.land/std@0.224.0/testing/bdd.ts",
     "std/testing/mock": "https://deno.land/std@0.224.0/testing/mock.ts",
     "std/testing/types": "https://deno.land/std@0.224.0/testing/types.ts",
