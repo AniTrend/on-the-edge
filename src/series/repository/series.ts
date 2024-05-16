@@ -12,7 +12,7 @@ import { getTraktShow } from '../service/trakt/index.ts';
 import { seriesTransform } from '../transformer/series.ts';
 import { MediaWithSeason } from '../types.d.ts';
 import { isManga } from '../utils/index.ts';
-import LocalSource from '../local/index.ts';
+import LocalSource from '../local/source.ts';
 import SeasonRepository from './season.ts';
 import { seasonTransformer } from '../transformer/season.ts';
 import { Theme } from '../service/theme/transformer/types.d.ts';
@@ -22,6 +22,7 @@ import { TmdbShow } from '../service/tmdb/types.d.ts';
 import { AnimeRelationId } from '../service/arm/types.d.ts';
 import { MergedSeason } from '../transformer/types.d.ts';
 import { currentDate, isOlderThan } from '../../common/core/utils.ts';
+import { MediaParamId } from '../local/index.ts';
 
 export default class SeriesRepository {
   constructor(
@@ -30,9 +31,9 @@ export default class SeriesRepository {
   ) {}
 
   private fetchFromRemote = async (
-    anilist: number,
+    id: MediaParamId,
   ): Promise<MediaWithSeason> => {
-    const relation = await getAniListRelationId(anilist);
+    const relation = await getAniListRelationId(id.anilist);
 
     const [notify, mal] = await Promise.all([
       getNotifyAnime(relation?.notify),
@@ -82,8 +83,8 @@ export default class SeriesRepository {
     return result;
   };
 
-  getById = async (anilist: number): Promise<IResponse<MediaWithSeason>> => {
-    const localContent = await this.local.get(anilist);
+  getById = async (id: MediaParamId): Promise<IResponse<MediaWithSeason>> => {
+    const localContent = await this.local.get(id);
 
     if (localContent.data != null) {
       if (!isOlderThan(currentDate(), localContent.data.updatedAt, 2 * 24)) {
@@ -91,7 +92,7 @@ export default class SeriesRepository {
       }
     }
 
-    const remoteContent = await this.fetchFromRemote(anilist);
+    const remoteContent = await this.fetchFromRemote(id);
 
     return {
       data: remoteContent,

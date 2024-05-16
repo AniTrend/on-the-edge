@@ -1,12 +1,19 @@
-import { Document, ObjectId } from 'x/mongo';
+import { Document } from 'npm/mongodb';
+import { EntityCursor } from '../../common/mongo/types.d.ts';
 
 export interface NewsDocument extends Document {
-  _id: ObjectId;
+  id: string;
+  slug: string;
   title: string;
-  image: string;
   author: string;
+  category: string;
   description: string;
   content: string;
-  link: string;
+  image: string;
   published_on: number;
+  link: string;
+}
+
+export interface NewsId extends EntityCursor {
+  uuid: string;
 }

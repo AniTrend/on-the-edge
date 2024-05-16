@@ -42,19 +42,29 @@ const applicationState: State = {
   local: await _localSourceFactory.connect(),
 };
 
-const onTerminationRequest = (signal: Deno.Signal): void => {
-  logger.debug(
-    `common.core.setup:onTerminationRequest: OS dispatched signal '${signal}'`,
-  );
-  _localSourceFactory.disconnect();
-  logger.debug(
-    `common.core.setup:onTerminationRequest: Attempting to exit Deno process`,
-  );
-  Deno.exit();
+const onDispose = (token: number) => {
+  setTimeout(() => {
+    Deno.removeSignalListener('SIGINT', onTerminationRequest);
+    Deno.removeSignalListener('SIGTERM', onTerminationRequest);
+    clearTimeout(token);
+    Deno.exit();
+  }, 500);
 };
 
-Deno.addSignalListener('SIGINT', () => onTerminationRequest('SIGINT'));
-Deno.addSignalListener('SIGTERM', () => onTerminationRequest('SIGTERM'));
+const onTerminationRequest = (): void => {
+  logger.debug(
+    'common.core.setup:onTerminationRequest: OS dispatched signal',
+  );
+  const token = setTimeout(async () => await _localSourceFactory.disconnect());
+  logger.debug(
+    'common.core.setup:onTerminationRequest: Attempting to exit Deno process',
+  );
+
+  onDispose(token);
+};
+
+Deno.addSignalListener('SIGINT', onTerminationRequest);
+Deno.addSignalListener('SIGTERM', onTerminationRequest);
 
 logger.mark('setup-end');
 logger.measure(between('setup-start', 'setup-end'));
