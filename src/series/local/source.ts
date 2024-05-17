@@ -31,7 +31,7 @@ export default class LocalSource {
           `seriese.local.source:get: Result from collection lookup`,
           document?._id,
         );
-        logger.mark('series_source_get_end')
+        logger.mark('series_source_get_end');
         return document;
       })
       ?.catch((e) => {
@@ -57,11 +57,11 @@ export default class LocalSource {
       'mediaId.anilist': media.mediaId.anilist,
     };
     const options: FindOneAndReplaceOptions = {
-      upsert: true
-    } 
+      upsert: true,
+    };
     const replacement: MediaDocument = {
-      ...media
-    }
+      ...media,
+    };
 
     logger.mark('series_source_save_start');
     await this.collection?.findOneAndReplace(filter, replacement, options)
