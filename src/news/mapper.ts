@@ -2,7 +2,7 @@ import { News, NewsEntity } from './types.d.ts';
 import { NewsDocument } from './local/types.d.ts';
 import { OptionalId, WithId } from 'npm/mongodb';
 
-export const fromEntity = (data: WithId<NewsDocument>): NewsEntity => {
+export const toEntity = (data: WithId<NewsDocument>): NewsEntity => {
   return {
     id: data._id.toHexString(),
     slug: data.slug,
@@ -17,7 +17,7 @@ export const fromEntity = (data: WithId<NewsDocument>): NewsEntity => {
   };
 };
 
-export const toEntity = (data: News): OptionalId<NewsDocument> => {
+export const toDocument = (data: News): OptionalId<NewsDocument> => {
   return {
     slug: data.slug,
     title: data.title,

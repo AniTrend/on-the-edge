@@ -1,0 +1,38 @@
+name: deno-veify
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    permissions:
+      contents: write
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: setup deno
+        uses: denoland/setup-deno@v1
+
+      - name: auto-format code
+        run: deno fmt
+        
+      - name: check for file changes
+        id: git_status
+        run: |
+          echo "::set-output name=status::$(git status -s)"
+
+      - name: create pull request with formatting corrections
+        if: ${{contains(steps.git_status.outputs.status, ' ')}}
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(automation): auto format code using deno fmt"
+          commit_options: '--no-verify --signoff'
+          file_pattern: '*.ts'
+          repository: .
