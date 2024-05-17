@@ -1,6 +1,6 @@
 import { between } from 'x/optic';
 import { State } from '../types/state.d.ts';
-import { UAParser } from 'esm/ua_parser';
+import { UserAgent } from 'std/http';
 import { logger } from '../core/logger.ts';
 import type { AppContext } from '../types/core.d.ts';
 
@@ -22,8 +22,7 @@ const contextAttributes = (
     };
   }
 
-  const parser = new UAParser(agent);
-  const { browser, cpu, device, engine, os } = parser.getResult();
+  const { browser, cpu, device, engine, os } = new UserAgent(agent);
 
   return Promise.resolve({
     'browser_name': browser.name,

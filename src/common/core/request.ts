@@ -1,17 +1,17 @@
 import { between } from 'x/optic';
 import { logger } from './logger.ts';
 
-const sanitize = (url: string): string => {
-  const urlObject = new URL(url);
+const sanitize = (uri: string): { safeUrl: string; host: string } => {
+  const url = new URL(uri);
 
-  const queryParams = urlObject.searchParams;
+  const queryParams = url.searchParams;
   for (const key of queryParams.keys()) {
     if (key.includes('api_key') || key.includes('api_secret')) {
       queryParams.set(key, '********');
     }
   }
 
-  return urlObject.toString();
+  return { safeUrl: url.toString(), host: url.host };
 };
 
 export const defaults: RequestInit = {
@@ -20,6 +20,8 @@ export const defaults: RequestInit = {
   headers: {
     'accept': 'application/json, application/xml, text/plain, */*',
     'accept-encoding': 'gzip, deflate, br',
+    'connection': 'keep-alive',
+    'user-agent': `Deno/${Deno.version.deno}`,
   },
 };
 
@@ -27,16 +29,21 @@ export const request = async <T>(
   url: string,
   options: RequestInit = defaults,
 ): Promise<T> => {
-  const sanitizedUrl = sanitize(url);
-  logger.debug(`----> ${options.method}: ${sanitizedUrl}`);
   logger.mark('request-start');
-  return await fetch(url, options).then((response) => {
-    logger.debug(`<---- ${response.status} ${options.method}: ${sanitizedUrl}`);
+  const { safeUrl, host } = sanitize(url);
+  logger.debug(`----> HTTP ${options.method}: ${safeUrl}`);
+  return await fetch(url, {
+    headers: {
+      ...options.headers,
+      host: host,
+    },
+  }).then((response) => {
+    logger.debug(`<---- HTTP/${response.status} ${options.method}: ${safeUrl}`);
     logger.mark('request-end');
-    logger.measure(between('request-start', 'request-end'), sanitizedUrl);
+    logger.measure(between('request-start', 'request-end'), host);
     if (!response.ok) {
       throw new Error(
-        `<---- HTTP/${response.status} ${options.method}: ${sanitizedUrl}`,
+        `<---- HTTP/${response.status} ${options.method}: ${safeUrl}`,
       );
     }
     const contentType = response.headers.get('Content-Type');

@@ -1,7 +1,7 @@
-import { Document } from 'x/mongo';
+import { Document } from 'npm/mongodb';
 import { Local } from '../types/core.d.ts';
 
-export const getCollection = <T extends Document>(
-  collection: string,
+export const collection = <T extends Document>(
+  name: string,
   database: Local,
-) => database?.collection<T>(collection);
+) => database?.collection<T>(name);

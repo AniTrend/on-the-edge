@@ -2,29 +2,23 @@
   "$schema": "http://json-schema.org/draft-07/schema",
   "importMap": "./src/import_map.json",
   "lint": {
-    "files": {
-      "include": ["src"],
-      "exclude": [".github", "README.md"]
-    },
+    "include": ["src"],
+    "exclude": [".github", "README.md"],
     "rules": {
       "tags": ["recommended"]
     }
   },
   "fmt": {
-    "files": {
-      "include": ["src"],
-      "exclude": [".github", "README.md"]
-    },
-    "options": {
-      "useTabs": false,
-      "lineWidth": 80,
-      "indentWidth": 2,
-      "singleQuote": true,
-      "proseWrap": "preserve"
-    }
+    "include": ["src"],
+    "exclude": [".github", "README.md"],
+    "useTabs": false,
+    "lineWidth": 80,
+    "indentWidth": 2,
+    "singleQuote": true,
+    "proseWrap": "preserve"
   },
   "tasks": {
     "test": "deno test --allow-read --allow-env --allow-net",
-    "server": "deno run --allow-read --allow-env --allow-net ./src/index.ts"
+    "server": "deno run --allow-read --allow-env --allow-net --allow-sys ./src/index.ts"
   }
 }

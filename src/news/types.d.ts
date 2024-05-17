@@ -1,9 +1,13 @@
 export type News = {
+  slug: string;
   title: string;
-  image: string;
   author: string;
+  category: string;
   description: string;
   content: string;
-  link: string;
+  image: string;
   publishedOn: number;
+  link: string;
 };
+
+export type NewsEntity = News & { id: string };

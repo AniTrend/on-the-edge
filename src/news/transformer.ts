@@ -7,6 +7,13 @@ const sanitize = (content: string): string => {
   return content.replace(regex, '');
 };
 
+const extractSlug = (uri: string): string => {
+  const url = new URL(uri);
+  const pathname = url.pathname;
+  const pathSegments = pathname.split('/');
+  return pathSegments[pathSegments.length - 1];
+};
+
 export const transform = (
   // deno-lint-ignore no-explicit-any
   document: Record<string, any>,
@@ -23,13 +30,15 @@ export const transform = (
   }
   return items.map((item) => {
     return {
+      slug: extractSlug(item.guid),
       title: item.title,
-      image: item['media:thumbnail']['@url'],
       author: item.author,
+      category: item.category,
       description: sanitize(item.description),
       content: item['content:encoded'],
-      link: item.link,
+      image: item['media:thumbnail']['@url'],
       publishedOn: toEpotch(item.pubDate),
+      link: item.link,
     };
   });
 };

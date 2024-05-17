@@ -35,4 +35,7 @@ export const pagination = (page: number, count: number) => {
   return { from, to };
 };
 
+export const isNullOrUndefined = (obj: unknown) =>
+  obj == null || obj == undefined;
+
 export const port = env<number>('PORT');

@@ -1,24 +1,19 @@
 {
   "imports": {
-    "std/server": "https://deno.land/std@0.224.0/http/mod.ts",
-    "std/server/status": "https://deno.land/std@0.224.0/http/status.ts",
-    "std/json": "https://deno.land/std@0.224.0/json/mod.ts",
+    "std/http": "https://deno.land/std@0.224.0/http/mod.ts",
     "std/dotenv": "https://deno.land/std@0.224.0/dotenv/mod.ts",
     "std/collections": "https://deno.land/std@0.224.0/collections/mod.ts",
-    "std/testing/asserts": "https://deno.land/std@0.224.0/testing/asserts.ts",
+    "std/testing/asserts": "https://deno.land/std@0.224.0/assert/mod.ts",
     "std/testing/bdd": "https://deno.land/std@0.224.0/testing/bdd.ts",
-    "std/testing/mock": "https://deno.land/std@0.224.0/testing/mock.ts",
-    "std/testing/types": "https://deno.land/std@0.224.0/testing/types.ts",
     "x/optic": "https://deno.land/x/optic@1.3.11/mod.ts",
     "x/optic/formatters": "https://deno.land/x/optic@1.3.11/formatters/mod.ts",
-    "x/optic/regex-filter": "https://deno.land/x/optic@1.3.11/filters/regExpFilter.ts",
     "x/optic/profiler": "https://deno.land/x/optic@1.3.11/logger/profileMeasure.ts",
-    "x/mongo": "https://deno.land/x/mongo@v0.33.0/mod.ts",
     "x/oak": "https://deno.land/x/oak@v16.0.0/mod.ts",
     "x/xml": "https://deno.land/x/xml@4.0.0/mod.ts",
     "x/deepmerge": "https://deno.land/x/deepmergets@v5.1.0/dist/deno/index.ts",
-    "esm/ua_parser": "https://esm.sh/ua-parser-js@2.0.0-beta.2",
+    "x/fest": "https://deno.land/x/fest@4.13.2/mod.ts",
     "esm/growthbook": "https://esm.sh/@growthbook/growthbook@1.0.0",
-    "esm/logtail": "https://esm.sh/@logtail/node@0.4.21"
+    "esm/logtail": "https://esm.sh/@logtail/node@0.4.21",
+    "npm/mongodb": "npm:mongodb@6.6.1"
   }
 }

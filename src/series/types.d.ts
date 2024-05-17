@@ -159,3 +159,7 @@ export interface Media {
 export interface MediaWithSeason extends Media {
   seasons: SeriesSeason[];
 }
+
+export type MediaEntity = Media & MediaWithSeason & {
+  id: string;
+};

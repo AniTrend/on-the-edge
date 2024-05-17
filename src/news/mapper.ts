@@ -1,28 +1,32 @@
-import { ObjectId } from 'x/mongo';
-import { News } from './types.d.ts';
+import { News, NewsEntity } from './types.d.ts';
 import { NewsDocument } from './local/types.d.ts';
+import { OptionalId, WithId } from 'npm/mongodb';
 
-export const fromEntity = (data: NewsDocument): News => {
+export const fromEntity = (data: WithId<NewsDocument>): NewsEntity => {
   return {
+    id: data._id.toHexString(),
+    slug: data.slug,
     title: data.title,
-    image: data.image,
     author: data.author,
+    category: data.category,
     description: data.description,
     content: data.content,
+    image: data.image,
+    publishedOn: data.published_on,
     link: data.link,
-    publishedOn: data.publishedOn,
   };
 };
 
-export const toEntity = (data: News): NewsDocument => {
+export const toEntity = (data: News): OptionalId<NewsDocument> => {
   return {
-    _id: new ObjectId(data.link),
-    author: data.author,
-    content: data.content,
-    description: data.description,
-    image: data.image,
-    link: data.link,
-    published_on: data.publishedOn,
+    slug: data.slug,
     title: data.title,
+    author: data.author,
+    category: data.category,
+    description: data.description,
+    content: data.content,
+    image: data.image,
+    published_on: data.publishedOn,
+    link: data.link,
   };
 };
