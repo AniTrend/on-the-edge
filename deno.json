@@ -18,7 +18,8 @@
     "proseWrap": "preserve"
   },
   "tasks": {
+    "check": "deno check src/index.ts",
     "test": "deno test --allow-read --allow-env --allow-net",
-    "server": "deno run --allow-read --allow-env --allow-net --allow-sys ./src/index.ts"
+    "start": "deno run --allow-read --allow-env --allow-net --allow-sys ./src/index.ts"
   }
 }

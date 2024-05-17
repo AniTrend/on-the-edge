@@ -2,7 +2,7 @@ import { Collection, Filter, FindOptions, ObjectId, WithId } from 'npm/mongodb';
 import { logger } from '../../common/core/logger.ts';
 import { IPaging } from '../../common/types/paging.d.ts';
 import { IResponse } from '../../common/types/response.d.ts';
-import { fromEntity, toEntity } from '../mapper.ts';
+import { toDocument, toEntity } from '../mapper.ts';
 import { News } from '../types.d.ts';
 import { NewsDocument, NewsId } from './types.d.ts';
 import { between } from 'x/optic/profiler';
@@ -15,7 +15,7 @@ export default class LocalSource {
 
   saveAll = async (news: News[]) => {
     logger.mark('news_source_insertMany_start');
-    const entities = news.map(toEntity);
+    const entities = news.map(toDocument);
     await this.collection?.insertMany(entities)
       .then((document) => {
         logger.debug(
@@ -100,7 +100,7 @@ export default class LocalSource {
         );
       });
 
-    const items = documents?.map(fromEntity) ?? null;
+    const items = documents?.map(toEntity) ?? null;
     const count = items?.length ?? 0;
 
     let first, last: string | undefined = undefined;
@@ -146,7 +146,7 @@ export default class LocalSource {
       });
 
     if (document) {
-      const item = fromEntity(document);
+      const item = toEntity(document);
 
       return {
         data: item ?? null,
