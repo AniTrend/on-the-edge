@@ -1,4 +1,4 @@
-name: deno-veify
+name: deno-format
 
 on:
   pull_request:
