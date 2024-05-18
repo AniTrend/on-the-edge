@@ -27,7 +27,6 @@ export interface ImageConfig extends Document {
 }
 
 export interface ConfigDocument extends Document {
-  _id: string;
   navigation: NavigationConfig[];
   genres: GenreConfig[];
   image: ImageConfig;

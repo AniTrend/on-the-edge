@@ -3,36 +3,44 @@ import {
   getPlatformSource,
   isAnalyticsEnabled,
 } from '../../common/experiment/index.ts';
-import { Optional } from '../../common/mongo/types.d.ts';
 import { Transform } from '../../common/transformer/types.d.ts';
 import { Features } from '../../common/types/core.d.ts';
 import { ConfigDocument } from '../local/types.d.ts';
 import { ClientConfiguration } from './types.d.ts';
+import { PlatformSource } from '../../common/experiment/types.d.ts';
+import { idOf } from '../../common/mongo/index.ts';
+
+const toImageUrl = (image: string, source?: PlatformSource): string => {
+  if (source) {
+    return `${source.media}${image}`;
+  }
+  return image;
+};
 
 export const transform: Transform<
   {
-    document: Optional<WithId<ConfigDocument>>;
+    document: WithId<ConfigDocument>;
     features: Features;
   },
   ClientConfiguration
-> = (data) => {
-  const platformSource = getPlatformSource(data.features);
-  const image = data.document?.image;
+> = ({ document, features }) => {
+  const platformSource = getPlatformSource(features);
+  const { image, _id, genres, navigation } = document;
   return {
-    id: data.document?._id,
+    id: idOf(_id),
     settings: {
-      analyticsEnabled: isAnalyticsEnabled(data.features),
+      analyticsEnabled: isAnalyticsEnabled(features),
       platformSource: platformSource?.api,
     },
-    genres: data.document?.genres,
+    genres: genres,
     image: {
-      banner: image?.banner ?? '',
-      poster: image?.poster ?? '',
-      loading: image?.loading ?? '',
-      error: image?.error ?? '',
-      info: image?.info ?? '',
-      default: image?.default ?? '',
+      banner: toImageUrl(image.banner, platformSource),
+      poster: toImageUrl(image.poster, platformSource),
+      loading: toImageUrl(image.loading, platformSource),
+      error: toImageUrl(image.error, platformSource),
+      info: toImageUrl(image.info, platformSource),
+      default: toImageUrl(image.default, platformSource),
     },
-    navigation: data.document?.navigation,
+    navigation: navigation,
   };
 };

@@ -6,7 +6,7 @@ import { AppFeatures } from '../experiment/types.d.ts';
 
 export type RCF822Date = string;
 
-export type Error = {
+export type ErrorResponse = {
   message: string;
 };
 

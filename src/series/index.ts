@@ -1,5 +1,5 @@
 import { Status } from 'x/oak';
-import { AppContext, Error } from '../common/types/core.d.ts';
+import { AppContext, ErrorResponse } from '../common/types/core.d.ts';
 import LocalSource from './local/source.ts';
 import SeriesRepository from './repository/series.ts';
 import SeasonRepository from './repository/season.ts';
@@ -21,7 +21,7 @@ export const series = async ({ request, response, state }: AppContext) => {
   } else {
     response.type = 'application/json';
     response.status = Status.BadRequest;
-    response.body = <Error> {
+    response.body = <ErrorResponse> {
       message: `Missing required query parameter: 'id'`,
     };
   }
