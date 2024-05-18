@@ -12,7 +12,7 @@ export class LocalSource {
     const config = await this.collection?.findOne()
       ?.catch((e) => {
         logger.error(
-          `config.local.source.LocalSource:getConfig: Unable to find config in collection`,
+          `config.local.source:getConfig: Unable to find config in collection`,
           e,
         );
         return undefined;

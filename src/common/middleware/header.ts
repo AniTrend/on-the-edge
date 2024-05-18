@@ -1,6 +1,6 @@
 import { HTTPMethods, Status } from 'x/oak';
 import { logger } from '../core/logger.ts';
-import type { AppContext, Error } from '../types/core.d.ts';
+import type { AppContext, ErrorResponse } from '../types/core.d.ts';
 
 const bodyTypes: HTTPMethods[] = [
   'PATCH',
@@ -29,7 +29,7 @@ const fail = (header: string, ctx: AppContext) => {
   const { response } = ctx;
   response.status = Status.BadRequest;
   response.type = 'application/json';
-  response.body = <Error> {
+  response.body = <ErrorResponse> {
     message: 'Missing required header',
   };
   logger.error(
