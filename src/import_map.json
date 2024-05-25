@@ -14,6 +14,6 @@
     "x/fest": "https://deno.land/x/fest@4.13.2/mod.ts",
     "esm/growthbook": "https://esm.sh/@growthbook/growthbook@1.0.0",
     "esm/logtail": "https://esm.sh/@logtail/node@0.4.21",
-    "npm/mongodb": "npm:mongodb@6.6.2-dev.20240524.sha.652af8d"
+    "npm/mongodb": "npm:mongodb@6.6.1"
   }
 }
