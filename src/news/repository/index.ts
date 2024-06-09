@@ -20,7 +20,7 @@ export default class NewsRepository {
     logger.mark('news_repository_sync_cache_start');
     if (isOlderThan(currentDate(), publishedOn, 4)) {
       const content = await latestNews(locale);
-      const document = parse(content, { flatten: true });
+      const document = parse(content, { flatten: { attributes: true } });
       const news = transform(document);
       this.local.saveAll(news);
     } else {
