@@ -12,8 +12,8 @@
     "x/xml": "https://deno.land/x/xml@5.4.7/mod.ts",
     "x/deepmerge": "https://deno.land/x/deepmergets@v7.0.3/dist/deno/index.ts",
     "x/fest": "https://deno.land/x/fest@4.13.2/mod.ts",
-    "esm/growthbook": "https://esm.sh/@growthbook/growthbook@1.0.0",
+    "esm/growthbook": "https://esm.sh/@growthbook/growthbook@1.0.1",
     "esm/logtail": "https://esm.sh/@logtail/node@0.4.21",
-    "npm/mongodb": "npm:mongodb@6.6.1"
+    "npm/mongodb": "npm:mongodb@6.7.0-dev.20240608.sha.0655c730"
   }
 }
