@@ -13,7 +13,7 @@
     "x/deepmerge": "https://deno.land/x/deepmergets@v7.1.0/dist/deno/index.ts",
     "x/fest": "https://deno.land/x/fest@4.13.2/mod.ts",
     "esm/growthbook": "https://esm.sh/@growthbook/growthbook@1.1.0",
-    "esm/logtail": "https://esm.sh/@logtail/node@0.4.21",
+    "esm/logtail": "https://esm.sh/@logtail/node@undefined",
     "npm/mongodb": "npm:mongodb@6.8.0-dev.20240720.sha.357ca086"
   }
 }
