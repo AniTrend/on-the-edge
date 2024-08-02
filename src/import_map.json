@@ -9,11 +9,11 @@
     "x/optic/formatters": "https://deno.land/x/optic@1.3.11/formatters/mod.ts",
     "x/optic/profiler": "https://deno.land/x/optic@1.3.11/logger/profileMeasure.ts",
     "x/oak": "https://deno.land/x/oak@v16.1.0/mod.ts",
-    "x/xml": "https://deno.land/x/xml@5.4.12/mod.ts",
+    "x/xml": "https://deno.land/x/xml@5.4.13/mod.ts",
     "x/deepmerge": "https://deno.land/x/deepmergets@v7.1.0/dist/deno/index.ts",
     "x/fest": "https://deno.land/x/fest@4.13.2/mod.ts",
     "esm/growthbook": "https://esm.sh/@growthbook/growthbook@1.1.0",
     "esm/logtail": "https://esm.sh/@logtail/node@0.4.21",
-    "npm/mongodb": "npm:mongodb@6.8.0-dev.20240731.sha.b26c3280"
+    "npm/mongodb": "npm:mongodb@6.8.0-dev.20240802.sha.54efb7d4"
   }
 }
