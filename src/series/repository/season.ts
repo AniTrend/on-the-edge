@@ -1,5 +1,5 @@
 import { zip } from 'std/collections';
-import { deepmerge } from 'x/deepmerge';
+import { deepmerge } from 'deepmerge';
 import { getTmdbSeason } from '../service/tmdb/index.ts';
 import { isMovie } from '../utils/index.ts';
 import { NotifyAnime } from '../service/notify/types.d.ts';
