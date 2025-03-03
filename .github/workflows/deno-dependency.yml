@@ -15,7 +15,12 @@ jobs:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
       - uses: actions/checkout@v4
-      - uses: denoland/setup-deno@v2
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+      - name: Config properties file
+        run: |
+          cp .env.defaults .env
+          rm deno.lock
       - name: Update dependencies
         run: |
           deno run -A https://deno.land/x/udd/main.ts src/import_map.json
@@ -28,36 +33,5 @@ jobs:
           body: >
             Dependencies updated by [udd](https://github.com/hayd/deno-udd).
           branch: dependencies/deno-dependency-updates
-          author: GitHub <noreply@github.com>
           delete-branch: true
           token: ${{ steps.app-token.outputs.token }}
-      - name: Retrieve commit sha
-        id: commit
-        run: |
-          echo "::set-output name=sha::$(git rev-parse HEAD)"
-      - name: Set commit status with pending
-        uses: Sibz/github-status-action@v1
-        with:
-          authToken: ${{ steps.app-token.outputs.token }}
-          context: "Unit tests"
-          state: "pending"
-          sha: ${{ steps.commit.outputs.sha }}
-      - name: Setup Deno
-        uses: denoland/setup-deno@v2
-      - name: Config properties file
-        run: |
-          cp .env.defaults .env
-          rm deno.lock
-      - name: Unit tests
-        id: test
-        continue-on-error: true
-        run: |
-          deno test -A
-      - name: Set commit status with outcome
-        uses: Sibz/github-status-action@v1
-        with:
-          authToken: ${{ steps.app-token.outputs.token }}
-          context: "Unit tests"
-          description: "To run other CI actions close/reopen this PR"
-          state: ${{ steps.test.outcome }}
-          sha: ${{ steps.commit.outputs.sha }} 
