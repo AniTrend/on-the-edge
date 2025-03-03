@@ -9,6 +9,11 @@ jobs:
   update-dependencies:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
       - uses: actions/checkout@v4
       - uses: denoland/setup-deno@v2
       - name: Update dependencies
@@ -25,6 +30,7 @@ jobs:
           branch: dependencies/deno-dependency-updates
           author: GitHub <noreply@github.com>
           delete-branch: true
+          token: ${{ steps.app-token.outputs.token }}
       - name: Retrieve commit sha
         id: commit
         run: |
@@ -32,7 +38,7 @@ jobs:
       - name: Set commit status with pending
         uses: Sibz/github-status-action@v1
         with:
-          authToken: ${{ secrets.GITHUB_TOKEN }}
+          authToken: ${{ steps.app-token.outputs.token }}
           context: "Unit tests"
           state: "pending"
           sha: ${{ steps.commit.outputs.sha }}
@@ -50,7 +56,7 @@ jobs:
       - name: Set commit status with outcome
         uses: Sibz/github-status-action@v1
         with:
-          authToken: ${{ secrets.GITHUB_TOKEN }}
+          authToken: ${{ steps.app-token.outputs.token }}
           context: "Unit tests"
           description: "To run other CI actions close/reopen this PR"
           state: ${{ steps.test.outcome }}
