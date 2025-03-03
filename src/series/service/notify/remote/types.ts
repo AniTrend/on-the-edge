@@ -1,10 +1,10 @@
 export interface TitleModel {
-  english: string;
-  japanese: string;
-  synonyms: string[];
   canonical: string;
   romaji: string;
+  english: string;
+  japanese: string;
   hiragana: string;
+  synonyms: string[];
 }
 
 export interface ImageModel {
@@ -32,9 +32,17 @@ export interface RatingModel {
   };
 }
 
+export interface PopularityModel {
+  watching: number;
+  completed: number;
+  planned: number;
+  hold: number;
+  dropped: number;
+}
+
 export interface MappingModel {
-  service: string; // anilist/anime
-  serviceId: string; // 101348
+  service: string;
+  serviceId: string;
 }
 
 export interface TrailerModel extends MappingModel {
@@ -48,23 +56,32 @@ export interface LinkModel {
 
 export interface AnimeModel {
   id: string;
+  type: 'tv' | 'movie' | 'ova' | 'ona' | 'special';
   title: TitleModel;
-  type: string | 'tv' | 'movie' | 'ona' | 'ova' | 'special';
   summary: string;
-  status: string | 'current' | 'upcoming' | 'finished';
+  status: 'finished' | 'current' | 'upcoming';
   genres: string[];
-  startDate: Date;
-  endDate: Date;
+  startDate: string;
+  endDate: string;
   episodeCount: number;
   episodeLength: number;
-  source: string | 'manga';
+  source: string;
   image: ImageModel;
   firstChannel: string;
   rating: RatingModel;
+  popularity: PopularityModel;
   trailers: TrailerModel[];
   episodes: string[];
   mappings: MappingModel[];
+  posts: null | unknown;
+  likes: null | unknown;
+  created: string;
+  createdBy: string;
+  edited: string;
+  editedBy: string;
+  isDraft: boolean;
   studios: string[];
   producers: string[];
-  links: LinkModel[];
+  licensors: string[];
+  links: LinkModel[] | null;
 }
