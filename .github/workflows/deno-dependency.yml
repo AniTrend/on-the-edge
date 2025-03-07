@@ -20,7 +20,6 @@ jobs:
       - name: Config properties file
         run: |
           cp .env.defaults .env
-          rm deno.lock
       - name: Update dependencies
         run: |
           deno run -A https://deno.land/x/udd/main.ts src/import_map.json
