@@ -7,7 +7,7 @@ import { currentDate, isOlderThan } from '../../common/core/utils.ts';
 import { IResponse } from '../../common/types/response.ts';
 import { parse } from '@xml';
 import { logger } from '../../common/core/logger.ts';
-import { NewsId } from '../local/types.ts';
+import { NewsPagingParam } from '../local/types.ts';
 import { between } from '@optic';
 
 export class NewsRepository {
@@ -34,9 +34,9 @@ export class NewsRepository {
     );
   };
 
-  getLatest = async (id?: NewsId): Promise<IPaging<News>> => {
+  getAllPaged = async (params: NewsPagingParam): Promise<IPaging<News>> => {
     logger.mark('news_repository_get_latest_start');
-    const result = await this.local.getAll(id);
+    const result = await this.local.getAllByParam(params);
     logger.mark('news_repository_get_latest_end');
     logger.measure(
       between(
@@ -60,7 +60,7 @@ export class NewsRepository {
     return result;
   };
 
-  getById = async (id: NewsId): Promise<IResponse<News>> => {
+  getById = async (id: string): Promise<IResponse<News>> => {
     logger.mark('news_repository_get_by_id_start');
     const result = await this.local.get(id);
     logger.mark('news_repository_get_by_id_end');

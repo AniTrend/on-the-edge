@@ -13,6 +13,8 @@ export interface NewsDocument extends Document {
   link: string;
 }
 
-export interface NewsId extends EntityCursor {
-  uuid: string;
+export interface NewsPagingParam {
+  before: EntityCursor;
+  after: EntityCursor;
+  limit: number | null;
 }
