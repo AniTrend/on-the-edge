@@ -15,7 +15,7 @@ export const newsWorker = async ({ response, state }: AppContext) => {
   response.status = Status.NoContent;
 };
 
-export const news = async ({ response, state }: AppContext) => {
+export const news = async ({ request, response, state }: AppContext) => {
   const { local, features } = state;
   const repository = new NewsRepository(
     new LocalSource(collection('news', local)),
@@ -23,7 +23,13 @@ export const news = async ({ response, state }: AppContext) => {
 
   if (isNewsApiv2Enabled(features)) {
     response.type = 'application/json';
-    response.body = await repository.getLatest();
+    response.body = await repository.getAllPaged({
+      before: request.url.searchParams.get('before'),
+      after: request.url.searchParams.get('after'),
+      limit: request.url.searchParams.get('limit')
+        ? Number(request.url.searchParams.get('limit'))
+        : null,
+    });
   } else {
     response.type = 'application/xml';
     response.body = await repository.getLatestLegacy();

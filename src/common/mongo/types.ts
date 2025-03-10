@@ -10,6 +10,4 @@ export type SortOption<T extends Document> = {
   [K in keyof OptionalId<T>]?: SortDirection;
 };
 
-export interface EntityCursor {
-  cursor: string;
-}
+export type EntityCursor = string | null;

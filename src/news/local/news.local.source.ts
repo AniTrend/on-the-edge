@@ -4,7 +4,7 @@ import { IPaging } from '../../common/types/paging.ts';
 import { IResponse } from '../../common/types/response.ts';
 import { toDocument, toEntity } from '../mapper/index.ts';
 import { News } from '../types.ts';
-import { NewsDocument, NewsId } from './types.ts';
+import { NewsDocument, NewsPagingParam } from './types.ts';
 import { between } from '@optic';
 import { projectionOf, sortOf } from '../../common/mongo/index.ts';
 
@@ -40,7 +40,7 @@ export default class LocalSource {
 
   getLatestPublishedDate = async (): Promise<number> => {
     const filter: Filter<NewsDocument> = {
-      id: { $exists: true },
+      _id: { $exists: true },
     };
     const options: FindOptions<WithId<NewsDocument>> = {
       projection: projectionOf<NewsDocument>({ published_on: 1 }),
@@ -70,15 +70,18 @@ export default class LocalSource {
       }) ?? 0;
   };
 
-  getAll = async (id?: NewsId): Promise<IPaging<News>> => {
-    const filter: Filter<NewsDocument> = id
-      ? {
-        _id: { $gt: new ObjectId(id.cursor) },
-      }
-      : {};
+  getAllByParam = async (params: NewsPagingParam): Promise<IPaging<News>> => {
+    const filter: Filter<NewsDocument> = {};
+
+    if (params?.before) {
+      filter._id = { $lt: new ObjectId(params.before) };
+    } else if (params?.after) {
+      filter._id = { $gt: new ObjectId(params.after) };
+    }
+
     const options: FindOptions<WithId<NewsDocument>> = {
       sort: sortOf<NewsDocument>({ published_on: 'desc' }),
-      limit: 25,
+      limit: params.limit ?? 10,
     };
 
     logger.mark('news_source_get_all_start');
@@ -118,11 +121,9 @@ export default class LocalSource {
     };
   };
 
-  get = async (
-    id: NewsId,
-  ): Promise<IResponse<News>> => {
+  get = async (id: string): Promise<IResponse<News>> => {
     const filter: Filter<NewsDocument> = {
-      slug: { $eq: id.uuid },
+      slug: { $eq: id },
     };
     logger.mark('news_source_get_start');
     const document = await this.collection
