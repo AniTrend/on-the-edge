@@ -38,6 +38,14 @@ export interface MediaId {
   [key: string]: string;
 }
 
+export interface TransformedEpisode {
+  id: string;
+  number: number;
+  title: string;
+  startAirDate?: number;
+  endAirDate?: number;
+}
+
 export interface Anime {
   id: string;
   title: Title;
@@ -48,6 +56,7 @@ export interface Anime {
   endDate: Instant;
   episodeCount: number;
   episodeLength: number;
+  episodes: TransformedEpisode[],
   source: Source;
   poster: Poster;
   rating: Rating;

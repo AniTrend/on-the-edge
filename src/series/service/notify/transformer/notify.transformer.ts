@@ -1,12 +1,13 @@
 import { toInstant } from '../../../../common/helpers/index.ts';
 import { Transform } from '../../../../common/transformer/types.ts';
 import {
-  AnimeModel,
+  EpisodeModel,
   ImageModel,
   MappingModel,
   TrailerModel,
 } from '../remote/types.ts';
-import { Anime, MediaId, Poster, Trailer } from './types.ts';
+import { EnrichedAnimeData } from '../notify.service.ts';
+import { Anime, MediaId, Poster, Trailer, TransformedEpisode } from './types.ts';
 import { Format, Source, Status } from './enums.ts';
 
 const mapMediaId = (input: MappingModel[]): MediaId => {
@@ -101,7 +102,20 @@ const mapFormat = (type: string): Format => {
   }
 };
 
-export const transform: Transform<AnimeModel, Anime> = (sourceData) => ({
+const mapEpisode = (episode: EpisodeModel): TransformedEpisode => ({
+  id: episode.id,
+  number: episode.number,
+  title: episode.title.english || episode.title.romaji ||
+    episode.title.japanese,
+  startAirDate: episode.airingDate?.start
+    ? toInstant(episode.airingDate.start)
+    : undefined,
+  endAirDate: episode.airingDate?.end
+    ? toInstant(episode.airingDate.end)
+    : undefined,
+});
+
+export const transform: Transform<EnrichedAnimeData, Anime> = (sourceData) => ({
   id: sourceData.id,
   title: {
     english: sourceData.title.english,
@@ -118,9 +132,16 @@ export const transform: Transform<AnimeModel, Anime> = (sourceData) => ({
   endDate: toInstant(sourceData.endDate),
   episodeCount: sourceData.episodeCount,
   episodeLength: sourceData.episodeLength,
+  episodes: sourceData.episodes.map(mapEpisode),
   source: mapSource(sourceData.source),
   poster: mapPoster(sourceData.image),
   rating: sourceData.rating,
   trailers: mapTrailer(sourceData.trailers),
   mediaId: mapMediaId(sourceData.mappings),
+  english: sourceData.title.english,
+  native: sourceData.title.hiragana,
+  romaji: sourceData.title.romaji,
+  canonical: sourceData.title.canonical,
+  harigana: sourceData.title.hiragana,
+  synonyms: sourceData.title.synonyms,
 });
