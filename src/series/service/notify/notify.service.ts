@@ -20,7 +20,7 @@ export const getNotifyAnime = async (
     const model = await getAnime(notify);
 
     const episodes: EpisodeModel[] = await Promise.all(
-      model.episodes.map(getEpisode)
+      model.episodes.map(getEpisode),
     );
 
     return transform({

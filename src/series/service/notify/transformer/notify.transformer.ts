@@ -7,7 +7,13 @@ import {
   TrailerModel,
 } from '../remote/types.ts';
 import { EnrichedAnimeData } from '../notify.service.ts';
-import { Anime, MediaId, Poster, Trailer, TransformedEpisode } from './types.ts';
+import {
+  Anime,
+  MediaId,
+  Poster,
+  Trailer,
+  TransformedEpisode,
+} from './types.ts';
 import { Format, Source, Status } from './enums.ts';
 
 const mapMediaId = (input: MappingModel[]): MediaId => {

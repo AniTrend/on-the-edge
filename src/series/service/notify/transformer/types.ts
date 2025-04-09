@@ -56,7 +56,7 @@ export interface Anime {
   endDate: Instant;
   episodeCount: number;
   episodeLength: number;
-  episodes: TransformedEpisode[],
+  episodes: TransformedEpisode[];
   source: Source;
   poster: Poster;
   rating: Rating;
