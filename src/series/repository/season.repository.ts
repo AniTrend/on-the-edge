@@ -10,7 +10,7 @@ import { AnimeRelationId } from '../service/arm/types.ts';
 import {
   EnhancedMergedSeason,
   SeasonCorrelationMapper,
-} from './season.correlation.mapper.ts';
+} from './season-correlation/index.ts';
 
 export default class SeasonRepository {
   constructor() {}
