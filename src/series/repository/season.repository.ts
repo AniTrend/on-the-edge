@@ -7,6 +7,7 @@ import { SkyhookEpisode, SkyhookShow } from '../service/skyhook/types.ts';
 import { TmdbEpisode, TmdbSeason, TmdbShow } from '../service/tmdb/types.ts';
 import { MergedEpisode, MergedSeason } from '../transformer/types.ts';
 import { AnimeRelationId } from '../service/arm/types.ts';
+import { SeasonCorrelationMapper } from './season-correlation/index.ts';
 
 export default class SeasonRepository {
   constructor() {}
@@ -81,12 +82,32 @@ export default class SeasonRepository {
     notify?: NotifyAnime,
     skyhook?: SkyhookShow,
     tmdb?: TmdbShow,
-    _relations?: AnimeRelationId[],
+    relations?: AnimeRelationId[],
   ): Promise<MergedSeason[]> => {
     if (isMovie(notify?.format)) {
       return [];
     }
 
+    // Try to use the season correlation mapper if we have anime data
+    if (notify || relations?.length) {
+      const correlationMapper = new SeasonCorrelationMapper(
+        notify,
+        skyhook,
+        tmdb,
+        relations || [],
+      );
+
+      // Get correlated seasons with anime mapping
+      const correlatedSeasons = correlationMapper.correlateSeasons();
+
+      // If we successfully correlated seasons, return them
+      if (correlatedSeasons.length > 0) {
+        return correlatedSeasons as MergedSeason[];
+      }
+    }
+
+    // Fall back to the original season merging logic if correlation fails
+    // or if we don't have sufficient anime data
     const filteredTmdbSeasons = await this.getFilteredTmdbSeasons(tmdb);
     const seasons = this.mergeSeasons(
       tmdb?.seasons ?? [],

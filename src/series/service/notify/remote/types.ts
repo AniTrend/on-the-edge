@@ -54,6 +54,28 @@ export interface LinkModel {
   url: string;
 }
 
+export type EpisodeIdModel = string;
+
+export interface EpisodeTitleModel {
+  romaji: string;
+  english: string;
+  japanese: string;
+}
+
+export interface AiringDateModel {
+  start: string;
+  end: string;
+}
+
+export interface EpisodeModel {
+  id: EpisodeIdModel;
+  animeId: string;
+  number: number;
+  title: EpisodeTitleModel;
+  airingDate: AiringDateModel;
+  links: Record<string, unknown>; // Assuming links is an object, but the example is empty
+}
+
 export interface AnimeModel {
   id: string;
   type: 'tv' | 'movie' | 'ova' | 'ona' | 'special';
@@ -71,7 +93,7 @@ export interface AnimeModel {
   rating: RatingModel;
   popularity: PopularityModel;
   trailers: TrailerModel[];
-  episodes: string[];
+  episodes: EpisodeIdModel[];
   mappings: MappingModel[];
   posts: null | unknown;
   likes: null | unknown;
