@@ -230,6 +230,7 @@ export class SeasonCorrelationMapper {
     // Ensure required fields are present for MergedSeason compatibility
     const enhancedSpecialSeason: EnhancedMergedSeason = {
       ...specialSeason,
+      images: specialSeason.images || { backdrops: [], posters: [], logos: [] }, // Ensure non-null images
       poster_path: specialSeason.poster_path || '', // Ensure non-null poster_path
       episodes: specialEpisodes.map((skyhookEpisode, index) => {
         const tmdbEpisode: TmdbEpisode = specialSeason.episodes?.[index] || {
@@ -504,6 +505,8 @@ export class SeasonCorrelationMapper {
     // Create the enhanced season
     const enhancedSeason: EnhancedMergedSeason = {
       ...season,
+      poster_path: season.poster_path || '', // Ensure non-null poster_path
+      images: season.images || { backdrops: [], posters: [], logos: [] }, // Ensure non-null images
       episodes: allEpisodes.map((episode) => {
         const isSpecial = ('isSpecial' in episode) ? episode.isSpecial : false;
         const originalSeason = isSpecial ? specialSeason : season;
@@ -694,15 +697,7 @@ export class SeasonCorrelationMapper {
             runtime: 0,
           };
 
-          const baseSkyhook = skyhookEpisode || {
-            tvdbShowId: 0,
-            tvdbId: 0,
-            seasonNumber: tmdbEpisode?.season_number || 0,
-            episodeNumber: tmdbEpisode?.episode_number || 0,
-            title: tmdbEpisode?.name || '',
-            airDate: tmdbEpisode?.air_date || '',
-            overview: tmdbEpisode?.overview || '',
-          } as SkyhookEpisode;
+          const baseSkyhook = skyhookEpisode;
 
           const mappingNote = tmdbEpisode
             ? 'TMDb-only episode'

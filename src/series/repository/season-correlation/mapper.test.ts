@@ -1,6 +1,5 @@
 import { assertEquals } from '@std/assert';
 import {
-  EnhancedMergedSeason,
   MappingPattern,
   SeasonCorrelationMapper,
 } from './index.ts';
