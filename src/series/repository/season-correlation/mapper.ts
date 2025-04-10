@@ -1,14 +1,14 @@
 import { AnimeRelationId } from '../../service/arm/types.ts';
 import { NotifyAnime } from '../../service/notify/types.ts';
-import { SkyhookShow, SkyhookEpisode } from '../../service/skyhook/types.ts';
-import { TmdbShow, TmdbSeason, TmdbEpisode } from '../../service/tmdb/types.ts';
+import { SkyhookEpisode, SkyhookShow } from '../../service/skyhook/types.ts';
+import { TmdbEpisode, TmdbSeason, TmdbShow } from '../../service/tmdb/types.ts';
 import { zip } from '@std/collections';
 
-import { 
-  MappingPattern, 
-  EnhancedMergedEpisode, 
+import {
+  EnhancedMergedEpisode,
   EnhancedMergedSeason,
-  SpecialsMapping
+  MappingPattern,
+  SpecialsMapping,
 } from './types/index.ts';
 import { PatternDetector } from './pattern-detector.ts';
 import { SpecialsDetector } from './specials-detector.ts';
@@ -32,32 +32,32 @@ export class SeasonCorrelationMapper {
   public correlateSeasons(): EnhancedMergedSeason[] {
     // Skip processing if not enough data
     if (!this.canCorrelate()) return [];
-    
+
     // 1. Get configuration if available
     const config = this.getConfiguration();
-    
+
     // 2. Extract season structures from each source
     const tmdbSeasons = this.extractTmdbSeasons();
     const skyhookEpisodes = this.extractSkyhookEpisodes();
     const animeData = this.extractAnimeData();
-    
+
     // 3. Identify and handle specials (Season 0) separately
     // Use config if available to determine special handling
     const specialsHandling = config?.specialsHandling;
     const specialsSeasons = this.handleSpecials(
-      tmdbSeasons, 
+      tmdbSeasons,
       skyhookEpisodes,
-      specialsHandling
+      specialsHandling,
     );
-    
+
     // 4. Process regular seasons using config when available
     const regularSeasons = this.correlateRegularSeasons(
-      tmdbSeasons, 
-      skyhookEpisodes, 
+      tmdbSeasons,
+      skyhookEpisodes,
       animeData,
-      config
+      config,
     );
-    
+
     // 5. Combine and return all seasons
     return [...specialsSeasons, ...regularSeasons];
   }
@@ -88,16 +88,18 @@ export class SeasonCorrelationMapper {
    */
   private extractAnimeData(): {
     seasons: number;
-    episodes: Array<{id: number; number: number; type: string; title: string}>;
+    episodes: Array<
+      { id: number; number: number; type: string; title: string }
+    >;
   } | undefined {
     if (!this.notify) return undefined;
-    
+
     // Extract episode data from anime source
     const totalEpisodes = this.notify.episodeCount || 0;
     const totalSeasons = this.calculateAnimeSeasons(this.notify);
-    
+
     // Create a basic representation of anime episodes
-    const episodes = Array.from({length: totalEpisodes}, (_, i) => {
+    const episodes = Array.from({ length: totalEpisodes }, (_, i) => {
       const isSpecial = i >= totalEpisodes;
       return {
         id: i + 1,
@@ -106,26 +108,26 @@ export class SeasonCorrelationMapper {
         title: '',
       };
     });
-    
+
     return {
       seasons: totalSeasons,
       episodes,
     };
   }
-  
+
   /**
    * Calculates the number of anime seasons/cours
    */
-  private calculateAnimeSeasons(anime: NotifyAnime): number {    
+  private calculateAnimeSeasons(anime: NotifyAnime): number {
     // Estimate based on episode count (rough approximation)
     const episodeCount = anime.episodeCount || 0;
     if (episodeCount <= 0) return 1;
-    
+
     if (episodeCount <= 13) return 1;
     if (episodeCount <= 26) return 2;
     if (episodeCount <= 39) return 3;
     if (episodeCount <= 52) return 4;
-    
+
     return Math.ceil(episodeCount / 12); // Rough estimate based on typical cours length
   }
 
@@ -135,7 +137,7 @@ export class SeasonCorrelationMapper {
   private handleSpecials(
     tmdbSeasons: TmdbSeason[],
     skyhookEpisodes: SkyhookEpisode[],
-    specialsHandling?: 'standalone' | 'integrated' | 'distributed'
+    specialsHandling?: 'standalone' | 'integrated' | 'distributed',
   ): EnhancedMergedSeason[] {
     // Find Season 0 if it exists
     const specialSeason = tmdbSeasons.find((season) =>
@@ -148,7 +150,7 @@ export class SeasonCorrelationMapper {
       episode.seasonNumber === 0
     );
     if (specialEpisodes.length === 0) return [];
-    
+
     // Get anime data if available
     const animeData = this.extractAnimeData();
 
@@ -156,40 +158,50 @@ export class SeasonCorrelationMapper {
     const specialsType = SpecialsDetector.detectSpecialsType(
       specialSeason,
       specialEpisodes,
-      animeData
+      animeData,
     );
-    
+
     // Get regular seasons for integration/distribution logic
-    const regularSeasons = tmdbSeasons.filter(season => season.season_number > 0);
+    const regularSeasons = tmdbSeasons.filter((season) =>
+      season.season_number > 0
+    );
 
     // Apply the appropriate handling strategy
     switch (specialsType) {
       case MappingPattern.SPECIALS_STANDALONE:
         return [
-          this.createStandaloneSpecialsSeason(specialSeason, specialEpisodes, animeData),
+          this.createStandaloneSpecialsSeason(
+            specialSeason,
+            specialEpisodes,
+            animeData,
+          ),
         ];
 
       case MappingPattern.SPECIALS_INTEGRATED:
         return this.createIntegratedSpecialsSeason(
-          specialSeason, 
-          specialEpisodes, 
+          specialSeason,
+          specialEpisodes,
           regularSeasons,
           skyhookEpisodes,
-          animeData
+          animeData,
         );
 
       case MappingPattern.SPECIALS_DISTRIBUTED:
         return this.createDistributedSpecialsSeason(
-          specialSeason, 
-          specialEpisodes, 
+          specialSeason,
+          specialEpisodes,
           regularSeasons,
           skyhookEpisodes,
-          animeData
+          animeData,
         );
 
       default:
         return [
-          this.createStandaloneSpecialsSeason(specialSeason, specialEpisodes, animeData),
+          this.createStandaloneSpecialsSeason(
+            specialSeason,
+            specialEpisodes,
+            animeData,
+          ),
         ];
     }
   }
@@ -202,17 +214,19 @@ export class SeasonCorrelationMapper {
     specialEpisodes: SkyhookEpisode[],
     animeData?: {
       seasons: number;
-      episodes: Array<{id: number; number: number; type: string; title: string}>;
-    }
+      episodes: Array<
+        { id: number; number: number; type: string; title: string }
+      >;
+    },
   ): EnhancedMergedSeason {
     // Get specials mapping data
     const specialsMapping = SpecialsDetector.analyzeSpecials(
       specialSeason,
       specialEpisodes,
       [],
-      animeData
+      animeData,
     );
-    
+
     // Ensure required fields are present for MergedSeason compatibility
     const enhancedSpecialSeason: EnhancedMergedSeason = {
       ...specialSeason,
@@ -235,21 +249,26 @@ export class SeasonCorrelationMapper {
           runtime: 0,
         };
 
-        return this.mergeEpisodeData(tmdbEpisode, skyhookEpisode, 'Standalone special episode', animeData);
+        return this.mergeEpisodeData(
+          tmdbEpisode,
+          skyhookEpisode,
+          'Standalone special episode',
+          animeData,
+        );
       }),
       isSpecial: true,
       mappingPattern: MappingPattern.SPECIALS_STANDALONE,
       specialsMapping,
-      viewingOrder: specialsMapping.chronologicalPosition === 'before' 
+      viewingOrder: specialsMapping.chronologicalPosition === 'before'
         ? 'Watch before main series'
         : specialsMapping.chronologicalPosition === 'after'
-          ? 'Watch after main series'
-          : 'Watch alongside main series'
+        ? 'Watch after main series'
+        : 'Watch alongside main series',
     };
 
     return enhancedSpecialSeason;
   }
-  
+
   /**
    * Creates seasons with integrated specials
    */
@@ -260,62 +279,79 @@ export class SeasonCorrelationMapper {
     allSkyhookEpisodes: SkyhookEpisode[],
     animeData?: {
       seasons: number;
-      episodes: Array<{id: number; number: number; type: string; title: string}>;
-    }
+      episodes: Array<
+        { id: number; number: number; type: string; title: string }
+      >;
+    },
   ): EnhancedMergedSeason[] {
     // Get specials mapping data
     const specialsMapping = SpecialsDetector.analyzeSpecials(
       specialSeason,
       specialEpisodes,
       regularSeasons,
-      animeData
+      animeData,
     );
-    
+
     // If no target seasons specified, return as standalone
-    if (!specialsMapping.targetSeasons || specialsMapping.targetSeasons.length === 0) {
-      return [this.createStandaloneSpecialsSeason(specialSeason, specialEpisodes, animeData)];
+    if (
+      !specialsMapping.targetSeasons ||
+      specialsMapping.targetSeasons.length === 0
+    ) {
+      return [
+        this.createStandaloneSpecialsSeason(
+          specialSeason,
+          specialEpisodes,
+          animeData,
+        ),
+      ];
     }
-    
+
     // Create enhanced seasons with integrated specials
     return regularSeasons
-      .filter(season => specialsMapping.targetSeasons?.includes(season.season_number))
-      .map(season => {
+      .filter((season) =>
+        specialsMapping.targetSeasons?.includes(season.season_number)
+      )
+      .map((season) => {
         // Find corresponding regular episodes
         const regularEpisodes = allSkyhookEpisodes.filter(
-          episode => episode.seasonNumber === season.season_number
+          (episode) => episode.seasonNumber === season.season_number,
         );
-        
+
         // Find specials that belong to this season
-        const seasonSpecials = specialEpisodes.filter(special => {
+        const seasonSpecials = specialEpisodes.filter((special) => {
           // Check if this special explicitly references this season
-          if (special.airedBeforeSeasonNumber === season.season_number || 
-              special.airedAfterSeasonNumber === season.season_number) {
+          if (
+            special.airedBeforeSeasonNumber === season.season_number ||
+            special.airedAfterSeasonNumber === season.season_number
+          ) {
             return true;
           }
-          
+
           // If there's only one target season, all specials belong to it
           if (specialsMapping.targetSeasons?.length === 1) {
             return true;
           }
-          
+
           // Otherwise, distribute specials evenly (simple approach)
-          const seasonIndex = regularSeasons.findIndex(s => s.season_number === season.season_number);
+          const seasonIndex = regularSeasons.findIndex((s) =>
+            s.season_number === season.season_number
+          );
           const specialIndex = specialEpisodes.indexOf(special);
           return specialIndex % regularSeasons.length === seasonIndex;
         });
-        
+
         // Create enhanced season with integrated specials
         return this.createEnhancedSeasonWithSpecials(
-          season, 
-          regularEpisodes, 
-          seasonSpecials, 
-          specialSeason, 
+          season,
+          regularEpisodes,
+          seasonSpecials,
+          specialSeason,
           specialsMapping,
-          animeData
+          animeData,
         );
       });
   }
-  
+
   /**
    * Creates seasons with distributed specials
    */
@@ -326,27 +362,38 @@ export class SeasonCorrelationMapper {
     allSkyhookEpisodes: SkyhookEpisode[],
     animeData?: {
       seasons: number;
-      episodes: Array<{id: number; number: number; type: string; title: string}>;
-    }
+      episodes: Array<
+        { id: number; number: number; type: string; title: string }
+      >;
+    },
   ): EnhancedMergedSeason[] {
     // Get specials mapping data
     const specialsMapping = SpecialsDetector.analyzeSpecials(
       specialSeason,
       specialEpisodes,
       regularSeasons,
-      animeData
+      animeData,
     );
-    
+
     // If no mappings or target seasons, return as standalone
-    if (!specialsMapping.episodeMappings || !specialsMapping.targetSeasons || specialsMapping.targetSeasons.length === 0) {
-      return [this.createStandaloneSpecialsSeason(specialSeason, specialEpisodes, animeData)];
+    if (
+      !specialsMapping.episodeMappings || !specialsMapping.targetSeasons ||
+      specialsMapping.targetSeasons.length === 0
+    ) {
+      return [
+        this.createStandaloneSpecialsSeason(
+          specialSeason,
+          specialEpisodes,
+          animeData,
+        ),
+      ];
     }
-    
+
     // Create a map of season number -> special episodes for that season
     const seasonToSpecialsMap: Record<number, SkyhookEpisode[]> = {};
-    
+
     // Distribute specials according to mapping
-    specialEpisodes.forEach(special => {
+    specialEpisodes.forEach((special) => {
       const mapping = specialsMapping.episodeMappings?.[special.episodeNumber];
       if (mapping) {
         if (!seasonToSpecialsMap[mapping.seasonNum]) {
@@ -355,32 +402,34 @@ export class SeasonCorrelationMapper {
         seasonToSpecialsMap[mapping.seasonNum].push(special);
       }
     });
-    
+
     // Create enhanced seasons with distributed specials
     return regularSeasons
-      .filter(season => specialsMapping.targetSeasons?.includes(season.season_number) || 
-                        seasonToSpecialsMap[season.season_number]?.length > 0)
-      .map(season => {
+      .filter((season) =>
+        specialsMapping.targetSeasons?.includes(season.season_number) ||
+        seasonToSpecialsMap[season.season_number]?.length > 0
+      )
+      .map((season) => {
         // Find corresponding regular episodes
         const regularEpisodes = allSkyhookEpisodes.filter(
-          episode => episode.seasonNumber === season.season_number
+          (episode) => episode.seasonNumber === season.season_number,
         );
-        
+
         // Get specials for this season
         const seasonSpecials = seasonToSpecialsMap[season.season_number] || [];
-        
+
         // Create enhanced season with distributed specials
         return this.createEnhancedSeasonWithSpecials(
-          season, 
-          regularEpisodes, 
-          seasonSpecials, 
-          specialSeason, 
+          season,
+          regularEpisodes,
+          seasonSpecials,
+          specialSeason,
           specialsMapping,
-          animeData
+          animeData,
         );
       });
   }
-  
+
   /**
    * Creates an enhanced season with specials integrated
    */
@@ -392,14 +441,16 @@ export class SeasonCorrelationMapper {
     specialsMapping: SpecialsMapping,
     animeData?: {
       seasons: number;
-      episodes: Array<{id: number; number: number; type: string; title: string}>;
-    }
+      episodes: Array<
+        { id: number; number: number; type: string; title: string }
+      >;
+    },
   ): EnhancedMergedSeason {
     // Merge regular and special episodes
     const allEpisodes = [...regularEpisodes];
-    
+
     // Insert specials in the right positions
-    specialEpisodes.forEach(special => {
+    specialEpisodes.forEach((special) => {
       // Check for explicit position
       const mapping = specialsMapping.episodeMappings?.[special.episodeNumber];
       if (mapping && mapping.seasonNum === season.season_number) {
@@ -407,58 +458,71 @@ export class SeasonCorrelationMapper {
         const adjustedSpecial = {
           ...special,
           episodeNumber: mapping.episodeNum,
-          isSpecial: true
+          isSpecial: true,
         };
         allEpisodes.push(adjustedSpecial);
-      } else if (special.airedBeforeEpisodeNumber !== undefined && 
-                 special.airedBeforeSeasonNumber === season.season_number) {
+      } else if (
+        special.airedBeforeEpisodeNumber !== undefined &&
+        special.airedBeforeSeasonNumber === season.season_number
+      ) {
         // Insert before the referenced episode
         const adjustedSpecial = {
           ...special,
           episodeNumber: special.airedBeforeEpisodeNumber - 0.5,
-          isSpecial: true
+          isSpecial: true,
         };
         allEpisodes.push(adjustedSpecial);
-      } else if (special.airedAfterEpisodeNumber !== undefined && 
-                special.airedAfterSeasonNumber === season.season_number) {
+      } else if (
+        special.airedAfterEpisodeNumber !== undefined &&
+        special.airedAfterSeasonNumber === season.season_number
+      ) {
         // Insert after the referenced episode
         const adjustedSpecial = {
           ...special,
           episodeNumber: special.airedAfterEpisodeNumber + 0.5,
-          isSpecial: true
+          isSpecial: true,
         };
         allEpisodes.push(adjustedSpecial);
       } else {
         // Default placement at end of season
-        const maxEpisodeNumber = Math.max(...regularEpisodes.map(ep => ep.episodeNumber), 0);
+        const maxEpisodeNumber = Math.max(
+          ...regularEpisodes.map((ep) => ep.episodeNumber),
+          0,
+        );
         const adjustedSpecial = {
           ...special,
           episodeNumber: maxEpisodeNumber + (special.episodeNumber * 0.1),
-          isSpecial: true
+          isSpecial: true,
         };
         allEpisodes.push(adjustedSpecial);
       }
     });
-    
+
     // Sort episodes by episode number
     allEpisodes.sort((a, b) => a.episodeNumber - b.episodeNumber);
-    
+
     // Create the enhanced season
     const enhancedSeason: EnhancedMergedSeason = {
       ...season,
-      episodes: allEpisodes.map(episode => {
+      episodes: allEpisodes.map((episode) => {
         const isSpecial = ('isSpecial' in episode) ? episode.isSpecial : false;
         const originalSeason = isSpecial ? specialSeason : season;
-        
+
         // For specials, find the original TMDb episode
         let tmdbEpisode: TmdbEpisode | undefined;
         if (isSpecial) {
-          const originalEpisodeNumber = specialEpisodes.find(s => s.tvdbId === episode.tvdbId)?.episodeNumber;
-          tmdbEpisode = originalSeason.episodes?.find(e => String(e.episode_number) === String(originalEpisodeNumber));
+          const originalEpisodeNumber = specialEpisodes.find((s) =>
+            s.tvdbId === episode.tvdbId
+          )?.episodeNumber;
+          tmdbEpisode = originalSeason.episodes?.find((e) =>
+            String(e.episode_number) === String(originalEpisodeNumber)
+          );
         } else {
-          tmdbEpisode = originalSeason.episodes?.find(e => String(e.episode_number) === String(episode.episodeNumber));
+          tmdbEpisode = originalSeason.episodes?.find((e) =>
+            String(e.episode_number) === String(episode.episodeNumber)
+          );
         }
-        
+
         if (!tmdbEpisode) {
           tmdbEpisode = {
             id: -1,
@@ -477,22 +541,22 @@ export class SeasonCorrelationMapper {
             runtime: 0,
           };
         }
-        
+
         return this.mergeEpisodeData(
-          tmdbEpisode, 
-          episode, 
-          isSpecial ? 'Integrated special episode' : 'Regular episode', 
-          animeData
+          tmdbEpisode,
+          episode,
+          isSpecial ? 'Integrated special episode' : 'Regular episode',
+          animeData,
         );
       }),
       specialsMapping: specialEpisodes.length > 0 ? specialsMapping : undefined,
-      mappingPattern: specialEpisodes.length > 0 ? 
-        (specialsMapping.integrationStrategy === 'distributed' ? 
-          MappingPattern.SPECIALS_DISTRIBUTED : 
-          MappingPattern.SPECIALS_INTEGRATED) : 
-        MappingPattern.SEQUENTIAL
+      mappingPattern: specialEpisodes.length > 0
+        ? (specialsMapping.integrationStrategy === 'distributed'
+          ? MappingPattern.SPECIALS_DISTRIBUTED
+          : MappingPattern.SPECIALS_INTEGRATED)
+        : MappingPattern.SEQUENTIAL,
     };
-    
+
     return enhancedSeason;
   }
 
@@ -504,9 +568,11 @@ export class SeasonCorrelationMapper {
     skyhookEpisodes: SkyhookEpisode[],
     animeData?: {
       seasons: number;
-      episodes: Array<{id: number; number: number; type: string; title: string}>;
+      episodes: Array<
+        { id: number; number: number; type: string; title: string }
+      >;
     },
-    config?: AnimeSeasonConfig
+    config?: AnimeSeasonConfig,
   ): EnhancedMergedSeason[] {
     // Filter out Season 0
     const regularTmdbSeasons = tmdbSeasons.filter((season) =>
@@ -524,7 +590,7 @@ export class SeasonCorrelationMapper {
         tmdbSeason,
         seasonEpisodes,
         animeData,
-        config
+        config,
       );
 
       // Create enhanced season
@@ -534,7 +600,7 @@ export class SeasonCorrelationMapper {
           tmdbSeason.episodes || [],
           seasonEpisodes,
           mappingPattern,
-          animeData
+          animeData,
         ),
         mappingPattern,
       } as EnhancedMergedSeason;
@@ -550,28 +616,50 @@ export class SeasonCorrelationMapper {
     mappingPattern: MappingPattern,
     animeData?: {
       seasons: number;
-      episodes: Array<{id: number; number: number; type: string; title: string}>;
-    }
+      episodes: Array<
+        { id: number; number: number; type: string; title: string }
+      >;
+    },
   ): EnhancedMergedEpisode[] {
     // Different correlation logic based on mapping pattern
     switch (mappingPattern) {
       case MappingPattern.SEQUENTIAL:
-        return this.correlateSequentialEpisodes(tmdbEpisodes, skyhookEpisodes, animeData);
-      
+        return this.correlateSequentialEpisodes(
+          tmdbEpisodes,
+          skyhookEpisodes,
+          animeData,
+        );
+
       case MappingPattern.SPLIT_COURS:
-        return this.correlateSplitCoursEpisodes(tmdbEpisodes, skyhookEpisodes, animeData);
-      
+        return this.correlateSplitCoursEpisodes(
+          tmdbEpisodes,
+          skyhookEpisodes,
+          animeData,
+        );
+
       case MappingPattern.MERGED_SEASONS:
-        return this.correlateMergedSeasonsEpisodes(tmdbEpisodes, skyhookEpisodes, animeData);
-      
+        return this.correlateMergedSeasonsEpisodes(
+          tmdbEpisodes,
+          skyhookEpisodes,
+          animeData,
+        );
+
       case MappingPattern.REARRANGED:
-        return this.correlateRearrangedEpisodes(tmdbEpisodes, skyhookEpisodes, animeData);
-        
+        return this.correlateRearrangedEpisodes(
+          tmdbEpisodes,
+          skyhookEpisodes,
+          animeData,
+        );
+
       default:
-        return this.correlateSequentialEpisodes(tmdbEpisodes, skyhookEpisodes, animeData);
+        return this.correlateSequentialEpisodes(
+          tmdbEpisodes,
+          skyhookEpisodes,
+          animeData,
+        );
     }
   }
-  
+
   /**
    * Correlates episodes in a sequential pattern (direct 1:1 mapping)
    */
@@ -580,8 +668,10 @@ export class SeasonCorrelationMapper {
     skyhookEpisodes: SkyhookEpisode[],
     animeData?: {
       seasons: number;
-      episodes: Array<{id: number; number: number; type: string; title: string}>;
-    }
+      episodes: Array<
+        { id: number; number: number; type: string; title: string }
+      >;
+    },
   ): EnhancedMergedEpisode[] {
     return zip(tmdbEpisodes, skyhookEpisodes).map(
       ([tmdbEpisode, skyhookEpisode]) => {
@@ -613,20 +703,30 @@ export class SeasonCorrelationMapper {
             airDate: tmdbEpisode?.air_date || '',
             overview: tmdbEpisode?.overview || '',
           } as SkyhookEpisode;
-          
-          const mappingNote = tmdbEpisode ? 
-            'TMDb-only episode' : 
-            'Skyhook-only episode';
 
-          return this.mergeEpisodeData(baseEpisode, baseSkyhook, mappingNote, animeData);
+          const mappingNote = tmdbEpisode
+            ? 'TMDb-only episode'
+            : 'Skyhook-only episode';
+
+          return this.mergeEpisodeData(
+            baseEpisode,
+            baseSkyhook,
+            mappingNote,
+            animeData,
+          );
         }
-        
+
         // Both sources have matching episode data
-        return this.mergeEpisodeData(tmdbEpisode, skyhookEpisode, 'Direct correlation between sources', animeData);
+        return this.mergeEpisodeData(
+          tmdbEpisode,
+          skyhookEpisode,
+          'Direct correlation between sources',
+          animeData,
+        );
       },
     );
   }
-  
+
   /**
    * Correlates episodes in a split cours pattern
    */
@@ -635,26 +735,33 @@ export class SeasonCorrelationMapper {
     skyhookEpisodes: SkyhookEpisode[],
     animeData?: {
       seasons: number;
-      episodes: Array<{id: number; number: number; type: string; title: string}>;
-    }
+      episodes: Array<
+        { id: number; number: number; type: string; title: string }
+      >;
+    },
   ): EnhancedMergedEpisode[] {
     // For split cours mapping, we need to estimate how episodes would be split
     // This is a simplistic approach that would need refinement with real anime data
-    
+
     // Simple approach: just do sequential mapping but note that it's actually split cours
-    return this.correlateSequentialEpisodes(tmdbEpisodes, skyhookEpisodes, animeData)
-      .map(episode => {
+    return this.correlateSequentialEpisodes(
+      tmdbEpisodes,
+      skyhookEpisodes,
+      animeData,
+    )
+      .map((episode) => {
         // Mark this as a split cours episode
         return {
           ...episode,
           provenance: {
             ...episode.provenance,
-            mappingNotes: `${episode.provenance.mappingNotes} (part of split cours anime)`
-          }
+            mappingNotes:
+              `${episode.provenance.mappingNotes} (part of split cours anime)`,
+          },
         };
       });
   }
-  
+
   /**
    * Correlates episodes in a merged seasons pattern
    */
@@ -663,23 +770,30 @@ export class SeasonCorrelationMapper {
     skyhookEpisodes: SkyhookEpisode[],
     animeData?: {
       seasons: number;
-      episodes: Array<{id: number; number: number; type: string; title: string}>;
-    }
+      episodes: Array<
+        { id: number; number: number; type: string; title: string }
+      >;
+    },
   ): EnhancedMergedEpisode[] {
     // Simple approach: just do sequential mapping but note that it's actually merged seasons
-    return this.correlateSequentialEpisodes(tmdbEpisodes, skyhookEpisodes, animeData)
-      .map(episode => {
+    return this.correlateSequentialEpisodes(
+      tmdbEpisodes,
+      skyhookEpisodes,
+      animeData,
+    )
+      .map((episode) => {
         // Mark this as a merged seasons episode
         return {
           ...episode,
           provenance: {
             ...episode.provenance,
-            mappingNotes: `${episode.provenance.mappingNotes} (part of merged anime seasons)`
-          }
+            mappingNotes:
+              `${episode.provenance.mappingNotes} (part of merged anime seasons)`,
+          },
         };
       });
   }
-  
+
   /**
    * Correlates episodes in a rearranged pattern
    */
@@ -688,19 +802,21 @@ export class SeasonCorrelationMapper {
     skyhookEpisodes: SkyhookEpisode[],
     animeData?: {
       seasons: number;
-      episodes: Array<{id: number; number: number; type: string; title: string}>;
-    }
+      episodes: Array<
+        { id: number; number: number; type: string; title: string }
+      >;
+    },
   ): EnhancedMergedEpisode[] {
     // For rearranged episodes, we need to handle airedBefore/airedAfter logic
-    
+
     // First, create a map of episode numbers to TMDb episodes
     const tmdbEpisodeMap: Record<number, TmdbEpisode> = {};
-    tmdbEpisodes.forEach(episode => {
+    tmdbEpisodes.forEach((episode) => {
       tmdbEpisodeMap[Number(episode.episode_number)] = episode;
     });
-    
+
     // Create merged episodes with proper ordering information
-    return skyhookEpisodes.map(skyhookEpisode => {
+    return skyhookEpisodes.map((skyhookEpisode) => {
       const tmdbEpisode = tmdbEpisodeMap[skyhookEpisode.episodeNumber] || {
         id: -1,
         air_date: skyhookEpisode.airDate || '',
@@ -717,24 +833,35 @@ export class SeasonCorrelationMapper {
         show_id: '',
         runtime: 0,
       };
-      
+
       // Construct mapping note
       let mappingNote = 'Rearranged episode order';
-      
-      if (skyhookEpisode.airedBeforeSeasonNumber !== undefined && 
-          skyhookEpisode.airedBeforeEpisodeNumber !== undefined) {
-        mappingNote += ` (aired before S${skyhookEpisode.airedBeforeSeasonNumber}E${skyhookEpisode.airedBeforeEpisodeNumber})`;
+
+      if (
+        skyhookEpisode.airedBeforeSeasonNumber !== undefined &&
+        skyhookEpisode.airedBeforeEpisodeNumber !== undefined
+      ) {
+        mappingNote +=
+          ` (aired before S${skyhookEpisode.airedBeforeSeasonNumber}E${skyhookEpisode.airedBeforeEpisodeNumber})`;
       }
-      
-      if (skyhookEpisode.airedAfterSeasonNumber !== undefined && 
-          skyhookEpisode.airedAfterEpisodeNumber !== undefined) {
-        mappingNote += ` (aired after S${skyhookEpisode.airedAfterSeasonNumber}E${skyhookEpisode.airedAfterEpisodeNumber})`;
+
+      if (
+        skyhookEpisode.airedAfterSeasonNumber !== undefined &&
+        skyhookEpisode.airedAfterEpisodeNumber !== undefined
+      ) {
+        mappingNote +=
+          ` (aired after S${skyhookEpisode.airedAfterSeasonNumber}E${skyhookEpisode.airedAfterEpisodeNumber})`;
       }
-      
-      return this.mergeEpisodeData(tmdbEpisode, skyhookEpisode, mappingNote, animeData);
+
+      return this.mergeEpisodeData(
+        tmdbEpisode,
+        skyhookEpisode,
+        mappingNote,
+        animeData,
+      );
     });
   }
-  
+
   /**
    * Merges episode data from TMDb and Skyhook sources
    */
@@ -744,30 +871,35 @@ export class SeasonCorrelationMapper {
     mappingNote: string,
     animeData?: {
       seasons: number;
-      episodes: Array<{id: number; number: number; type: string; title: string}>;
-    }
+      episodes: Array<
+        { id: number; number: number; type: string; title: string }
+      >;
+    },
   ): EnhancedMergedEpisode {
     // Determine anime episode ID if available
     let animeEpisodeIds;
     if (animeData && this.notify) {
       // Find matching anime episode (simplified logic)
-      const absoluteNumber = skyhookEpisode.absoluteEpisodeNumber || 
+      const absoluteNumber = skyhookEpisode.absoluteEpisodeNumber ||
         (skyhookEpisode.seasonNumber * 100 + skyhookEpisode.episodeNumber);
-      
-      if (absoluteNumber && typeof this.notify.episodes === 'number' && absoluteNumber <= this.notify.episodes) {
+
+      if (
+        absoluteNumber && typeof this.notify.episodes === 'number' &&
+        absoluteNumber <= this.notify.episodes
+      ) {
         animeEpisodeIds = {
-          notify: absoluteNumber
+          notify: absoluteNumber,
         };
       }
     }
-    
+
     // Calculate confidence score
     const confidenceScore = this.calculateConfidenceScore(
       tmdbEpisode,
       skyhookEpisode,
-      animeEpisodeIds !== undefined
+      animeEpisodeIds !== undefined,
     );
-    
+
     return {
       // Basic merged episode data
       id: tmdbEpisode.id,
@@ -777,7 +909,7 @@ export class SeasonCorrelationMapper {
       title: skyhookEpisode.title || tmdbEpisode.name || '',
       airDate: skyhookEpisode.airDate || tmdbEpisode.air_date || '',
       overview: skyhookEpisode.overview || tmdbEpisode.overview || '',
-      
+
       // Skyhook-specific fields
       tvdbShowId: skyhookEpisode.tvdbShowId,
       tvdbId: skyhookEpisode.tvdbId,
@@ -790,7 +922,7 @@ export class SeasonCorrelationMapper {
       runtime: skyhookEpisode.runtime || tmdbEpisode.runtime || 0,
       finaleType: skyhookEpisode.finaleType,
       image: skyhookEpisode.image,
-      
+
       // TMDb-specific fields
       tmdbShowId: tmdbEpisode.show_id || '',
       productionCode: tmdbEpisode.production_code || '',
@@ -799,59 +931,63 @@ export class SeasonCorrelationMapper {
       voteCount: tmdbEpisode.vote_count || 0,
       crew: tmdbEpisode.crew || [],
       guestStars: tmdbEpisode.guest_stars || [],
-      
+
       // Anime-specific fields
       animeEpisodeIds,
-      
+
       // Provenance tracking
       provenance: {
-        sourceType: tmdbEpisode.id > 0 && skyhookEpisode.tvdbId > 0 
-          ? 'merged' 
+        sourceType: tmdbEpisode.id > 0 && skyhookEpisode.tvdbId > 0
+          ? 'merged'
           : (tmdbEpisode.id > 0 ? 'tmdb' : 'skyhook'),
         originalIds: {
           tmdb: tmdbEpisode.id > 0 ? tmdbEpisode.id : undefined,
           tvdb: skyhookEpisode.tvdbId > 0 ? skyhookEpisode.tvdbId : undefined,
         },
         confidence: confidenceScore,
-        mappingNotes: mappingNote
-      }
+        mappingNotes: mappingNote,
+      },
     } as EnhancedMergedEpisode;
   }
-  
+
   /**
    * Calculates a confidence score for episode mapping
    */
   private calculateConfidenceScore(
     tmdbEpisode: TmdbEpisode,
     skyhookEpisode: SkyhookEpisode,
-    hasAnimeMatch: boolean
+    hasAnimeMatch: boolean,
   ): number {
     let score = 0.5; // Start with neutral confidence
-    
+
     // If we have both TMDb and Skyhook data, higher confidence
     if (tmdbEpisode.id > 0 && skyhookEpisode.tvdbId > 0) {
       score += 0.3;
     }
-    
+
     // If episode titles match, higher confidence
-    if (tmdbEpisode.name && 
-        skyhookEpisode.title && 
-        tmdbEpisode.name.toLowerCase() === skyhookEpisode.title.toLowerCase()) {
+    if (
+      tmdbEpisode.name &&
+      skyhookEpisode.title &&
+      tmdbEpisode.name.toLowerCase() === skyhookEpisode.title.toLowerCase()
+    ) {
       score += 0.1;
     }
-    
+
     // If air dates match, higher confidence
-    if (tmdbEpisode.air_date && 
-        skyhookEpisode.airDate && 
-        tmdbEpisode.air_date === skyhookEpisode.airDate?.toString()) {
+    if (
+      tmdbEpisode.air_date &&
+      skyhookEpisode.airDate &&
+      tmdbEpisode.air_date === skyhookEpisode.airDate?.toString()
+    ) {
       score += 0.1;
     }
-    
+
     // If we have anime match, higher confidence
     if (hasAnimeMatch) {
       score += 0.1;
     }
-    
+
     // Cap at 0.99 (never 100% confident)
     return Math.min(score, 0.99);
   }
@@ -863,7 +999,7 @@ export class SeasonCorrelationMapper {
     const tmdbId = this.tmdb?.id ? Number(this.tmdb.id) : undefined;
     const tvdbId = this.skyhook?.tvdbId;
     const animeId = this.notify?.id ? Number(this.notify.id) : undefined;
-    
+
     return getMappingConfig(tmdbId, tvdbId, animeId);
   }
 }

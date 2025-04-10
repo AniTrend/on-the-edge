@@ -97,9 +97,9 @@ export interface AnimeSeasonMappingConfigs {
  */
 export const DEFAULT_MAPPING_CONFIGS: AnimeSeasonMappingConfigs = {
   // This is just a sample, you'd add real shows with known mapping issues here
-  
+
   // Example: Fate/Zero
-  "fate_zero": {
+  'fate_zero': {
     animeIds: {
       mal: 10087,
       anilist: 10087,
@@ -110,12 +110,13 @@ export const DEFAULT_MAPPING_CONFIGS: AnimeSeasonMappingConfigs = {
     },
     mappingPattern: MappingPattern.SPLIT_COURS,
     viewingOrder: {
-      custom: "Watch Fate/Zero before Fate/Stay Night: Unlimited Blade Works for chronological order"
+      custom:
+        'Watch Fate/Zero before Fate/Stay Night: Unlimited Blade Works for chronological order',
     },
   },
-  
+
   // Example: Sword Art Online
-  "sword_art_online": {
+  'sword_art_online': {
     animeIds: {
       mal: 11757,
       anilist: 11757,
@@ -125,18 +126,18 @@ export const DEFAULT_MAPPING_CONFIGS: AnimeSeasonMappingConfigs = {
       tvdb: 259640,
     },
     mappingPattern: MappingPattern.SPLIT_COURS,
-    specialsHandling: "integrated",
+    specialsHandling: 'integrated',
     // Map first half to season 1, second half to season 2, etc.
     seasonMappings: {
-      "1": 1,
-      "2": 1, 
-      "3": 2,
-      "4": 2,
+      '1': 1,
+      '2': 1,
+      '3': 2,
+      '4': 2,
     },
   },
-  
+
   // Example: Attack on Titan / Shingeki no Kyojin
-  "attack_on_titan": {
+  'attack_on_titan': {
     animeIds: {
       mal: 16498,
       anilist: 16498,
@@ -146,11 +147,11 @@ export const DEFAULT_MAPPING_CONFIGS: AnimeSeasonMappingConfigs = {
       tvdb: 267440,
     },
     mappingPattern: MappingPattern.SEQUENTIAL,
-    specialsHandling: "standalone",
+    specialsHandling: 'standalone',
     viewingOrder: {
-      specials: "OVAs can be watched after their corresponding seasons"
-    }
-  }
+      specials: 'OVAs can be watched after their corresponding seasons',
+    },
+  },
 };
 
 /**
@@ -159,7 +160,7 @@ export const DEFAULT_MAPPING_CONFIGS: AnimeSeasonMappingConfigs = {
 export function getMappingConfig(
   tmdbId?: number,
   tvdbId?: number,
-  animeId?: number
+  animeId?: number,
 ): AnimeSeasonConfig | undefined {
   // Create keys to look up in the configuration
   const possibleKeys = [
@@ -169,14 +170,14 @@ export function getMappingConfig(
     tvdbId ? `tvdb${tvdbId}` : undefined,
     animeId ? `anime${animeId}` : undefined,
   ].filter(Boolean) as string[];
-  
+
   // Check each possible key
   for (const key of possibleKeys) {
     if (DEFAULT_MAPPING_CONFIGS[key]) {
       return DEFAULT_MAPPING_CONFIGS[key];
     }
   }
-  
+
   // If no direct match, see if we can match by IDs inside the config
   for (const [_, config] of Object.entries(DEFAULT_MAPPING_CONFIGS)) {
     if (
@@ -191,7 +192,7 @@ export function getMappingConfig(
       return config;
     }
   }
-  
+
   // No match found
   return undefined;
 }

@@ -16,6 +16,7 @@ The season correlation system handles the complex relationship between Western T
 ### 1. SeasonCorrelationMapper
 
 The main class that orchestrates the correlation process:
+
 - Extracts data from Western and anime sources
 - Identifies mapping patterns using detector classes
 - Correlates seasons and episodes according to detected patterns
@@ -24,6 +25,7 @@ The main class that orchestrates the correlation process:
 ### 2. PatternDetector
 
 Identifies the relationship pattern between Western TV seasons and anime:
+
 - **SEQUENTIAL**: Direct 1:1 mapping (most common)
 - **SPLIT_COURS**: One Western season maps to multiple anime cours
 - **MERGED_SEASONS**: Multiple Western seasons map to one anime season
@@ -32,6 +34,7 @@ Identifies the relationship pattern between Western TV seasons and anime:
 ### 3. SpecialsDetector
 
 Specifically handles "Season 0" content with different strategies:
+
 - **SPECIALS_STANDALONE**: Keep specials as a separate season
 - **SPECIALS_INTEGRATED**: Include specials within their related seasons
 - **SPECIALS_DISTRIBUTED**: Distribute specials across multiple seasons
@@ -39,6 +42,7 @@ Specifically handles "Season 0" content with different strategies:
 ### 4. Configuration System
 
 Manual mapping configuration for shows when automatic detection is insufficient:
+
 - Override detected mapping patterns
 - Specify specials handling strategy
 - Define custom episode mappings for complex cases
@@ -56,6 +60,7 @@ Season 0 (specials, OVAs, ONAs) can be handled in three ways:
 ### Split Cours Handling
 
 When one Western season maps to multiple anime cours:
+
 - Adds appropriate metadata noting the split
 - Maintains mapping to the correct anime episodes
 - Allows for proper display of episode ordering
@@ -63,12 +68,13 @@ When one Western season maps to multiple anime cours:
 ### Data Provenance
 
 Each episode maintains tracking information about:
+
 - Which source(s) provided the data (TMDb, Skyhook, anime)
 - Original IDs from each system
 - Confidence score for the mapping
 - Notes explaining mapping decisions
 
-## Configuration 
+## Configuration
 
 For shows with complex mapping that can't be automatically detected, configure them in the `config.ts` file:
 
@@ -97,7 +103,12 @@ For shows with complex mapping that can't be automatically detected, configure t
 
 ```typescript
 // Create mapper with show data from various sources
-const mapper = new SeasonCorrelationMapper(notifyAnime, skyhookShow, tmdbShow, relations);
+const mapper = new SeasonCorrelationMapper(
+  notifyAnime,
+  skyhookShow,
+  tmdbShow,
+  relations,
+);
 
 // Get correlated seasons
 const correlatedSeasons = mapper.correlateSeasons();

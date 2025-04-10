@@ -1,99 +1,1628 @@
-import { assertEquals } from "@std/assert";
-import { 
-  SeasonCorrelationMapper, 
-  MappingPattern, 
-  EnhancedMergedSeason 
-} from "./index.ts";
-import { NotifyAnime } from "../../service/notify/types.ts";
-import { SkyhookShow } from "../../service/skyhook/types.ts";
-import { TmdbShow } from "../../service/tmdb/types.ts";
+import { assertEquals } from '@std/assert';
+import {
+  EnhancedMergedSeason,
+  MappingPattern,
+  SeasonCorrelationMapper,
+} from './index.ts';
+import { NotifyAnime } from '../../service/notify/types.ts';
+import { SkyhookShow } from '../../service/skyhook/types.ts';
+import { TmdbShow } from '../../service/tmdb/types.ts';
+import { toInstant } from '../../../common/helpers/index.ts';
+import {
+  Format,
+  Source,
+  Status,
+} from '../../service/notify/transformer/index.ts';
 
-Deno.test("SeasonCorrelationMapper - Basic correlation", () => {
+Deno.test('SeasonCorrelationMapper - Basic correlation', () => {
   // Setup test data
   const mockTmdb: TmdbShow = {
-    id: 12345,
-    name: "Test Anime",
+    adult: false,
+    backdrop_path: '/9sIjJIHGSOYaAqU7pe2TSSNRmS0.jpg',
+    episode_run_time: [25],
+    first_air_date: '2019-07-08',
+    genres: [
+      { id: 16, name: 'Animation' },
+      { id: 10759, name: 'Action & Adventure' },
+      { id: 18, name: 'Drama' },
+      { id: 10768, name: 'War & Politics' },
+    ],
+    homepage: 'https://vinlandsaga.jp',
+    id: 88803,
+    in_production: true,
+    languages: ['ja'],
+    last_air_date: '2023-03-21',
+    last_episode_to_air: {
+      id: 4148009,
+      name: 'The King and the Sword',
+      overview:
+        'While in Jelling, Ketil, Thorgil and Olmar meet a man named Leif Erikson who is searching for Thorfinn, the son of his close friend.',
+      vote_average: 0,
+      vote_count: 0,
+      air_date: '2023-03-21',
+      episode_number: 11,
+      production_code: '',
+      runtime: 26,
+      season_number: 2,
+      show_id: 88803,
+      still_path: '/5lpzPKNaW1qFUugkXeALjFW66Bp.jpg',
+    },
+    name: 'Vinland Saga',
+    next_episode_to_air: {
+      id: 4148010,
+      name: 'For the Love That Was Lost',
+      overview:
+        "Olmar feels insulted by Canute's messenger and, encouraged by his older brother Thorgil, takes matters into his own hands.",
+      vote_average: 0,
+      vote_count: 0,
+      air_date: '2023-03-28',
+      episode_number: 12,
+      production_code: '',
+      runtime: 26,
+      season_number: 2,
+      show_id: 88803,
+      still_path: null,
+    },
+    networks: [
+      {
+        id: 469,
+        logo_path: '/8hWXAayakmOUZPzmJsqxN7WYnd3.png',
+        name: 'NHK G',
+        origin_country: 'JP',
+      },
+      {
+        id: 614,
+        logo_path: '/hSdroyVthq3CynxTIIY7lnS8w1.png',
+        name: 'Tokyo MX',
+        origin_country: 'JP',
+      },
+      {
+        id: 861,
+        logo_path: '/JQ5bx6n7Qmdmyqz6sqjo5Fz2iR.png',
+        name: 'BS11',
+        origin_country: 'JP',
+      },
+      {
+        id: 1175,
+        logo_path: '/wi1TlXf4tnnnEA5m3DkbH1X7iC9.png',
+        name: 'GBS',
+        origin_country: 'JP',
+      },
+    ],
+    number_of_episodes: 48,
+    number_of_seasons: 2,
+    origin_country: ['JP'],
+    original_language: 'ja',
+    original_name: 'ヴィンランド・サガ',
+    overview:
+      "For a thousand years, the Vikings have made quite a name and reputation for themselves as the strongest families with a thirst for violence. Thorfinn, the son of one of the Vikings' greatest warriors, spends his boyhood in a battlefield enhancing his skills in his adventure to redeem his most-desired revenge after his father was murdered.",
+    popularity: 34.681,
+    poster_path: '/vUHlpA5c1NXkds59reY3HMb4Abs.jpg',
+    production_companies: [
+      {
+        id: 31058,
+        logo_path: '/1vwZPG0zMVRvThCY8Lljh0ppxQo.png',
+        name: 'WIT STUDIO',
+        origin_country: 'JP',
+      },
+      {
+        id: 59118,
+        logo_path: '/9nTCEBgGaaI5swkv8gy2vny0Mb5.png',
+        name: 'Kodansha',
+        origin_country: 'JP',
+      },
+      {
+        id: 120469,
+        logo_path: '/tyNprnyeLLQuNfdqhFf4UEiPayF.png',
+        name: 'Twin Engine',
+        origin_country: 'JP',
+      },
+      {
+        id: 1778,
+        logo_path: '/b5rT6VbYza3LyfltCmz1OcqzWJM.png',
+        name: 'dentsu',
+        origin_country: 'JP',
+      },
+      {
+        id: 150372,
+        logo_path: null,
+        name: 'Sound Team・Don Juan',
+        origin_country: 'JP',
+      },
+      {
+        id: 21444,
+        logo_path: '/wSejGn3lAZdQ5muByxvzigwyDY6.png',
+        name: 'MAPPA',
+        origin_country: 'JP',
+      },
+      {
+        id: 171086,
+        logo_path: null,
+        name: 'Fujipacific Music',
+        origin_country: 'JP',
+      },
+    ],
+    production_countries: [
+      {
+        iso_3166_1: 'JP',
+        name: 'Japan',
+      },
+    ],
     seasons: [
       {
-        id: 1,
-        name: "Season 1",
+        air_date: '2019-07-08',
+        episode_count: 24,
+        id: 123005,
+        name: 'Season 1',
+        overview:
+          "Thorfinn pursues a journey with his father's killer in order to take revenge and end his life in a duel as an honorable warrior and pay his father a homage.",
+        poster_path: '/glSIuIhAmL08IGkPsDreIHgcs6E.jpg',
         season_number: 1,
-        episode_count: 13,
-        air_date: "2022-01-01",
-        poster_path: "",
-        overview: "",
-        episodes: [
-          {
-            id: 101,
-            name: "Episode 1",
-            overview: "Test overview",
-            air_date: "2022-01-01",
-            episode_number: 1,
-            season_number: 1,
-            still_path: "",
-            vote_average: 0,
-            vote_count: 0,
-            production_code: "",
-            crew: [],
-            guest_stars: [],
-            show_id: "12345",
-            runtime: 24
-          },
-          {
-            id: 102,
-            name: "Episode 2",
-            overview: "Test overview",
-            air_date: "2022-01-08",
-            episode_number: 2,
-            season_number: 1,
-            still_path: "",
-            vote_average: 0,
-            vote_count: 0,
-            production_code: "",
-            crew: [],
-            guest_stars: [],
-            show_id: "12345",
-            runtime: 24
-          }
-        ]
-      }
-    ]
+        episodes: null,
+        images: null,
+      },
+      {
+        air_date: '2023-01-10',
+        episode_count: 24,
+        id: 201464,
+        name: 'Season 2',
+        overview:
+          'As a new millennium dawns, Thorfinn struggles to find meaning in his life. Meanwhile, the new King of England seeks to expand his territory.',
+        poster_path: '/xbECOYxvv3f5BVVjQJ1sUAkxirt.jpg',
+        season_number: 2,
+        episodes: null,
+        images: null,
+      },
+    ],
+    spoken_languages: [
+      {
+        english_name: 'Japanese',
+        iso_639_1: 'ja',
+        name: '日本語',
+      },
+    ],
+    status: 'Returning Series',
+    tagline: '',
+    type: 'Scripted',
+    vote_average: 8.6,
+    vote_count: 467,
+    images: {
+      backdrops: [
+        {
+          aspect_ratio: 1.778,
+          height: 2160,
+          iso_639_1: null,
+          file_path: '/9sIjJIHGSOYaAqU7pe2TSSNRmS0.jpg',
+          vote_average: 5.454,
+          vote_count: 3,
+          width: 3840,
+        },
+        {
+          aspect_ratio: 1.778,
+          height: 1080,
+          iso_639_1: null,
+          file_path: '/cIquD62zPPeys2ijAuoUHKVtcCq.jpg',
+          vote_average: 5.312,
+          vote_count: 1,
+          width: 1920,
+        },
+        {
+          aspect_ratio: 1.778,
+          height: 2160,
+          iso_639_1: null,
+          file_path: '/xamCBQePUy9xI42GvtphLuGqd09.jpg',
+          vote_average: 5.246,
+          vote_count: 2,
+          width: 3840,
+        },
+        {
+          aspect_ratio: 1.778,
+          height: 1080,
+          iso_639_1: null,
+          file_path: '/sQj1rwsiBasgffpbiIwSWyKT5j0.jpg',
+          vote_average: 5.18,
+          vote_count: 3,
+          width: 1920,
+        },
+        {
+          aspect_ratio: 1.778,
+          height: 1080,
+          iso_639_1: 'en',
+          file_path: '/epeKkcetNXp6s4J4iRHpe92ahCN.jpg',
+          vote_average: 5.18,
+          vote_count: 3,
+          width: 1920,
+        },
+        {
+          aspect_ratio: 1.778,
+          height: 900,
+          iso_639_1: null,
+          file_path: '/jJAnuiM51otzd0TCcRj57f83j22.jpg',
+          vote_average: 5.18,
+          vote_count: 3,
+          width: 1600,
+        },
+        {
+          aspect_ratio: 1.778,
+          height: 720,
+          iso_639_1: null,
+          file_path: '/pJOmfkUBOUKJ5C1eYgXgi0nZFPN.jpg',
+          vote_average: 5.172,
+          vote_count: 1,
+          width: 1280,
+        },
+        {
+          aspect_ratio: 1.778,
+          height: 1080,
+          iso_639_1: null,
+          file_path: '/5WvGbcjONfpZwFsVB4vxvKtWqp.jpg',
+          vote_average: 0,
+          vote_count: 0,
+          width: 1920,
+        },
+        {
+          aspect_ratio: 1.778,
+          height: 1080,
+          iso_639_1: null,
+          file_path: '/9TX2nlgLhTkoIS8MFb7Fvgc3sRW.jpg',
+          vote_average: 0,
+          vote_count: 0,
+          width: 1920,
+        },
+        {
+          aspect_ratio: 1.778,
+          height: 720,
+          iso_639_1: null,
+          file_path: '/dGZtPUln1X8hHhpW6dgTFklQi5q.jpg',
+          vote_average: 0,
+          vote_count: 0,
+          width: 1280,
+        },
+        {
+          aspect_ratio: 1.778,
+          height: 900,
+          iso_639_1: null,
+          file_path: '/Ailnfk9bp9zztdi2ZagqQXKw1xf.jpg',
+          vote_average: 0,
+          vote_count: 0,
+          width: 1600,
+        },
+        {
+          aspect_ratio: 1.778,
+          height: 720,
+          iso_639_1: null,
+          file_path: '/ezsIPdd83ZTdXJs1WX5BbuPRYK8.jpg',
+          vote_average: 0,
+          vote_count: 0,
+          width: 1280,
+        },
+        {
+          aspect_ratio: 1.778,
+          height: 1080,
+          iso_639_1: null,
+          file_path: '/nSKJ66U8TecHoyJVlt8CwqQRF6Y.jpg',
+          vote_average: 0,
+          vote_count: 0,
+          width: 1920,
+        },
+        {
+          aspect_ratio: 1.778,
+          height: 1080,
+          iso_639_1: null,
+          file_path: '/w2g3VjLs0O7LHsAAOKe0eQRnnf9.jpg',
+          vote_average: 0,
+          vote_count: 0,
+          width: 1920,
+        },
+        {
+          aspect_ratio: 1.778,
+          height: 1080,
+          iso_639_1: null,
+          file_path: '/2Ug5tnUpsAl3VJKlBsQFp1pZNBO.jpg',
+          vote_average: 0,
+          vote_count: 0,
+          width: 1920,
+        },
+        {
+          aspect_ratio: 1.778,
+          height: 1080,
+          iso_639_1: 'ja',
+          file_path: '/jSJNujsXJqT30klZuRiIrhtdF8d.jpg',
+          vote_average: 0,
+          vote_count: 0,
+          width: 1920,
+        },
+        {
+          aspect_ratio: 1.778,
+          height: 1080,
+          iso_639_1: null,
+          file_path: '/c0omsbKo4jYtJSCJr5RWiyzlwDo.jpg',
+          vote_average: 0,
+          vote_count: 0,
+          width: 1920,
+        },
+        {
+          aspect_ratio: 1.778,
+          height: 1080,
+          iso_639_1: null,
+          file_path: '/nNTJFrrPvP21gq2l4ufWtju61V5.jpg',
+          vote_average: 0,
+          vote_count: 0,
+          width: 1920,
+        },
+        {
+          aspect_ratio: 1.778,
+          height: 720,
+          iso_639_1: null,
+          file_path: '/5OrRePcI82PqEUnRUkgSP6piNyb.jpg',
+          vote_average: 0,
+          vote_count: 0,
+          width: 1280,
+        },
+        {
+          aspect_ratio: 1.778,
+          height: 1080,
+          iso_639_1: null,
+          file_path: '/sPN7Ylc7swmyukJeQBNcRAl9usS.jpg',
+          vote_average: 0,
+          vote_count: 0,
+          width: 1920,
+        },
+        {
+          aspect_ratio: 1.778,
+          height: 1080,
+          iso_639_1: null,
+          file_path: '/jnQOwBTtRO2XdHeZMwJQa9vdwuX.jpg',
+          vote_average: 0,
+          vote_count: 0,
+          width: 1920,
+        },
+        {
+          aspect_ratio: 1.778,
+          height: 1080,
+          iso_639_1: null,
+          file_path: '/w2KcF8FQlZaPQ5kL8sepY70KGM.jpg',
+          vote_average: 0,
+          vote_count: 0,
+          width: 1920,
+        },
+        {
+          aspect_ratio: 1.778,
+          height: 1152,
+          iso_639_1: null,
+          file_path: '/pSLuy0OfN1QblifDVoEhAvst4et.jpg',
+          vote_average: 0,
+          vote_count: 0,
+          width: 2048,
+        },
+        {
+          aspect_ratio: 1.778,
+          height: 720,
+          iso_639_1: 'en',
+          file_path: '/tlcrovU6b0AElwUmSILIEMLtYT7.jpg',
+          vote_average: 0,
+          vote_count: 0,
+          width: 1280,
+        },
+        {
+          aspect_ratio: 1.778,
+          height: 720,
+          iso_639_1: 'en',
+          file_path: '/gk2IZnQkTSdLIZjZNEvoqLJrEBT.jpg',
+          vote_average: 0,
+          vote_count: 0,
+          width: 1280,
+        },
+        {
+          aspect_ratio: 1.777,
+          height: 1688,
+          iso_639_1: null,
+          file_path: '/vIIe7fySRVNXZNdARc9DL99PZhG.jpg',
+          vote_average: 0,
+          vote_count: 0,
+          width: 3000,
+        },
+        {
+          aspect_ratio: 1.778,
+          height: 1080,
+          iso_639_1: null,
+          file_path: '/vwljgUvy6eDoxbubk2mBOO0kQbc.jpg',
+          vote_average: 0,
+          vote_count: 0,
+          width: 1920,
+        },
+        {
+          aspect_ratio: 1.778,
+          height: 720,
+          iso_639_1: null,
+          file_path: '/8f4ITrislnLJ7djpK2CfACx9VFz.jpg',
+          vote_average: 0,
+          vote_count: 0,
+          width: 1280,
+        },
+        {
+          aspect_ratio: 1.778,
+          height: 720,
+          iso_639_1: null,
+          file_path: '/rAJfkaBusCYt0oYqWmuibSOiTIz.jpg',
+          vote_average: 0,
+          vote_count: 0,
+          width: 1280,
+        },
+        {
+          aspect_ratio: 1.778,
+          height: 1080,
+          iso_639_1: null,
+          file_path: '/yAp8WIDIgeJBTqSNCFma0EBWm9z.jpg',
+          vote_average: 0,
+          vote_count: 0,
+          width: 1920,
+        },
+        {
+          aspect_ratio: 1.778,
+          height: 1080,
+          iso_639_1: null,
+          file_path: '/bc1EIC2cevJW4HhZGMAUd2KPMvR.jpg',
+          vote_average: 0,
+          vote_count: 0,
+          width: 1920,
+        },
+      ],
+      logos: [
+        {
+          aspect_ratio: 2.419,
+          height: 296,
+          iso_639_1: 'ko',
+          file_path: '/obHWn2Y5brwGraGpMC316tSDWP7.png',
+          vote_average: 5.312,
+          vote_count: 1,
+          width: 716,
+        },
+        {
+          aspect_ratio: 2.836,
+          height: 450,
+          iso_639_1: 'en',
+          file_path: '/6C1KPzEdCVB2x67Z0VTBPAj0HQy.png',
+          vote_average: 5.312,
+          vote_count: 1,
+          width: 1276,
+        },
+        {
+          aspect_ratio: 1.211,
+          height: 298,
+          iso_639_1: 'ja',
+          file_path: '/uKjNdfRwW1NX9lOgrBj0MfUxoMg.png',
+          vote_average: 0,
+          vote_count: 0,
+          width: 361,
+        },
+        {
+          aspect_ratio: 1.213,
+          height: 534,
+          iso_639_1: 'ja',
+          file_path: '/drBRzDGM0zitJzdJKN4UUMzxAV9.png',
+          vote_average: 0,
+          vote_count: 0,
+          width: 648,
+        },
+        {
+          aspect_ratio: 2.353,
+          height: 544,
+          iso_639_1: 'en',
+          file_path: '/3gRatXdgLfzYU9q9WRwuQaIvpGQ.png',
+          vote_average: 0,
+          vote_count: 0,
+          width: 1280,
+        },
+        {
+          aspect_ratio: 0.754,
+          height: 536,
+          iso_639_1: 'ko',
+          file_path: '/iqDanWhIagCDPfaIIZEUOcBzzEX.png',
+          vote_average: 0,
+          vote_count: 0,
+          width: 404,
+        },
+      ],
+      posters: [
+        {
+          aspect_ratio: 0.667,
+          height: 1500,
+          iso_639_1: 'en',
+          file_path: '/vUHlpA5c1NXkds59reY3HMb4Abs.jpg',
+          vote_average: 5.394,
+          vote_count: 10,
+          width: 1000,
+        },
+        {
+          aspect_ratio: 0.709,
+          height: 1500,
+          iso_639_1: 'en',
+          file_path: '/glSIuIhAmL08IGkPsDreIHgcs6E.jpg',
+          vote_average: 5.318,
+          vote_count: 3,
+          width: 1063,
+        },
+        {
+          aspect_ratio: 0.667,
+          height: 1500,
+          iso_639_1: 'ja',
+          file_path: '/7CMA1lJqbQg6VNJ4jbxlfEJsn26.jpg',
+          vote_average: 5.312,
+          vote_count: 1,
+          width: 1000,
+        },
+        {
+          aspect_ratio: 0.701,
+          height: 1426,
+          iso_639_1: 'pt',
+          file_path: '/dbfd26MVZq9tam7T5ckE96MEwOD.jpg',
+          vote_average: 5.312,
+          vote_count: 1,
+          width: 1000,
+        },
+        {
+          aspect_ratio: 0.667,
+          height: 2100,
+          iso_639_1: 'uk',
+          file_path: '/1Nq0EtTJOqVRnIx5TQLLsbR0uFo.jpg',
+          vote_average: 5.312,
+          vote_count: 1,
+          width: 1400,
+        },
+        {
+          aspect_ratio: 0.68,
+          height: 1000,
+          iso_639_1: 'en',
+          file_path: '/8D4VmgK82ZrRXiLBiiakph6H58r.jpg',
+          vote_average: 5.312,
+          vote_count: 1,
+          width: 680,
+        },
+        {
+          aspect_ratio: 0.75,
+          height: 2667,
+          iso_639_1: 'zh',
+          file_path: '/r0BlDe8kp5YUWgQoddrpVrN5i1T.jpg',
+          vote_average: 5.312,
+          vote_count: 1,
+          width: 2000,
+        },
+        {
+          aspect_ratio: 0.667,
+          height: 3000,
+          iso_639_1: 'ko',
+          file_path: '/flEwcwq9auhtBAevtHZbbohMOWE.jpg',
+          vote_average: 5.312,
+          vote_count: 1,
+          width: 2000,
+        },
+        {
+          aspect_ratio: 0.71,
+          height: 1476,
+          iso_639_1: 'ja',
+          file_path: '/fQ0T8o3F2rfB1PQ9BAajLv9rLyE.jpg',
+          vote_average: 5.172,
+          vote_count: 1,
+          width: 1048,
+        },
+        {
+          aspect_ratio: 0.57,
+          height: 1024,
+          iso_639_1: 'ja',
+          file_path: '/kYYy79aY2OxBpX1aKTzypz0xuNl.jpg',
+          vote_average: 5.172,
+          vote_count: 1,
+          width: 584,
+        },
+        {
+          aspect_ratio: 0.712,
+          height: 2772,
+          iso_639_1: 'uk',
+          file_path: '/ppcKngApQ7shuwPlBacmmtAQCy3.jpg',
+          vote_average: 5.172,
+          vote_count: 1,
+          width: 1974,
+        },
+        {
+          aspect_ratio: 0.667,
+          height: 1500,
+          iso_639_1: 'en',
+          file_path: '/kuTXfeVHNKjd7ejYHEDkHF8OFpc.jpg',
+          vote_average: 5.118,
+          vote_count: 4,
+          width: 1000,
+        },
+        {
+          aspect_ratio: 0.707,
+          height: 2828,
+          iso_639_1: null,
+          file_path: '/ourYRaeErMpbfMcSVOc5s31AYq9.jpg',
+          vote_average: 5.106,
+          vote_count: 2,
+          width: 2000,
+        },
+        {
+          aspect_ratio: 0.667,
+          height: 1800,
+          iso_639_1: 'en',
+          file_path: '/17z117UdIdv22fy80AXEU0n6Whr.jpg',
+          vote_average: 5.044,
+          vote_count: 3,
+          width: 1200,
+        },
+        {
+          aspect_ratio: 0.667,
+          height: 960,
+          iso_639_1: 'en',
+          file_path: '/zh3VH700llCYUWaRLxrsEASoth3.jpg',
+          vote_average: 5.044,
+          vote_count: 3,
+          width: 640,
+        },
+        {
+          aspect_ratio: 0.709,
+          height: 2048,
+          iso_639_1: 'en',
+          file_path: '/AuUgiPuvwkBq20kagz4ZcyhkPTY.jpg',
+          vote_average: 4.996,
+          vote_count: 6,
+          width: 1452,
+        },
+        {
+          aspect_ratio: 0.749,
+          height: 750,
+          iso_639_1: 'zh',
+          file_path: '/4C78oLnxAiIeC9vYa0Z7sLkVJx7.jpg',
+          vote_average: 0,
+          vote_count: 0,
+          width: 562,
+        },
+        {
+          aspect_ratio: 0.667,
+          height: 2828,
+          iso_639_1: 'ar',
+          file_path: '/ZtJSgumwvbO7QAhk5byKtK8DZw.jpg',
+          vote_average: 0,
+          vote_count: 0,
+          width: 1886,
+        },
+        {
+          aspect_ratio: 0.702,
+          height: 1425,
+          iso_639_1: 'ja',
+          file_path: '/dQPznfjHyLPKk4t3ZCIh4PKY1Kb.jpg',
+          vote_average: 0,
+          vote_count: 0,
+          width: 1000,
+        },
+        {
+          aspect_ratio: 0.706,
+          height: 2265,
+          iso_639_1: 'ko',
+          file_path: '/onWPDUIw29v4HqffselymVzsvBV.jpg',
+          vote_average: 0,
+          vote_count: 0,
+          width: 1600,
+        },
+        {
+          aspect_ratio: 0.68,
+          height: 1000,
+          iso_639_1: 'en',
+          file_path: '/qoYy1mKQ3np3uLfD4CUSlY2vmEZ.jpg',
+          vote_average: 0,
+          vote_count: 0,
+          width: 680,
+        },
+        {
+          aspect_ratio: 0.68,
+          height: 1000,
+          iso_639_1: 'en',
+          file_path: '/qF38o1JUALy9AtnCVWYPwJ50zO9.jpg',
+          vote_average: 0,
+          vote_count: 0,
+          width: 680,
+        },
+        {
+          aspect_ratio: 0.751,
+          height: 1998,
+          iso_639_1: 'ru',
+          file_path: '/fsMSJYJo2DkyHnmZI6iBMjJpEDr.jpg',
+          vote_average: 0,
+          vote_count: 0,
+          width: 1500,
+        },
+        {
+          aspect_ratio: 0.667,
+          height: 3000,
+          iso_639_1: 'en',
+          file_path: '/dMLbKudUC9PK0yBIoYFs646Tibq.jpg',
+          vote_average: 0,
+          vote_count: 0,
+          width: 2000,
+        },
+        {
+          aspect_ratio: 0.666,
+          height: 2560,
+          iso_639_1: 'en',
+          file_path: '/l3CYOpPYh6uGYyjxTgpjzfVJAFq.jpg',
+          vote_average: 0,
+          vote_count: 0,
+          width: 1706,
+        },
+      ],
+    },
   };
 
   const mockSkyhook: SkyhookShow = {
-    tvdbId: 67890,
-    name: "Test Anime",
-    episodes: [
+    tvdbId: 359274,
+    title: 'Vinland Saga',
+    overview:
+      "For a thousand years, the Vikings have made quite a name and reputation for themselves as the strongest families with a thirst for violence. Thorfinn, the son of one of the Vikings' greatest warriors, spends his boyhood in a battlefield enhancing his skills in his adventure to redeem his most-desired revenge after his father was murdered.",
+    slug: 'vinland-saga',
+    originalLanguage: 'jpn',
+    language: 'eng',
+    firstAired: toInstant('2019-07-08'),
+    tvMazeId: 42155,
+    lastUpdated: toInstant('2023-03-22T17:08:01Z'),
+    originalCountry: 'JP',
+    lastAired: new Date('2023-03-28'),
+    status: 'Continuing',
+    runtime: 26,
+    timeOfDay: {
+      hours: 0,
+      minutes: 30,
+    },
+    originalNetwork: 'NHK',
+    network: 'Tokyo MX',
+    imdbId: 'tt10233448',
+    genres: [
+      'Action',
+      'Adventure',
+      'Animation',
+      'Anime',
+      'Drama',
+      'History',
+      'War',
+    ],
+    contentRating: 'TV-MA',
+    actors: [
       {
-        tvdbShowId: 67890,
-        tvdbId: 201,
-        title: "Episode 1",
-        overview: "Test overview",
-        airDate: "2022-01-01",
-        seasonNumber: 1,
-        episodeNumber: 1,
-        absoluteEpisodeNumber: 1
+        name: 'Shizuka Ishigami',
+        character: 'Thorfinn (childhood)',
       },
       {
-        tvdbShowId: 67890,
-        tvdbId: 202,
-        title: "Episode 2",
-        overview: "Test overview",
-        airDate: "2022-01-08",
+        name: 'Yuto Uemura',
+        character: 'Thorfinn',
+      },
+      {
+        name: "Ken'ichirou Matsuda",
+        character: 'Thors',
+      },
+      {
+        name: 'Naoya Uchida',
+        character: 'Askeladd',
+      },
+      {
+        name: 'Hiroki Yasumoto',
+        character: 'Bjorn',
+      },
+      {
+        name: 'Akio Ootsuka',
+        character: 'Thorkell',
+      },
+      {
+        name: 'Atsushi Ono',
+        character: 'Floki',
+      },
+      {
+        name: 'Youji Ueda',
+        character: 'Leif Ericson',
+      },
+      {
+        name: 'Ao Takahashi',
+        character: 'Helga',
+      },
+      {
+        name: 'Hitomi Nabatame',
+        character: 'Ylva',
+      },
+      {
+        name: 'Jin Urayama',
+        character: 'Ragnar',
+      },
+      {
+        name: 'Satoshi Hino',
+        character: 'Willibald',
+      },
+      {
+        name: 'Ryouta Takeuchi',
+        character: 'Asgeir',
+      },
+      {
+        name: 'Takayuki Sugou',
+        character: 'Sweyn',
+      },
+      {
+        name: 'Hiroki Gotou',
+        character: 'Torgrim',
+      },
+      {
+        name: "Shin'ya Takahashi",
+        character: 'Atli',
+      },
+      {
+        name: 'Makoto Furukawa',
+        character: 'The Ear',
+      },
+      {
+        name: 'Mitsuhiro Ichiki',
+        character: 'Ari',
+      },
+      {
+        name: 'Yoshimitsu Shimoyama',
+        character: 'Halfdan',
+      },
+      {
+        name: 'Kensho Ono',
+        character: 'Canute',
+      },
+      {
+        name: 'Hiroki Yasumoto',
+        character: 'Bjon',
+      },
+      {
+        name: 'Shunsuke Takeuchi',
+        character: 'Einar',
+      },
+      {
+        name: 'Kenshi Okada',
+        character: 'Canute',
+      },
+      {
+        name: 'Mayumi Sako',
+        character: 'Arnheid',
+      },
+      {
+        name: 'Fuminori Komatsu',
+        character: 'Snake',
+      },
+      {
+        name: 'Yuu Hayashi',
+        character: 'Olmar',
+      },
+      {
+        name: 'Taiten Kusunoki',
+        character: 'Thorgil',
+      },
+      {
+        name: 'Hideaki Tezuka',
+        character: 'Ketil',
+      },
+      {
+        name: 'Mugihito',
+        character: 'Sverkel',
+      },
+    ],
+    images: [
+      {
+        coverType: 'Banner',
+        url: 'https://artworks.thetvdb.com/banners/graphical/5cc0e9967bcac.jpg',
+      },
+      {
+        coverType: 'Poster',
+        url:
+          'https://artworks.thetvdb.com/banners/v4/series/359274/posters/6091b3847ff64.jpg',
+      },
+      {
+        coverType: 'Fanart',
+        url:
+          'https://artworks.thetvdb.com/banners/fanart/original/5db7486ab8178.jpg',
+      },
+    ],
+    seasons: [
+      {
+        seasonNumber: 1,
+        images: [
+          {
+            coverType: 'Poster',
+            url:
+              'https://artworks.thetvdb.com/banners/v4/season/807819/posters/60eea3bae0270.jpg',
+          },
+        ],
+      },
+      {
+        seasonNumber: 2,
+        images: [
+          {
+            coverType: 'Poster',
+            url:
+              'https://artworks.thetvdb.com/banners/v4/season/1988566/posters/63570c148d85f.jpg',
+          },
+        ],
+      },
+    ],
+    episodes: [
+      {
+        tvdbShowId: 359274,
+        tvdbId: 7152184,
+        seasonNumber: 1,
+        episodeNumber: 1,
+        absoluteEpisodeNumber: 1,
+        title: 'Somewhere not here',
+        airDate: new Date('2019-07-08'),
+        airDateUtc: new Date('2019-07-07T15:30:00Z'),
+        runtime: 25,
+        overview:
+          'Thorfinn, a boy living in Iceland, longs for adventure and is eager to know more about the world. He dreams of a land of paradise called Vinland that he hears about from the adventurer Leif, while he leads his peaceful life with this father Thors, a former warrior. One day, Thors saves a runaway slave and sets a series of events in motion. This is the story of a true warrior in an age of turmoil.',
+        image:
+          'https://artworks.thetvdb.com/banners/series/359274/episodes/7152184.jpg',
+      },
+      {
+        tvdbShowId: 359274,
+        tvdbId: 7244089,
         seasonNumber: 1,
         episodeNumber: 2,
-        absoluteEpisodeNumber: 2
-      }
-    ]
+        absoluteEpisodeNumber: 2,
+        title: 'Sword',
+        airDate: new Date('2019-07-08'),
+        airDateUtc: new Date('2019-07-07T15:30:00Z'),
+        runtime: 25,
+        overview:
+          "In the year 1002, the war between England and Denmark was intensifying. One day, the Jomsvikings pay a visit to Thorfinn's village in order to bring back Thors, their former commander, to prepare for the impending battle. Thors is forced to join the war in order to protect the villagers from being taken hostage, and must face his accursed past in order to save his family and his village.",
+        image:
+          'https://artworks.thetvdb.com/banners/series/359274/episodes/7244089.jpg',
+      },
+      {
+        tvdbShowId: 359274,
+        tvdbId: 7244091,
+        seasonNumber: 1,
+        episodeNumber: 3,
+        absoluteEpisodeNumber: 3,
+        title: 'Troll',
+        airDate: new Date('2019-07-08'),
+        airDateUtc: new Date('2019-07-07T15:30:00Z'),
+        runtime: 25,
+        overview:
+          'Askeladd, the leader of a Viking army of a hundred men, receives orders from Floki of the Jomsvikings to kill Thors, who was once known as the Troll of Jom. However, the villagers, completely unaware of the order, buzz with excitement as they prepare for their first battle. Thorfinn also joins in the excitement. Thors and his men are about to embark on a difficult sea journey to England.',
+        image:
+          'https://artworks.thetvdb.com/banners/series/359274/episodes/7244091.jpg',
+      },
+      {
+        tvdbShowId: 359274,
+        tvdbId: 7244100,
+        seasonNumber: 1,
+        episodeNumber: 4,
+        absoluteEpisodeNumber: 4,
+        title: 'A True Warrior',
+        airDate: new Date('2019-07-29'),
+        airDateUtc: new Date('2019-07-28T15:30:00Z'),
+        runtime: 25,
+        overview:
+          'Thors and his men fall for Askeladd’s trap and face a dangerous situation, but Thors defeats many of Askeladd’s men with his overpowering strength. However, Thors knows that it will be difficult to save everyone, including his son, who’ve been living in a peaceful village their entire lives, and makes a tough decision',
+        image:
+          'https://artworks.thetvdb.com/banners/series/359274/episodes/7244100.jpg',
+      },
+      {
+        tvdbShowId: 359274,
+        tvdbId: 7244101,
+        seasonNumber: 1,
+        episodeNumber: 5,
+        absoluteEpisodeNumber: 5,
+        title: "The Troll's Son",
+        airDate: new Date('2019-08-05'),
+        airDateUtc: new Date('2019-08-04T15:30:00Z'),
+        runtime: 25,
+        overview:
+          'After Askeladd kills Thorfinn’s father Thors, Thorfinn hides inside Thor’s ship and bides his time until the opportunity to take revenge. However, life on the ship is harsh without any food or water, and Thorfinn grows weaker day by day. One day, Thorfinn, armed with his sword, attempt to attack Askeladd in his sleep',
+        image:
+          'https://artworks.thetvdb.com/banners/series/359274/episodes/7244101.jpg',
+      },
+      {
+        tvdbShowId: 359274,
+        tvdbId: 7244102,
+        seasonNumber: 1,
+        episodeNumber: 6,
+        absoluteEpisodeNumber: 6,
+        title: 'The Journey Begins',
+        airDate: new Date('2019-08-12'),
+        airDateUtc: new Date('2019-08-11T15:30:00Z'),
+        runtime: 25,
+        overview:
+          'Thorfinn goes to battle for the first time as a member of Askeladd’s army. After witnessing the harsh reality of the war to conquer England first-hand, Thorfinn tries to run away, but later throws himself into battle in order to get revenge for his father by defeating Askeladd. One night, Thorfinn gets wounded in battle, and is saved by a mother and daughter living in a village by the sea.',
+        image:
+          'https://artworks.thetvdb.com/banners/series/359274/episodes/7244102.jpg',
+      },
+      {
+        tvdbShowId: 359274,
+        tvdbId: 7244103,
+        seasonNumber: 1,
+        episodeNumber: 7,
+        absoluteEpisodeNumber: 7,
+        title: 'Normanni',
+        airDate: new Date('2019-08-19'),
+        airDateUtc: new Date('2019-08-18T15:30:00Z'),
+        runtime: 25,
+        overview:
+          'Askeladd withdraws temporarily from the war against England. While searching for a new source of income, he encounters a skirmish among the Franks and hatches a plot to steal their treasure. Askeladd sends 16 years old Thorfinn, who has grown up into a cold-hearted Viking, ahead as a messenger.',
+        image:
+          'https://artworks.thetvdb.com/banners/series/359274/episodes/7244103.jpg',
+      },
+      {
+        tvdbShowId: 359274,
+        tvdbId: 7244104,
+        seasonNumber: 1,
+        episodeNumber: 8,
+        absoluteEpisodeNumber: 8,
+        title: 'Beyond the Edge of the Sea',
+        airDate: new Date('2019-08-26'),
+        airDateUtc: new Date('2019-08-25T15:30:00Z'),
+        runtime: 25,
+        overview:
+          'After capturing the treasure from the Franks, Askeladd’s men return to the village of Gorm on the Jutland Peninsula in Denmark to pass the winter. Thorfinn challenges Askeladd to a duel as a reward for bringing him the head of the captain of the clan of Franks. Even though Thorfinn has grown in skill through his experience in battle, he is still no match for Askeladd.',
+        image:
+          'https://artworks.thetvdb.com/banners/series/359274/episodes/7244104.jpg',
+      },
+      {
+        tvdbShowId: 359274,
+        tvdbId: 7244105,
+        seasonNumber: 1,
+        episodeNumber: 9,
+        absoluteEpisodeNumber: 9,
+        title: 'The Battle of London Bridge',
+        airDate: new Date('2019-09-02'),
+        airDateUtc: new Date('2019-09-01T15:30:00Z'),
+        runtime: 25,
+        overview:
+          'In October 1013, King Sweyn leads a fleet of Danish and Viking ships in an attempt to take London Bridge of England. Askeladd’s army, hired by the army of Denmark, was among them. However, after the betrayal of Thorkell the Tall, a Viking known for his overpowering strength, London Bridge has become impregnable. Askeladd tells Thorfinn he’ll reward him with a duel if he’s able to kill Thorkell.',
+        image:
+          'https://artworks.thetvdb.com/banners/series/359274/episodes/7244105.jpg',
+      },
+      {
+        tvdbShowId: 359274,
+        tvdbId: 7244107,
+        seasonNumber: 1,
+        episodeNumber: 10,
+        absoluteEpisodeNumber: 10,
+        title: 'Ragnarok',
+        airDate: new Date('2019-09-16'),
+        airDateUtc: new Date('2019-09-15T15:30:00Z'),
+        runtime: 25,
+        overview:
+          'Askeladd’s army separates from the army of Denmark and attacks a village 100 km to the west. Thorfinn leaves the soldiers behind in disgust and climbs up a hill overlooking the village, where he pledges revenge for his father. However, he encounters Askeladd sitting in the darkness, who tells him about "Britannia", the aging of the world, and Ragnarok, the final battle.',
+        image:
+          'https://artworks.thetvdb.com/banners/series/359274/episodes/7244107.jpg',
+      },
+      {
+        tvdbShowId: 359274,
+        tvdbId: 7244108,
+        seasonNumber: 1,
+        episodeNumber: 11,
+        absoluteEpisodeNumber: 11,
+        title: 'A Gamble',
+        airDate: new Date('2019-09-23'),
+        airDateUtc: new Date('2019-09-22T15:30:00Z'),
+        runtime: 25,
+        overview:
+          'Thorkell takes Canute hostage and follows after the main army of Denmark. Ragnar objects to Thorkell’s plan to take on the entire army of Denmark, boasting 16,000 soldiers, with only 500 men. Thorkell then begins to tell Ragnar the story of Valhalla, the pride of Normans, a place where only those who die in battle can go.',
+        image:
+          'https://artworks.thetvdb.com/banners/series/359274/episodes/7244108.jpg',
+      },
+      {
+        tvdbShowId: 359274,
+        tvdbId: 7412737,
+        seasonNumber: 1,
+        episodeNumber: 12,
+        absoluteEpisodeNumber: 12,
+        title: 'The Land on the Far Bank',
+        airDate: new Date('2019-09-30'),
+        airDateUtc: new Date('2019-09-29T15:30:00Z'),
+        runtime: 25,
+        overview:
+          'Askeladd and his men continue their march to escape from Thorkell. However, their march comes to a halt at the Severn River. Askeladd hands a letter to an old man operating a ferry across the river and tells him to deliver the letter to the other side immediately. As soon as he hears the addressee’s name, the old man sets off in his boat.',
+        image:
+          'https://artworks.thetvdb.com/banners/series/359274/episodes/7412737.jpg',
+      },
+      {
+        tvdbShowId: 359274,
+        tvdbId: 7420022,
+        seasonNumber: 1,
+        episodeNumber: 13,
+        absoluteEpisodeNumber: 13,
+        title: 'Child of a Hero',
+        airDate: new Date('2019-10-07'),
+        airDateUtc: new Date('2019-10-06T15:30:00Z'),
+        runtime: 25,
+        overview:
+          'Askeladd crosses the river and escapes from Thorkell into Wales with Canute. However, Askeladd’s men are ambushed by a group of soldiers hiding behind the boulders at the border of the kingdom of Brycheiniog. Askeladd attempts to negotiate with their messenger, and reveals his plan.',
+        image:
+          'https://artworks.thetvdb.com/banners/series/359274/episodes/7420022.jpg',
+      },
+      {
+        tvdbShowId: 359274,
+        tvdbId: 7420023,
+        seasonNumber: 1,
+        episodeNumber: 14,
+        absoluteEpisodeNumber: 14,
+        title: 'Servant',
+        airDate: new Date('2019-11-04'),
+        airDateUtc: new Date('2019-11-03T15:30:00Z'),
+        runtime: 25,
+        overview:
+          'Askeladd’s men continued their march to escape Thorkell. However, Torgrim and his friends were hatching a plot to switch sides and join Thorkell, taking Canute with them. Torgrim finally launches his rebellion and corners Askeladd, negotiating with him to hand over Canute, then Thorkell arrives in the midst of the confusion.',
+        image:
+          'https://artworks.thetvdb.com/banners/series/359274/episodes/7420023.jpg',
+      },
+      {
+        tvdbShowId: 359274,
+        tvdbId: 7420023, // If duplicate, ensure unique ids; adjust as necessary.
+        seasonNumber: 1,
+        episodeNumber: 15,
+        absoluteEpisodeNumber: 15,
+        title: 'Out of the Cradle',
+        airDate: new Date('2019-11-18'),
+        airDateUtc: new Date('2019-11-17T15:30:00Z'),
+        runtime: 25,
+        overview:
+          'Thorfinn and Thorkell agree to have a duel over the fate of Askeladd. Thorkell looks forward to facing off against Thors’s son, Thorfinn, and asks him what a true warrior really is. Meanwhile, Canute is suddenly ambushed while he attempts to escape, and has a dream about a certain individual.',
+        image:
+          'https://artworks.thetvdb.com/banners/series/359274/episodes/7420023.jpg',
+      },
+      {
+        tvdbShowId: 359274,
+        tvdbId: 7453095,
+        seasonNumber: 1,
+        episodeNumber: 16,
+        absoluteEpisodeNumber: 16,
+        title: 'United Front',
+        airDate: new Date('2019-11-25'),
+        airDateUtc: new Date('2019-11-24T15:30:00Z'),
+        runtime: 25,
+        overview:
+          'Thorfinn suffers a serious injury in his fight against Thorkell. Thorfinn is told to think about what he has to do to beat Thorkell. Askeladd treats Thorfinn’s wounds so that he may fight again someday, and proposes a joint strategy to help the two of them survive longer.',
+        image:
+          'https://artworks.thetvdb.com/banners/series/359274/episodes/7453095.jpg',
+      },
+      {
+        tvdbShowId: 359274,
+        tvdbId: 7454118,
+        seasonNumber: 1,
+        episodeNumber: 17,
+        absoluteEpisodeNumber: 17,
+        title: 'Crown',
+        airDate: new Date('2019-12-02'),
+        airDateUtc: new Date('2019-12-01T15:30:00Z'),
+        runtime: 25,
+        overview:
+          'After the fighting dies down, Canute takes in Askeladd and Thorkell as his followers, and returns to Gainsborough. Canute goes through an awakening when he realizes the meaning of love in the aftermath of Ragnar’s death. Canute throws away what little feelings he had left for his father, and joins Askeladd in plotting to assassinate King Sweyn.',
+        image:
+          'https://artworks.thetvdb.com/banners/series/359274/episodes/7454118.jpg',
+      },
+      {
+        tvdbShowId: 359274,
+        tvdbId: 7464357,
+        seasonNumber: 1,
+        episodeNumber: 18,
+        absoluteEpisodeNumber: 18,
+        title: 'Reunion',
+        airDate: new Date('2019-12-09'),
+        airDateUtc: new Date('2019-12-08T15:30:00Z'),
+        runtime: 25,
+        overview:
+          'Canute’s party arrives in York to attend the Imperial Council. Although Canute had wanted to strike out against King Sweyn, the King was being guarded by the most powerful Jomsviking unit in the Northern Sea while keeping a close eye on Canute. With the situation strained to the breaking point, Askeladd comes up with a plan. Meanwhile, Thorfinn is reunited with a person who knew his former self.',
+        image:
+          'https://artworks.thetvdb.com/banners/series/359274/episodes/7464357.jpg',
+      },
+      {
+        tvdbShowId: 359274,
+        tvdbId: 7464358,
+        seasonNumber: 1,
+        episodeNumber: 19,
+        absoluteEpisodeNumber: 19,
+        title: 'Lone Wolf',
+        airDate: new Date('2019-12-16'),
+        airDateUtc: new Date('2019-12-15T15:30:00Z'),
+        runtime: 25,
+        overview:
+          'Thorfinn begins his duel against Askeladd with Canute and Thorkell as witnesses. However, Thorfinn is unable to strike as he stands overwhelmed by the extraordinary mood that overtakes Askeladd after Bjorn’s departure. Having noticed Thorfinn’s hesitation, Askeladd lays down his sword and provokes Thorfinn into an unarmed fight, which incites Thorfinn’s fury.',
+        image:
+          'https://artworks.thetvdb.com/banners/series/359274/episodes/7464358.jpg',
+      },
+      {
+        tvdbShowId: 359274,
+        tvdbId: 7464359,
+        seasonNumber: 1,
+        episodeNumber: 20,
+        absoluteEpisodeNumber: 20,
+        title: 'Miscalculation',
+        airDate: new Date('2019-12-23'),
+        airDateUtc: new Date('2019-12-22T15:30:00Z'),
+        runtime: 25,
+        overview:
+          'After the assassination attempt on Canute’s life, rumors spread through York saying that the king is trying to kill Canute. As a result, the king is unable to issue any orders that would put Canute in harm, and Askeladd is pleased that everything is proceeding as planned. However, the tables turn when King Sweyn speaks. Meanwhile, Thorfinn is sent to prison as punishment for disturbing the peace.',
+      },
+      {
+        tvdbShowId: 359274,
+        tvdbId: 7464360,
+        seasonNumber: 1,
+        episodeNumber: 21,
+        absoluteEpisodeNumber: 21,
+        title: 'End of the Prologue',
+        airDate: new Date('2019-12-30'),
+        airDateUtc: new Date('2019-12-29T15:30:00Z'),
+        runtime: 25,
+        overview:
+          'Askeladd comes forth before King Sweyn and implores him to halt his invasion of Wales. Meanwhile, Thorfinn decides to return home at Leif’s urging. However, the moment before he boards the ship, Thorfinn catches a glimpse of a single tern taking off into the sky...',
+        image:
+          'https://artworks.thetvdb.com/banners/series/359274/episodes/7464360.jpg',
+      },
+      {
+        tvdbShowId: 359274,
+        tvdbId: 9040137,
+        seasonNumber: 2,
+        episodeNumber: 1,
+        absoluteEpisodeNumber: 25,
+        title: 'Slave',
+        airDate: new Date('2023-01-10'),
+        airDateUtc: new Date('2023-01-09T15:30:00Z'),
+        runtime: 26,
+        overview:
+          'Einar lives peacefully in northern England with his mother and sister, but then one day, their village comes under attack.',
+        image:
+          'https://artworks.thetvdb.com/banners/v4/episode/9040137/screencap/63c00a5e500bf.jpg',
+      },
+      {
+        tvdbShowId: 359274,
+        tvdbId: 9524421,
+        seasonNumber: 2,
+        episodeNumber: 2,
+        absoluteEpisodeNumber: 26,
+        title: "Ketil's Farm",
+        airDate: new Date('2023-01-17'),
+        airDateUtc: new Date('2023-01-16T15:30:00Z'),
+        runtime: 26,
+        overview:
+          'Einar and Thorfinn are told to convert a wild forest into a wheat field; and if they succeed, they will have the chance to buy their own freedom.',
+        image:
+          'https://artworks.thetvdb.com/banners/v4/episode/9524421/screencap/63d2c48111ec3.jpg',
+      },
+      {
+        tvdbShowId: 359274,
+        tvdbId: 9524422,
+        seasonNumber: 2,
+        episodeNumber: 3,
+        absoluteEpisodeNumber: 27,
+        title: 'Snake',
+        airDate: new Date('2023-01-24'),
+        airDateUtc: new Date('2023-01-23T15:30:00Z'),
+        runtime: 26,
+        overview:
+          'The farm guards convince Ketil’s 17-year-old son that he needs to make his first killing to become a man.',
+        image:
+          'https://artworks.thetvdb.com/banners/v4/episode/9524422/screencap/63ca64c578281.jpg',
+      },
+      {
+        tvdbShowId: 359274,
+        tvdbId: 9524423,
+        seasonNumber: 2,
+        episodeNumber: 4,
+        absoluteEpisodeNumber: 28,
+        title: 'Awakening',
+        airDate: new Date('2023-01-31'),
+        airDateUtc: new Date('2023-01-30T15:30:00Z'),
+        runtime: 26,
+        overview:
+          "After everything that happened, Einar asks Thorfinn if he's ever fought in a war — and if he's ever killed a man.",
+        image:
+          'https://artworks.thetvdb.com/banners/v4/episode/9524423/screencap/63d3eea4c2059.jpg',
+      },
+      {
+        tvdbShowId: 359274,
+        tvdbId: 9524424,
+        seasonNumber: 2,
+        episodeNumber: 5,
+        absoluteEpisodeNumber: 29,
+        title: 'The Path of Blood',
+        airDate: new Date('2023-02-07'),
+        airDateUtc: new Date('2023-02-06T15:30:00Z'),
+        runtime: 26,
+        overview:
+          'After the sudden turn of events, young Canute must rise up to claim the throne to a kingdom much reduced and under attack.',
+        image:
+          'https://artworks.thetvdb.com/banners/v4/episode/9524424/screencap/63dd1735a1c98.jpg',
+      },
+      {
+        tvdbShowId: 359274,
+        tvdbId: 9524425,
+        seasonNumber: 2,
+        episodeNumber: 6,
+        absoluteEpisodeNumber: 30,
+        title: 'I Want a Horse',
+        airDate: new Date('2023-02-14'),
+        airDateUtc: new Date('2023-02-13T15:30:00Z'),
+        runtime: 26,
+        overview:
+          "Thorfinn and Einar are working themselves to the bone to clear the forest, but there's only so much they can do without the help of horses.",
+        image:
+          'https://artworks.thetvdb.com/banners/v4/episode/9524425/screencap/63e14a8d9d29c.jpg',
+      },
+      {
+        tvdbShowId: 359274,
+        tvdbId: 9524426,
+        seasonNumber: 2,
+        episodeNumber: 7,
+        absoluteEpisodeNumber: 31,
+        title: 'Iron Fist Ketil',
+        airDate: new Date('2023-02-21'),
+        airDateUtc: new Date('2023-02-20T15:30:00Z'),
+        runtime: 26,
+        overview:
+          "Thieves have been stealing food from Ketil's farm. Meanwhile, Ketil's eldest son Thorgil returns home.",
+        image:
+          'https://artworks.thetvdb.com/banners/v4/episode/9524426/screencap/63f2048cf3fb1.jpg',
+      },
+      {
+        tvdbShowId: 359274,
+        tvdbId: 9524427,
+        seasonNumber: 2,
+        episodeNumber: 8,
+        absoluteEpisodeNumber: 32,
+        title: 'An Empty Man',
+        airDate: new Date('2023-02-28'),
+        airDateUtc: new Date('2023-02-27T15:30:00Z'),
+        runtime: 26,
+        overview:
+          'Thorfinn has nightmares almost every night, but he can never remember what he dreamed about — and that bothers him.',
+        image:
+          'https://artworks.thetvdb.com/banners/v4/episode/9524427/screencap/63fb8f52f0748.jpg',
+      },
+      {
+        tvdbShowId: 359274,
+        tvdbId: 9524428,
+        seasonNumber: 2,
+        episodeNumber: 9,
+        absoluteEpisodeNumber: 33,
+        title: 'Oath',
+        airDate: new Date('2023-03-07'),
+        airDateUtc: new Date('2023-03-06T15:30:00Z'),
+        runtime: 26,
+        overview:
+          'Thorfinn wakes up in a peaceful place and he sees his father again. But then things quickly turn dark, and Thorfinn must face his painful past.',
+        image:
+          'https://artworks.thetvdb.com/banners/v4/episode/9524428/screencap/6416639414300.jpg',
+      },
+      {
+        tvdbShowId: 359274,
+        tvdbId: 9524429,
+        seasonNumber: 2,
+        episodeNumber: 10,
+        absoluteEpisodeNumber: 34,
+        title: 'Cursed Head',
+        airDate: new Date('2023-03-14'),
+        airDateUtc: new Date('2023-03-13T15:30:00Z'),
+        runtime: 26,
+        overview:
+          'Finally, after three long years, Einar and Thorfinn chop down the final tree in the forest. With hope in their hearts, they talk about the future.',
+        image:
+          'https://artworks.thetvdb.com/banners/v4/episode/9524429/screencap/6410d2d733f46.jpg',
+      },
+      {
+        tvdbShowId: 359274,
+        tvdbId: 9524430,
+        seasonNumber: 2,
+        episodeNumber: 11,
+        absoluteEpisodeNumber: 35,
+        title: 'The King and the Sword',
+        airDate: new Date('2023-03-21'),
+        airDateUtc: new Date('2023-03-20T15:30:00Z'),
+        runtime: 26,
+        overview:
+          'While in Jelling, Ketil, Thorgil and Olmar meet a man named Leif Erikson who is searching for Thorfinn, the son of his close friend.',
+        image:
+          'https://artworks.thetvdb.com/banners/v4/episode/9524430/screencap/641655b07d3a5.jpg',
+      },
+      {
+        tvdbShowId: 359274,
+        tvdbId: 9524431,
+        seasonNumber: 2,
+        episodeNumber: 12,
+        absoluteEpisodeNumber: 36,
+        title: 'For the Love That Was Lost',
+        airDate: new Date('2023-03-28'),
+        airDateUtc: new Date('2023-03-27T15:30:00Z'),
+      },
+      {
+        tvdbShowId: 359274,
+        tvdbId: 9672479,
+        seasonNumber: 2,
+        episodeNumber: 13,
+        airDate: new Date('2023-04-04'),
+        airDateUtc: new Date('2023-04-03T15:30:00Z'),
+        runtime: 26,
+      },
+      {
+        tvdbShowId: 359274,
+        tvdbId: 9672480,
+        seasonNumber: 2,
+        episodeNumber: 14,
+        airDate: new Date('2023-04-11'),
+        airDateUtc: new Date('2023-04-10T15:30:00Z'),
+        runtime: 26,
+      },
+      {
+        tvdbShowId: 359274,
+        tvdbId: 9672481,
+        seasonNumber: 2,
+        episodeNumber: 15,
+        airDate: new Date('2023-04-18'),
+        airDateUtc: new Date('2023-04-17T15:30:00Z'),
+        runtime: 26,
+      },
+      {
+        tvdbShowId: 359274,
+        tvdbId: 9672482,
+        seasonNumber: 2,
+        episodeNumber: 16,
+        airDate: new Date('2023-04-25'),
+        airDateUtc: new Date('2023-04-24T15:30:00Z'),
+        runtime: 26,
+      },
+      {
+        tvdbShowId: 359274,
+        tvdbId: 9672483,
+        seasonNumber: 2,
+        episodeNumber: 17,
+        airDate: new Date('2023-05-02'),
+        airDateUtc: new Date('2023-05-01T15:30:00Z'),
+        runtime: 26,
+      },
+      {
+        tvdbShowId: 359274,
+        tvdbId: 9672484,
+        seasonNumber: 2,
+        episodeNumber: 18,
+        airDate: new Date('2023-05-09'),
+        airDateUtc: new Date('2023-05-08T15:30:00Z'),
+        runtime: 26,
+      },
+      {
+        tvdbShowId: 359274,
+        tvdbId: 9672485,
+        seasonNumber: 2,
+        episodeNumber: 19,
+        airDate: new Date('2023-05-16'),
+        airDateUtc: new Date('2023-05-15T15:30:00Z'),
+      },
+      {
+        tvdbShowId: 359274,
+        tvdbId: 9672486,
+        seasonNumber: 2,
+        episodeNumber: 20,
+        airDate: new Date('2023-05-23'),
+        airDateUtc: new Date('2023-05-22T15:30:00Z'),
+      },
+      {
+        tvdbShowId: 359274,
+        tvdbId: 9672487,
+        seasonNumber: 2,
+        episodeNumber: 21,
+        airDate: new Date('2023-05-30'),
+        airDateUtc: new Date('2023-05-29T15:30:00Z'),
+      },
+      {
+        tvdbShowId: 359274,
+        tvdbId: 9672488,
+        seasonNumber: 2,
+        episodeNumber: 22,
+        airDate: new Date('2023-06-06'),
+        airDateUtc: new Date('2023-06-05T15:30:00Z'),
+      },
+      {
+        tvdbShowId: 359274,
+        tvdbId: 9672489,
+        seasonNumber: 2,
+        episodeNumber: 23,
+        airDate: new Date('2023-06-13'),
+        airDateUtc: new Date('2023-06-12T15:30:00Z'),
+      },
+      {
+        tvdbShowId: 359274,
+        tvdbId: 9672490,
+        seasonNumber: 2,
+        episodeNumber: 24,
+        airDate: new Date('2023-06-20'),
+        airDateUtc: new Date('2023-06-19T15:30:00Z'),
+        runtime: 26,
+      },
+    ],
   };
 
   const mockNotify: NotifyAnime = {
-    id: '1001',
-    title: "Test Anime",
-    format: "TV",
-    episodes: 13,
-    ovas: 2,
-    seasons: 1
+    id: 'Y3IK2Fiig',
+    title: {
+      canonical: 'Vinland Saga',
+      romaji: 'Vinland Saga',
+      english: 'Vinland Saga',
+      native: 'ヴィンランド・サガ',
+      harigana: '',
+      synonyms: [],
+    },
+    summary:
+      "For a thousand years, the Vikings have made quite a name and reputation for themselves as the strongest families with a thirst for violence. Thorfinn, the son of one of the Vikings' greatest warriors, spends his boyhood in a battlefield enhancing his skills in his adventure to redeem his most-desired revenge after his father was murdered.",
+    status: Status.FINISHED,
+    startDate: 1562544000000,
+    endDate: 1577664000000,
+    episodeCount: 24,
+    episodeLength: 24,
+    source: Source.MANGA,
+    rating: {
+      overall: 8.60598290598291,
+      story: 8.83333333333333,
+      visuals: 9.17777777777778,
+      soundtrack: 8.52222222222222,
+      count: {
+        overall: 351,
+        story: 27,
+        visuals: 27,
+        soundtrack: 27,
+      },
+    },
+    trailers: [
+      {
+        site: 'youtube',
+        id: 'Rwiua0hXOVo',
+      },
+      {
+        site: 'youtube',
+        id: 'UkJmBWvCfNU',
+      },
+      {
+        site: 'youtube',
+        id: '3xAlirMzjCQ',
+      },
+      {
+        site: 'youtube',
+        id: '5xqEp7R9SYM',
+      },
+    ],
+    episodes: [
+      { id: 'eJ_3T2KZRL', number: 1, title: '' },
+      { id: 'eJl3ThFWgE', number: 2, title: '' },
+      { id: 'eJ_3ThKWRy', number: 3, title: '' },
+      { id: 'eJlqo2KZRU', number: 4, title: '' },
+      { id: 'eJ_qT2KZgw', number: 5, title: '' },
+      { id: 'e1lqohKWgl', number: 6, title: '' },
+      { id: 'eJ_3o2KZgX', number: 7, title: '' },
+      { id: 'e1lqo2FWR9', number: 8, title: '' },
+      { id: 'gx_3ohFZg', number: 9, title: '' },
+      { id: 'RblqT2KZRz', number: 10, title: '' },
+      { id: 'RblqThKZgm', number: 11, title: '' },
+      { id: 'Rxlqo2FZgZ', number: 12, title: '' },
+      { id: 'gxlqohFWRM', number: 13, title: '' },
+      { id: 'gb_3T2KZR7', number: 14, title: '' },
+      { id: 'Rbl3ThKWgV', number: 15, title: '' },
+      { id: 'p4MnT8TWRo', number: 16, title: '' },
+      { id: 'tVG7oUTZR0', number: 17, title: '' },
+      { id: 'tVM7oUoZg1', number: 18, title: '' },
+      { id: 'p4GnTUTWRx', number: 19, title: '' },
+      { id: 'p4GnoUoZg-', number: 20, title: '' },
+      { id: 'tVMnTUoWRf', number: 21, title: '' },
+      { id: 'tVMnoUoZRY', number: 22, title: '' },
+      { id: 't4G7o8TZgP', number: 23, title: '' },
+      { id: 'p4M7o8TZRs', number: 24, title: '' },
+    ],
+    format: Format.TV,
+    poster: {
+      color: 'black',
+      large: 'https://artworks.thetvdb.com/banners/v4/series/359274/large.jpg',
+    },
+    mediaId: {
+      animedb: '13945',
+      myanimelist: '37521',
+      anilist: '101348',
+      kitsu: '41084',
+      shoboi: '5390',
+    },
   };
 
   // Create mapper instance
@@ -101,144 +1630,160 @@ Deno.test("SeasonCorrelationMapper - Basic correlation", () => {
     mockNotify,
     mockSkyhook,
     mockTmdb,
-    []
+    [],
   );
 
   // Perform correlation
   const correlatedSeasons = mapper.correlateSeasons();
 
   // Assertions
-  assertEquals(correlatedSeasons.length, 1, "Should return one season");
-  assertEquals(correlatedSeasons[0].season_number, 1, "Should be season 1");
-  assertEquals(correlatedSeasons[0].episodes.length, 2, "Should have 2 episodes");
-  assertEquals(correlatedSeasons[0].mappingPattern, MappingPattern.SEQUENTIAL, "Should use sequential mapping");
-  assertEquals(correlatedSeasons[0].episodes[0].provenance.sourceType, "merged", "Episode should have merged source type");
-  assertEquals(correlatedSeasons[0].episodes[0].animeEpisodeIds?.notify, 1, "Episode should have anime ID");
+  assertEquals(correlatedSeasons.length, 1, 'Should return one season');
+  assertEquals(correlatedSeasons[0].season_number, 1, 'Should be season 1');
+  assertEquals(
+    correlatedSeasons[0].episodes.length,
+    2,
+    'Should have 2 episodes',
+  );
+  assertEquals(
+    correlatedSeasons[0].mappingPattern,
+    MappingPattern.SEQUENTIAL,
+    'Should use sequential mapping',
+  );
+  assertEquals(
+    correlatedSeasons[0].episodes[0].provenance.sourceType,
+    'merged',
+    'Episode should have merged source type',
+  );
+  assertEquals(
+    correlatedSeasons[0].episodes[0].animeEpisodeIds?.notify,
+    1,
+    'Episode should have anime ID',
+  );
 });
 
-Deno.test("SeasonCorrelationMapper - Special episodes handling", () => {
+Deno.test('SeasonCorrelationMapper - Special episodes handling', () => {
   // Setup test data with Season 0 (specials)
   const mockTmdb: TmdbShow = {
     id: 12345,
-    name: "Test Anime",
+    name: 'Test Anime',
     seasons: [
       {
         id: 0,
-        name: "Specials",
+        name: 'Specials',
         season_number: 0,
         episode_count: 2,
-        air_date: "2022-01-01",
-        poster_path: "",
-        overview: "",
+        air_date: '2022-01-01',
+        poster_path: '',
+        overview: '',
         episodes: [
           {
             id: 1,
-            name: "Special 1",
-            overview: "Special episode",
-            air_date: "2021-12-25",
+            name: 'Special 1',
+            overview: 'Special episode',
+            air_date: '2021-12-25',
             episode_number: 1,
             season_number: 0,
-            still_path: "",
+            still_path: '',
             vote_average: 0,
             vote_count: 0,
-            production_code: "",
+            production_code: '',
             crew: [],
             guest_stars: [],
-            show_id: "12345",
-            runtime: 24
+            show_id: '12345',
+            runtime: 24,
           },
           {
             id: 2,
-            name: "Special 2",
-            overview: "Special episode",
-            air_date: "2022-06-30",
+            name: 'Special 2',
+            overview: 'Special episode',
+            air_date: '2022-06-30',
             episode_number: 2,
             season_number: 0,
-            still_path: "",
+            still_path: '',
             vote_average: 0,
             vote_count: 0,
-            production_code: "",
+            production_code: '',
             crew: [],
             guest_stars: [],
-            show_id: "12345",
-            runtime: 24
-          }
-        ]
+            show_id: '12345',
+            runtime: 24,
+          },
+        ],
       },
       {
         id: 1,
-        name: "Season 1",
+        name: 'Season 1',
         season_number: 1,
         episode_count: 12,
-        air_date: "2022-01-01",
-        poster_path: "",
-        overview: "",
+        air_date: '2022-01-01',
+        poster_path: '',
+        overview: '',
         episodes: [
           {
             id: 101,
-            name: "Episode 1",
-            overview: "Test overview",
-            air_date: "2022-01-01",
+            name: 'Episode 1',
+            overview: 'Test overview',
+            air_date: '2022-01-01',
             episode_number: 1,
             season_number: 1,
-            still_path: "",
+            still_path: '',
             vote_average: 0,
             vote_count: 0,
-            production_code: "",
+            production_code: '',
             crew: [],
             guest_stars: [],
-            show_id: "12345",
-            runtime: 24
-          }
-        ]
-      }
-    ]
+            show_id: '12345',
+            runtime: 24,
+          },
+        ],
+      },
+    ],
   };
 
   const mockSkyhook: SkyhookShow = {
     tvdbId: 67890,
-    name: "Test Anime",
+    name: 'Test Anime',
     episodes: [
       {
         tvdbShowId: 67890,
         tvdbId: 1,
-        title: "OVA 1",
-        overview: "Special episode",
-        airDate: "2021-12-25",
+        title: 'OVA 1',
+        overview: 'Special episode',
+        airDate: '2021-12-25',
         seasonNumber: 0,
         episodeNumber: 1,
-        absoluteEpisodeNumber: null
+        absoluteEpisodeNumber: null,
       },
       {
         tvdbShowId: 67890,
         tvdbId: 2,
-        title: "OVA 2",
-        overview: "Special episode",
-        airDate: "2022-06-30",
+        title: 'OVA 2',
+        overview: 'Special episode',
+        airDate: '2022-06-30',
         seasonNumber: 0,
         episodeNumber: 2,
-        absoluteEpisodeNumber: null
+        absoluteEpisodeNumber: null,
       },
       {
         tvdbShowId: 67890,
         tvdbId: 101,
-        title: "Episode 1",
-        overview: "Test overview",
-        airDate: "2022-01-01",
+        title: 'Episode 1',
+        overview: 'Test overview',
+        airDate: '2022-01-01',
         seasonNumber: 1,
         episodeNumber: 1,
-        absoluteEpisodeNumber: 1
-      }
-    ]
+        absoluteEpisodeNumber: 1,
+      },
+    ],
   };
 
   const mockNotify: NotifyAnime = {
     id: 1001,
-    title: "Test Anime",
-    format: "TV",
+    title: 'Test Anime',
+    format: 'TV',
     episodes: 12,
     ovas: 2,
-    seasons: 1
+    seasons: 1,
   };
 
   // Create mapper instance
@@ -246,23 +1791,43 @@ Deno.test("SeasonCorrelationMapper - Special episodes handling", () => {
     mockNotify,
     mockSkyhook,
     mockTmdb,
-    []
+    [],
   );
 
   // Perform correlation
   const correlatedSeasons = mapper.correlateSeasons();
 
   // Assertions
-  assertEquals(correlatedSeasons.length >= 1, true, "Should return at least one season");
-  
+  assertEquals(
+    correlatedSeasons.length >= 1,
+    true,
+    'Should return at least one season',
+  );
+
   // Find Season 0
-  const specialsSeason = correlatedSeasons.find(s => s.season_number === 0);
-  assertEquals(specialsSeason !== undefined, true, "Should have specials season");
-  
+  const specialsSeason = correlatedSeasons.find((s) => s.season_number === 0);
+  assertEquals(
+    specialsSeason !== undefined,
+    true,
+    'Should have specials season',
+  );
+
   if (specialsSeason) {
-    assertEquals(specialsSeason.isSpecial, true, "Should be marked as special");
-    assertEquals(specialsSeason.episodes.length, 2, "Should have 2 special episodes");
-    assertEquals(specialsSeason.mappingPattern !== undefined, true, "Should have a mapping pattern");
-    assertEquals(specialsSeason.specialsMapping !== undefined, true, "Should have specials mapping info");
+    assertEquals(specialsSeason.isSpecial, true, 'Should be marked as special');
+    assertEquals(
+      specialsSeason.episodes.length,
+      2,
+      'Should have 2 special episodes',
+    );
+    assertEquals(
+      specialsSeason.mappingPattern !== undefined,
+      true,
+      'Should have a mapping pattern',
+    );
+    assertEquals(
+      specialsSeason.specialsMapping !== undefined,
+      true,
+      'Should have specials mapping info',
+    );
   }
 });
