@@ -7,10 +7,7 @@ import { SkyhookEpisode, SkyhookShow } from '../service/skyhook/types.ts';
 import { TmdbEpisode, TmdbSeason, TmdbShow } from '../service/tmdb/types.ts';
 import { MergedEpisode, MergedSeason } from '../transformer/types.ts';
 import { AnimeRelationId } from '../service/arm/types.ts';
-import {
-  EnhancedMergedSeason,
-  SeasonCorrelationMapper,
-} from './season-correlation/index.ts';
+import { SeasonCorrelationMapper } from './season-correlation/index.ts';
 
 export default class SeasonRepository {
   constructor() {}

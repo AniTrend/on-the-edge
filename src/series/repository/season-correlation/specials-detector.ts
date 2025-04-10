@@ -10,7 +10,7 @@ export class SpecialsDetector {
    * Detects how specials should be handled based on content analysis
    */
   public static detectSpecialsType(
-    specialSeason: TmdbSeason,
+    _specialSeason: TmdbSeason,
     specialEpisodes: SkyhookEpisode[],
     animeData?: {
       seasons: number;
@@ -42,10 +42,10 @@ export class SpecialsDetector {
    * Analyzes special episodes to generate a specials mapping
    */
   public static analyzeSpecials(
-    specialSeason: TmdbSeason,
+    _specialSeason: TmdbSeason,
     specialEpisodes: SkyhookEpisode[],
     regularSeasons: TmdbSeason[],
-    animeData?: {
+    _animeData?: {
       seasons: number;
       episodes: Array<
         { id: number; number: number; type: string; title: string }
@@ -343,7 +343,7 @@ export class SpecialsDetector {
    */
   private static determineIntegrationStrategy(
     specialEpisodes: SkyhookEpisode[],
-    regularSeasons: TmdbSeason[],
+    _regularSeasons: TmdbSeason[],
     specialType: SpecialsMapping['specialType'],
     chronologicalPosition: SpecialsMapping['chronologicalPosition'],
   ): SpecialsMapping['integrationStrategy'] {

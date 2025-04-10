@@ -137,7 +137,7 @@ export class SeasonCorrelationMapper {
   private handleSpecials(
     tmdbSeasons: TmdbSeason[],
     skyhookEpisodes: SkyhookEpisode[],
-    specialsHandling?: 'standalone' | 'integrated' | 'distributed',
+    _specialsHandling?: 'standalone' | 'integrated' | 'distributed',
   ): EnhancedMergedSeason[] {
     // Find Season 0 if it exists
     const specialSeason = tmdbSeasons.find((season) =>

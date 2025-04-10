@@ -91,7 +91,7 @@ export class PatternDetector {
    * Detects if episodes are rearranged between sources
    */
   private static detectRearrangedEpisodes(
-    tmdbSeason: TmdbSeason,
+    _tmdbSeason: TmdbSeason,
     skyhookEpisodes: SkyhookEpisode[],
   ): boolean {
     // Check for episodes with airedBefore or airedAfter fields set
