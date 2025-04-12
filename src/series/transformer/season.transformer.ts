@@ -11,8 +11,8 @@ import {
 import { MergedEpisode, MergedSeason } from './types.ts';
 
 const transformImage = (
-  images: TmdbImage[],
   imageType: ImageProviderType,
+  images?: TmdbImage[],
 ): SeriesImageBackdrop[] =>
   images?.map((data) => ({
     locale: data.iso_639_1,
@@ -71,11 +71,11 @@ export const seasonTransformer = (
     cover: provider.getImageUrl('original', season.poster_path),
     image: {
       backdrops: transformImage(
-        season.images.backdrops,
         ImageProviderType.BACKDROP,
+        season.images?.backdrops,
       ),
-      logos: transformImage(season.images.logos, ImageProviderType.LOGO),
-      posters: transformImage(season.images.posters, ImageProviderType.POSTER),
+      logos: transformImage(ImageProviderType.LOGO, season.images?.logos),
+      posters: transformImage(ImageProviderType.POSTER, season.images?.posters),
     },
     episodes: season.episodes.map(transformEpisode),
   })) ?? [];

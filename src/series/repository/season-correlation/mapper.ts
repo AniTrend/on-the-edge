@@ -235,7 +235,7 @@ export class SeasonCorrelationMapper {
       episodes: specialEpisodes.map((skyhookEpisode, index) => {
         const tmdbEpisode: TmdbEpisode = specialSeason.episodes?.[index] || {
           id: -1,
-          air_date: skyhookEpisode.airDate?.toDateString() || '',
+          air_date: skyhookEpisode.airDate?.toString() || '',
           episode_number: skyhookEpisode.episodeNumber.toString(),
           name: skyhookEpisode.title || '',
           overview: skyhookEpisode.overview || '',
@@ -529,7 +529,7 @@ export class SeasonCorrelationMapper {
         if (!tmdbEpisode) {
           tmdbEpisode = {
             id: -1,
-            air_date: episode.airDate.toDateString() || '',
+            air_date: episode.airDate.toString() || '',
             episode_number: episode.episodeNumber.toString(),
             name: episode.title || '',
             overview: episode.overview || '',

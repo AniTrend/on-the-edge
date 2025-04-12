@@ -22,5 +22,5 @@ export type MergedSeason = {
   overview: string;
   poster_path: string;
   season_number: number;
-  images: TmdbImages;
+  images?: TmdbImages;
 };

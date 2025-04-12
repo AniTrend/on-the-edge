@@ -416,6 +416,7 @@
       "jsr:@std/http@1.0.13",
       "jsr:@std/testing@1.0.9",
       "npm:@logtail/node@0.5.2",
+      "npm:@opentelemetry/api@1.9.0",
       "npm:mongodb@6.15.0"
     ]
   }
