@@ -13,7 +13,7 @@
     "@growthbook": "jsr:@growthbook/growthbook@1.2.2",
     "@xml": "jsr:@libs/xml@6.0.4",
     "@logtail": "npm:@logtail/node@0.5.4",
-    "@mongodb": "npm:mongodb@6.15.0",
+    "@mongodb": "npm:mongodb@6.16.0-dev.20250501.sha.f57c51b9",
     "@otel": "npm:@opentelemetry/api@1.9.0"
   }
 }
