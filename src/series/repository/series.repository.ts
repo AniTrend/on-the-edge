@@ -10,7 +10,7 @@ import { getThemesForAnime } from '../service/theme/index.ts';
 import { getTmdbShow } from '../service/tmdb/index.ts';
 import { getTraktShow } from '../service/trakt/index.ts';
 import { seriesTransform } from '../transformer/series.transformer.ts';
-import { MediaWithSeason } from '../types.ts';
+import { MediaEntity, MediaWithSeason } from '../types.ts';
 import { isManga } from '../utils/index.ts';
 import LocalSource from '../local/series.local.source.ts';
 import SeasonRepository from './season.repository.ts';
@@ -32,7 +32,7 @@ export default class SeriesRepository {
 
   private fetchFromRemote = async (
     id: MediaParamId,
-  ): Promise<MediaWithSeason> => {
+  ): Promise<IResponse<MediaEntity>> => {
     const relation = await getAniListRelationId(id.anilist);
 
     const [notify, mal] = await Promise.all([
@@ -66,7 +66,7 @@ export default class SeriesRepository {
       );
     }
 
-    const result: MediaWithSeason = {
+    const mediaWithSeason: MediaWithSeason = {
       ...seriesTransform(
         relation,
         skyhook,
@@ -79,11 +79,10 @@ export default class SeriesRepository {
       seasons: seasonTransformer(seasons),
     };
 
-    await this.local.save(result);
-    return result;
+    return await this.local.save(mediaWithSeason);
   };
 
-  getById = async (id: MediaParamId): Promise<IResponse<MediaWithSeason>> => {
+  getById = async (id: MediaParamId): Promise<IResponse<MediaEntity>> => {
     const localContent = await this.local.get(id);
 
     if (localContent.data != null) {
@@ -92,10 +91,6 @@ export default class SeriesRepository {
       }
     }
 
-    const remoteContent = await this.fetchFromRemote(id);
-
-    return {
-      data: remoteContent,
-    };
+    return await this.fetchFromRemote(id);
   };
 }

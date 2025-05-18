@@ -6,7 +6,7 @@ import {
 } from '@mongodb';
 import { logger } from '../../common/core/logger.ts';
 import { IResponse } from '../../common/types/response.ts';
-import { MediaWithSeason } from '../types.ts';
+import { MediaEntity, MediaWithSeason } from '../types.ts';
 import { transform } from './series.local.transformer.ts';
 import { MediaDocument } from './types.ts';
 import { MediaParamId } from './types.ts';
@@ -18,7 +18,7 @@ export default class LocalSource {
     private readonly collection?: Collection<MediaDocument>,
   ) {}
 
-  get = async (mediaId: MediaParamId): Promise<IResponse<MediaWithSeason>> => {
+  get = async (mediaId: MediaParamId): Promise<IResponse<MediaEntity>> => {
     const filter: Filter<Document> = {
       'mediaId.anilist': mediaId.anilist,
     };
@@ -52,31 +52,60 @@ export default class LocalSource {
     };
   };
 
-  save = async (media: MediaWithSeason) => {
+  save = async (media: MediaWithSeason): Promise<IResponse<MediaEntity>> => {
+    if (!this.collection) {
+      logger.error('seriese.local.source:save: Collection is not initialized');
+      throw new Error('Collection not initialized');
+    }
+
     const filter: Filter<Document> = {
       'mediaId.anilist': media.mediaId.anilist,
     };
     const options: FindOneAndReplaceOptions = {
       upsert: true,
+      returnDocument: 'after',
     };
     const replacement: MediaDocument = {
       ...media,
     };
 
     logger.mark('series_source_save_start');
-    await this.collection?.findOneAndReplace(filter, replacement, options)
-      ?.then((result) => {
-        logger.debug('seriese.local.source:save: Saved document', result?._id);
-        logger.mark('series_source_save_end');
-      })?.catch((e) => {
+    try {
+      const document = await this.collection.findOneAndReplace(
+        filter,
+        replacement,
+        options,
+      );
+      logger.mark('series_source_save_end');
+      logger.measure(
+        between('series_source_save_start', 'series_source_save_end'),
+      );
+      logger.debug(
+        'seriese.local.source:save: Document saved or updated',
+        document?._id,
+      );
+      if (!document) {
+        // This should ideally not be reached if upsert:true and returnDocument:'after' work as expected
         logger.error(
-          'seriese.local.source:save: Unable to save collection',
-          [filter, e],
+          'seriese.local.source:save: Save operation did not return a document despite upsert and returnDocument:after',
+          filter,
         );
-      })?.finally(() => {
-        logger.measure(
-          between('series_source_save_start', 'series_source_save_end'),
+        throw new Error(
+          'Save operation unexpectedly failed to return document',
         );
-      });
+      }
+      logger.debug('seriese.local.source:save: Saved document', document._id);
+      return {
+        data: transform(document) ?? null,
+      };
+    } catch (e) {
+      logger.error(
+        'seriese.local.source:save: Unable to save collection',
+        { filter, error: e instanceof Error ? e.message : String(e) },
+      );
+      throw new Error(
+        `Failed to save media: ${e instanceof Error ? e.message : String(e)}`,
+      );
+    }
   };
 }

@@ -78,7 +78,7 @@ export interface TmdbCrew {
   name: string;
   original_name: string;
   popularity: number;
-  profile_path: null | string;
+  profile_path: string | null;
   character?: string;
   order?: number;
 }
