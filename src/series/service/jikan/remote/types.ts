@@ -18,6 +18,12 @@ interface Period {
   };
 }
 
+interface MalImage {
+  image_url: string;
+  small_image_url: string;
+  large_image_url: string;
+}
+
 interface MalResource {
   mal_id: number;
   url: string;
@@ -29,16 +35,8 @@ interface MalResource {
     }
   >;
   images: {
-    jpg: {
-      image_url: string;
-      small_image_url: string;
-      large_image_url: string;
-    };
-    webp: {
-      image_url: string;
-      small_image_url: string;
-      large_image_url: string;
-    };
+    jpg: MalImage;
+    webp: MalImage;
   };
   title: string;
   title_english: string;
