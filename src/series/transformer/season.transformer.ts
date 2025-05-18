@@ -48,7 +48,7 @@ const transformEpisode = (episode: MergedEpisode): SeriesEpisode => ({
   airedAfterSeasonNumber: episode.airedAfterSeasonNumber,
   airedAfterEpisodeNumber: episode.airedAfterEpisodeNumber,
   title: episode.title,
-  airDate: episode.airDateUtc,
+  airDate: toInstant(episode.airDateUtc),
   runtime: episode.runtime,
   overview: episode.overview,
   image: episode.image,
