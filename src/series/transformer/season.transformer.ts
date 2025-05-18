@@ -18,7 +18,7 @@ const transformImage = (
     locale: data.iso_639_1,
     height: data.height,
     width: data.width,
-    url: provider.getUrl(data, imageType),
+    url: provider.getUrl(data, imageType) ?? '',
   })) ?? [];
 
 const transformCrew = (crew: TmdbCrew): SeriesEpisodeCrew => ({

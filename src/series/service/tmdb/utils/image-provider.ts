@@ -25,10 +25,10 @@ export class ImageProvider {
     this.stillSizes = images.still_sizes;
   }
 
-  getImageUrl = (size: string, file_path: string | null) =>
-    `${this.baseImageUrl}${size}${file_path}`;
+  getImageUrl = (size: string, file_path: string | null): string | undefined =>
+    file_path ? `${this.baseImageUrl}${size}${file_path}` : undefined;
 
-  getUrl(image: Image, type: ImageProviderType): string {
+  getUrl(image: Image, type: ImageProviderType): string | undefined {
     switch (type) {
       case ImageProviderType.POSTER:
         return this.getImageUrl(
