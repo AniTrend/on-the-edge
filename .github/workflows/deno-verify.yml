@@ -18,6 +18,8 @@ jobs:
 
       - name: setup deno
         uses: denoland/setup-deno@v2
+        with:
+          cache: true
 
       - name: Run deno linter
         run: deno lint
