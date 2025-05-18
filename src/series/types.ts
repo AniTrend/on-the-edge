@@ -101,7 +101,7 @@ export type SeriesEpisode = {
   airedAfterSeasonNumber?: number;
   airedAfterEpisodeNumber?: number;
   title?: string;
-  airDate: Date;
+  airDate: Instant;
   runtime?: number;
   overview?: string;
   image?: string;
