@@ -11,7 +11,8 @@ on:
   push:
     branches:
       - dev
-    tags: "*"
+    tags: 
+      - '*'
 
 jobs:
   build-image:
