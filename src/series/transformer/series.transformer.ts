@@ -209,7 +209,7 @@ export const seriesTransform = (
   trakt?: TraktShow,
 ): Media => ({
   mediaId: seriesId(relation, skyhook, tmdb, notify, jikan, trakt),
-  banner: jikan?.background ?? tmdb?.backdrop_path ?? skyhook?.banner ?? null,
+  banner: tmdb?.backdrop_path ?? skyhook?.banner ?? null,
   cover: seriesCover(notify, jikan),
   fanart: skyhook?.fanart ?? null,
   format: notify?.format ?? null,
