@@ -42,6 +42,7 @@
     "jsr:@std/streams@^1.0.9": "1.0.9",
     "jsr:@std/testing@1.0.9": "1.0.9",
     "npm:@logtail/node@0.5.4": "0.5.4",
+    "npm:@opentelemetry/api@1.9.0": "1.9.0",
     "npm:@types/node@*": "22.5.4",
     "npm:dom-mutator@0.6": "0.6.0",
     "npm:mongodb@6.10.0": "6.10.0",
@@ -227,6 +228,9 @@
     },
     "@msgpack/msgpack@2.8.0": {
       "integrity": "sha512-h9u4u/jiIRKbq25PM+zymTyW6bhTzELvOoUd+AvYriWOAKpLGnIamaET3pnHYoI5iYphAHBI4ayx0MehR+VVPQ=="
+    },
+    "@opentelemetry/api@1.9.0": {
+      "integrity": "sha512-3giAOQvZiH5F9bMlMiv8+GSPMeqg0dbaeo58/0SlA9sxSqZhnUtxzX9/2FzyhS9sWQf5S0GJE0AKBrFqjpeYcg=="
     },
     "@types/node@22.5.4": {
       "integrity": "sha512-FDuKUJQm/ju9fT/SeX/6+gBzoPzlVCzfzmGkwKvRHQVxi4BntVbyIwf6a4Xn62mrvndLiml6z/UBXIdEVjQLXg==",
