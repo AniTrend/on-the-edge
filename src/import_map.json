@@ -1,19 +1,19 @@
 {
   "imports": {
-    "@std/http": "jsr:@std/http@1.0.13",
-    "@std/dotenv": "jsr:@std/dotenv@0.225.3",
-    "@std/collections": "jsr:@std/collections@1.0.10",
-    "@std/testing": "jsr:@std/testing@1.0.9",
-    "@std/testing/bdd": "jsr:@std/testing@1.0.9/bdd",
-    "@std/assert": "jsr:@std/assert@1.0.11",
+    "@std/http": "jsr:@std/http@1.0.18",
+    "@std/dotenv": "jsr:@std/dotenv@0.225.5",
+    "@std/collections": "jsr:@std/collections@1.1.1",
+    "@std/testing": "jsr:@std/testing@1.0.14",
+    "@std/testing/bdd": "jsr:@std/testing@1.0.14/bdd",
+    "@std/assert": "jsr:@std/assert@1.0.13",
     "@optic": "jsr:@onjara/optic@2.0.3",
     "@optic/formatters": "jsr:@onjara/optic@2.0.3/formatters",
     "@oak": "jsr:@oak/oak@17.1.4",
     "@deepmerge": "jsr:@rebeccastevens/deepmerge@7.1.5",
     "@growthbook": "jsr:@growthbook/growthbook@1.2.2",
-    "@xml": "jsr:@libs/xml@6.0.4",
-    "@logtail": "npm:@logtail/node@0.5.4",
-    "@mongodb": "npm:mongodb@6.16.0",
+    "@xml": "jsr:@libs/xml@7.0.0",
+    "@logtail": "npm:@logtail/node@0.5.5",
+    "@mongodb": "npm:mongodb@6.17.0",
     "@otel": "npm:@opentelemetry/api@1.9.0"
   }
 }
