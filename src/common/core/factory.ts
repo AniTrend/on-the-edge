@@ -1,7 +1,7 @@
 import { Application, Router } from '@oak';
 import { FactoryOptions } from '../types/options.ts';
 import { createState } from './setup.ts';
-import timing from '../middleware/timing.ts';
+import tracing from '../middleware/tracing.ts';
 import error from '../middleware/error.ts';
 import growth from '../middleware/growth.ts';
 import header from '../middleware/header.ts';
@@ -19,7 +19,7 @@ export default async (opts: FactoryOptions): Promise<Application> => {
   const router = opts.router ?? new Router();
 
   app.use(
-    timing,
+    tracing,
     header,
     growth,
     targeting,
