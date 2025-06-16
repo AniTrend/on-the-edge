@@ -20,9 +20,11 @@ const onTerminationRequest = (): void => {
     'common.core.setup:onTerminationRequest: OS dispatched signal',
   );
   const otelToken = setTimeout(async () => {
-    await shutdown()
+    await shutdown();
   });
-  const mongoToken = setTimeout(async () => await _localSourceFactory.disconnect());
+  const mongoToken = setTimeout(async () =>
+    await _localSourceFactory.disconnect()
+  );
   logger.debug(
     'common.core.setup:onTerminationRequest: Attempting to exit Deno process',
   );
