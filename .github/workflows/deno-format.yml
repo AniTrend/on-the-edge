@@ -9,41 +9,16 @@ permissions:
 
 jobs:
   format:
-    permissions:
-      contents: write
-      pull-requests: write
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/create-github-app-token@v2
-        id: app-token
-        with:
-          app-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          token: ${{ steps.app-token.outputs.token }}
-          # Make sure the value of GITHUB_TOKEN will not be persisted in repo's config
-          persist-credentials: false
 
       - name: setup deno
         uses: denoland/setup-deno@v2
         with:
           cache: true
 
-      - name: auto-format code
-        run: deno fmt
-        
-      - name: check for file changes
-        id: git_status
-        run: |
-          echo "::set-output name=status::$(git status -s)"
+      - name: check code format
+        run: deno fmt --check
 
-      - name: create pull request with formatting corrections
-        if: ${{contains(steps.git_status.outputs.status, ' ')}}
-        uses: stefanzweifel/git-auto-commit-action@v6
-        with:
-          commit_message: "chore(automation): auto format code using deno fmt"
-          commit_options: '--no-verify --signoff'
-          file_pattern: '*.ts'
-          repository: .
