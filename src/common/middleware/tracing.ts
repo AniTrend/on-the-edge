@@ -1,4 +1,4 @@
-import { context, trace } from '@otel';
+import { context, SpanKind, SpanStatusCode, trace } from '@otel';
 import type { AppContext } from '../types/core.ts';
 
 const tracer = trace.getTracer('on-the-edge-middleware');
@@ -11,7 +11,7 @@ export default async (
 
   // Create a span for this HTTP request
   const span = tracer.startSpan(`${request.method} ${request.url.pathname}`, {
-    kind: 1, // SERVER span
+    kind: SpanKind.SERVER,
     attributes: {
       'http.method': request.method,
       'http.url': request.url.toString(),
@@ -23,27 +23,30 @@ export default async (
   });
 
   try {
-    // Run the request in the span context
     await context.with(trace.setSpan(context.active(), span), async () => {
       await next();
     });
 
-    // Set response attributes
     span.setAttributes({
       'http.status_code': response.status,
-      'http.response.size': response.headers.get('content-length') || 0,
+      'http.response.size': parseInt(
+        response.headers.get('content-length') || '0',
+        10,
+      ),
     });
 
-    // Set span status based on HTTP status
     if (response.status >= 400) {
       span.recordException(new Error(`HTTP ${response.status}`));
-      span.setStatus({ code: 2 }); // ERROR
+      span.setStatus({ code: SpanStatusCode.ERROR });
     } else {
-      span.setStatus({ code: 1 }); // OK
+      span.setStatus({ code: SpanStatusCode.OK });
     }
-  } catch (error) {
+  } catch (error: Error | unknown) {
     span.recordException(error as Error);
-    span.setStatus({ code: 2, message: (error as Error).message }); // ERROR
+    span.setStatus({
+      code: SpanStatusCode.ERROR,
+      message: (error as Error).message,
+    });
     throw error;
   } finally {
     span.end();
