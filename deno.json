@@ -20,7 +20,8 @@
   "tasks": {
     "check": "deno check src/server.ts",
     "test": "deno test --allow-read --allow-env --allow-net",
-    "start": "deno run --unstable-otel --allow-read --allow-env --allow-net --allow-sys ./src/server.ts",
+    "start": "deno run --unstable-otel --allow-read --allow-env --allow-net --allow-sys --allow-run ./src/server.ts",
     "check-deps": "deno run -A jsr:@check/deps"
-  }
+  },
+  "nodeModulesDir": "auto"
 }

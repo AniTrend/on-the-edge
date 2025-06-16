@@ -1,15 +1,16 @@
-import { State } from '../types/state.ts';
+import { shutdown } from './otel.ts';
 import { env } from './env.ts';
+import { State } from '../types/state.ts';
 import { GrowthBook } from '@growthbook';
 import { logger } from './logger.ts';
 import { between } from '@optic';
 import _localSourceFactory from '../mongo/factory.ts';
 
-const onDispose = (token: number) => {
+const onDispose = (tokens: number[]) => {
   setTimeout(() => {
     Deno.removeSignalListener('SIGINT', onTerminationRequest);
     Deno.removeSignalListener('SIGTERM', onTerminationRequest);
-    clearTimeout(token);
+    tokens.forEach((token) => clearTimeout(token));
     Deno.exit();
   }, 500);
 };
@@ -18,12 +19,17 @@ const onTerminationRequest = (): void => {
   logger.debug(
     'common.core.setup:onTerminationRequest: OS dispatched signal',
   );
-  const token = setTimeout(async () => await _localSourceFactory.disconnect());
+  const otelToken = setTimeout(async () => {
+    await shutdown();
+  });
+  const mongoToken = setTimeout(async () =>
+    await _localSourceFactory.disconnect()
+  );
   logger.debug(
     'common.core.setup:onTerminationRequest: Attempting to exit Deno process',
   );
 
-  onDispose(token);
+  onDispose([otelToken, mongoToken]);
 };
 
 Deno.addSignalListener('SIGINT', onTerminationRequest);

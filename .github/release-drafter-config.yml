@@ -37,6 +37,7 @@ autolabeler:
   - label: ':star2: feature'
     branch:
       - '/feature\/.+/'
+      - '/feat\/.+/'
   - label: ':wrench: enhancement'
     branch:
       - '/enhancement\/.+/'
