@@ -10,7 +10,6 @@ const consoleLogger = new ConsoleStream()
       .withColor(),
   );
 
-
 const logLevel = (level: MinLogLevel): Level => {
   switch (level) {
     case 'DEBUG':
