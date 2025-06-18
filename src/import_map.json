@@ -12,7 +12,6 @@
     "@deepmerge": "jsr:@rebeccastevens/deepmerge@7.1.5",
     "@growthbook": "jsr:@growthbook/growthbook@1.2.2",
     "@xml": "jsr:@libs/xml@7.0.0",
-    "@logtail": "npm:@logtail/node@0.5.5",
     "@mongodb": "npm:mongodb@6.17.0",
     "@otel": "npm:@opentelemetry/api@1.9.0",
     "@otel/sdk-node": "npm:@opentelemetry/sdk-node@0.202.0",
