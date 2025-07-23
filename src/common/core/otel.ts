@@ -2,7 +2,7 @@ import { NodeSDK } from '@otel/sdk-node';
 import { getNodeAutoInstrumentations } from '@otel/auto-instrumentations-node';
 import { OTLPTraceExporter } from '@otel/exporter-trace-otlp-http';
 import { OTLPMetricExporter } from '@otel/exporter-metrics-otlp-http';
-import { PeriodicExportingMetricReader } from 'npm:@opentelemetry/sdk-metrics@2.0.1';
+import { PeriodicExportingMetricReader } from '@otel/sdk-metrics';
 import { resourceFromAttributes } from '@otel/resources';
 import {
   ATTR_SERVICE_NAME,

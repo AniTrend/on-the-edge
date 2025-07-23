@@ -1,6 +1,5 @@
 import { ConsoleStream, Level, Logger } from '@optic';
 import { TokenReplacer } from '@optic/formatters';
-import { LogtailStream } from '../logger/logtail.ts';
 import { env } from './env.ts';
 import { MinLogLevel } from '../logger/types.ts';
 
@@ -10,10 +9,6 @@ const consoleLogger = new ConsoleStream()
       .withFormat('{msg} {metadata}')
       .withColor(),
   );
-
-const betterStackLogger = new LogtailStream(
-  env<string>('LOGTAIL_KEY'),
-);
 
 const logLevel = (level: MinLogLevel): Level => {
   switch (level) {
@@ -34,8 +29,7 @@ const logger = new Logger()
   .withMinLogLevel(
     logLevel(env<MinLogLevel>('MIN_LOG_LEVEL')),
   )
-  .addStream(consoleLogger)
-  .addStream(betterStackLogger);
+  .addStream(consoleLogger);
 
 logger.profilingConfig()
   .enabled(env<boolean>('OPTIC_TRACING'))
