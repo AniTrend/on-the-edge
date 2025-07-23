@@ -12,7 +12,7 @@ RUN deno cache src/server.ts
 
 FROM cache AS build
 RUN deno check src/server.ts
-RUN deno compile --unstable-otel --allow-net --allow-env --allow-read --allow-sys --allow-run --output=/usr/on-the-edge src/server.ts 
+RUN deno compile --unstable-otel --allow-net --allow-env --allow-read --allow-sys --allow-run --allow-scripts=npm:protobufjs --output=/usr/on-the-edge src/server.ts 
 
 FROM build AS final
 RUN rm -r /usr/app
