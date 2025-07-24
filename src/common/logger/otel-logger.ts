@@ -1,7 +1,7 @@
 import { logs } from '@otel/api-logs';
 import { SeverityNumber } from '@otel/api-logs';
 import { Stream } from '@optic';
-import { LogRecord, Level } from '@optic';
+import { Level, LogRecord } from '@optic';
 
 /**
  * OpenTelemetry Stream that forwards logs to the OpenTelemetry logs API
@@ -46,7 +46,7 @@ export class OTelStream implements Stream {
 
   handle(record: LogRecord): boolean {
     const timestamp = record.dateTime.getTime() * 1000000; // Convert to nanoseconds
-    
+
     // Extract structured attributes from metadata
     const attributes: Record<string, string | number | boolean> = {
       'log.level': this.mapLevelToString(record.level),
@@ -56,7 +56,10 @@ export class OTelStream implements Stream {
     // Add metadata as attributes if present
     if (record.metadata && typeof record.metadata === 'object') {
       Object.entries(record.metadata).forEach(([key, value]) => {
-        if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+        if (
+          typeof value === 'string' || typeof value === 'number' ||
+          typeof value === 'boolean'
+        ) {
           attributes[key] = value;
         } else {
           attributes[key] = String(value);
@@ -65,7 +68,9 @@ export class OTelStream implements Stream {
     }
 
     // Convert msg to string if it isn't already
-    const body = typeof record.msg === 'string' ? record.msg : String(record.msg);
+    const body = typeof record.msg === 'string'
+      ? record.msg
+      : String(record.msg);
 
     // Emit the log record to OpenTelemetry
     this.logger.emit({

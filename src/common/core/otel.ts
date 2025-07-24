@@ -4,7 +4,7 @@ import { OTLPTraceExporter } from '@otel/exporter-trace-otlp-http';
 import { OTLPMetricExporter } from '@otel/exporter-metrics-otlp-http';
 import { OTLPLogExporter } from '@otel/exporter-logs-otlp-http';
 import { PeriodicExportingMetricReader } from '@otel/sdk-metrics';
-import { LoggerProvider, BatchLogRecordProcessor } from '@otel/sdk-logs';
+import { BatchLogRecordProcessor, LoggerProvider } from '@otel/sdk-logs';
 import { logs } from '@otel/api-logs';
 import { resourceFromAttributes } from '@otel/resources';
 import {
@@ -30,7 +30,7 @@ try {
     const logExporter = new OTLPLogExporter({
       url: logsEndpoint,
     });
-    
+
     logRecordProcessor = new BatchLogRecordProcessor(logExporter, {
       exportTimeoutMillis: 30000,
       maxExportBatchSize: 512,
@@ -41,12 +41,14 @@ try {
     loggerProvider = new LoggerProvider({
       resource,
     });
-    
+
     logs.setGlobalLoggerProvider(loggerProvider);
     console.info('common.core.otel: Logs provider initialized');
   }
 } catch (_error) {
-  console.warn('common.core.otel: Logs endpoint not configured, skipping logs provider initialization');
+  console.warn(
+    'common.core.otel: Logs endpoint not configured, skipping logs provider initialization',
+  );
 }
 
 // Initialize the SDK with current best practices

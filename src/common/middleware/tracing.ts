@@ -18,13 +18,17 @@ export default async (
       'url.full': request.url.toString(),
       'url.scheme': request.url.protocol.slice(0, -1), // Remove trailing ':'
       'server.address': request.url.hostname,
-      'server.port': request.url.port ? parseInt(request.url.port) : (request.url.protocol === 'https:' ? 443 : 80),
+      'server.port': request.url.port
+        ? parseInt(request.url.port)
+        : (request.url.protocol === 'https:' ? 443 : 80),
       'url.path': request.url.pathname,
       'url.query': request.url.search,
       'user_agent.original': request.headers.get('user-agent') || '',
       'http.request.header.host': request.headers.get('host') || '',
       // Request size if available
-      'http.request.body.size': request.headers.get('content-length') ? parseInt(request.headers.get('content-length')!) : undefined,
+      'http.request.body.size': request.headers.get('content-length')
+        ? parseInt(request.headers.get('content-length')!)
+        : undefined,
     },
   });
 
@@ -36,24 +40,26 @@ export default async (
     });
 
     const duration = Date.now() - startTime;
-    
+
     span.setAttributes({
       'http.response.status_code': response.status,
-      'http.response.body.size': response.headers.get('content-length') ? parseInt(response.headers.get('content-length')!) : undefined,
+      'http.response.body.size': response.headers.get('content-length')
+        ? parseInt(response.headers.get('content-length')!)
+        : undefined,
       'http.request.duration_ms': duration,
     });
 
     // Set span status based on HTTP status code
     if (response.status >= 400 && response.status < 500) {
-      span.setStatus({ 
+      span.setStatus({
         code: SpanStatusCode.ERROR,
-        message: `HTTP ${response.status}` 
+        message: `HTTP ${response.status}`,
       });
     } else if (response.status >= 500) {
       span.recordException(new Error(`HTTP ${response.status}: Server Error`));
-      span.setStatus({ 
+      span.setStatus({
         code: SpanStatusCode.ERROR,
-        message: `HTTP ${response.status}` 
+        message: `HTTP ${response.status}`,
       });
     } else {
       span.setStatus({ code: SpanStatusCode.OK });
@@ -65,13 +71,13 @@ export default async (
       code: SpanStatusCode.ERROR,
       message: errorObj.message || 'Unknown error',
     });
-    
+
     // Add error attributes
     span.setAttributes({
       'error.type': errorObj.constructor.name,
       'error.message': errorObj.message,
     });
-    
+
     throw error;
   } finally {
     span.end();
