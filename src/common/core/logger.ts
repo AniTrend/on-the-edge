@@ -2,6 +2,7 @@ import { ConsoleStream, Level, Logger } from '@optic';
 import { TokenReplacer } from '@optic/formatters';
 import { env } from './env.ts';
 import { MinLogLevel } from '../logger/types.ts';
+import { OTelStream } from '../logger/otel-logger.ts';
 
 const consoleLogger = new ConsoleStream()
   .withFormat(
@@ -9,6 +10,8 @@ const consoleLogger = new ConsoleStream()
       .withFormat('{msg} {metadata}')
       .withColor(),
   );
+
+const otelStream = new OTelStream();
 
 const logLevel = (level: MinLogLevel): Level => {
   switch (level) {
@@ -29,7 +32,8 @@ const logger = new Logger()
   .withMinLogLevel(
     logLevel(env<MinLogLevel>('MIN_LOG_LEVEL')),
   )
-  .addStream(consoleLogger);
+  .addStream(consoleLogger)
+  .addStream(otelStream);
 
 logger.profilingConfig()
   .enabled(env<boolean>('OPTIC_TRACING'))
