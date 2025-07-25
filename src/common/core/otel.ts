@@ -12,6 +12,8 @@ import {
   ATTR_SERVICE_VERSION,
 } from '@otel/semantic-conventions';
 import { env } from './env.ts';
+import { between } from '@optic';
+import { logger } from './logger.ts';
 
 // Create resource with service information
 const resource = resourceFromAttributes({
@@ -43,10 +45,10 @@ try {
     });
 
     logs.setGlobalLoggerProvider(loggerProvider);
-    console.info('common.core.otel: Logs provider initialized');
+    logger.info('common.core.otel: Logs provider initialized');
   }
 } catch (_error) {
-  console.warn(
+  logger.warn(
     'common.core.otel: Logs endpoint not configured, skipping logs provider initialization',
   );
 }
@@ -78,18 +80,19 @@ const sdk = new NodeSDK({
 });
 
 try {
-  console.debug('otel-init-start');
-  console.info('common.core.otel: Initializing OTEL SDK');
+  logger.mark('otel-init-start');
+  logger.info('common.core.otel: Initializing OTEL SDK');
   sdk.start();
-  console.info('common.core.otel: OTEL SDK initialized successfully');
+  logger.info('common.core.otel: OTEL SDK initialized successfully');
 } catch (error) {
-  console.error('common.core.otel: Failed to initialize OTEL SDK:', error);
+  logger.error('common.core.otel: Failed to initialize OTEL SDK:', error);
 } finally {
-  console.debug('otel-init-end');
+  logger.mark('otel-init-end');
+  logger.measure(between('otel-init-start', 'otel-init-end'));
 }
 
 const shutdown = async (): Promise<void> => {
-  console.debug('otel-shutdown-start');
+  logger.mark('otel-shutdown-start');
   try {
     await sdk.shutdown();
     // Shutdown logs provider and processor if they were initialized
@@ -99,11 +102,12 @@ const shutdown = async (): Promise<void> => {
     if (loggerProvider) {
       await loggerProvider.shutdown();
     }
-    console.info('common.core.otel: OTEL SDK shutdown successfully');
+    logger.info('common.core.otel: OTEL SDK shutdown successfully');
   } catch (error) {
-    console.error('common.core.otel: Failed to shutdown OTEL SDK:', error);
+    logger.error('common.core.otel: Failed to shutdown OTEL SDK:', error);
   } finally {
-    console.debug('otel-shutdown-end');
+    logger.mark('otel-shutdown-end');
+    logger.measure(between('otel-shutdown-start', 'otel-shutdown-end'));
   }
 };
 
