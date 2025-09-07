@@ -147,8 +147,13 @@ const seriesDescription = (
   jikan?: Jikan,
   trakt?: TraktShow,
 ): string | null => {
-  return notify?.summary ?? jikan?.synopsis ?? tmdb?.overview ??
+  const base = notify?.summary ?? jikan?.synopsis ?? tmdb?.overview ??
     skyhook?.overview ?? trakt?.overview ?? null;
+  if (base && jikan?.moreinfo) {
+    // Separate additional info with two new lines for readability
+    return `${base}\n\n${jikan.moreinfo}`;
+  }
+  return base;
 };
 
 const seriesImage = (images?: Images): SeriesImage => {

@@ -22,3 +22,23 @@ export const getManga = async (id: number): Promise<MangaResource> => {
     `${service.url}/manga/${id}`,
   ).then((response) => response.data!);
 };
+
+/**
+ * Fetches additional information for an anime (separate endpoint in Jikan v4)
+ */
+export const getAnimeMoreInfo = async (id: number): Promise<string | null> => {
+  const service = getService();
+  return await request<{ data: { moreinfo?: string | null } }>(
+    `${service.url}/anime/${id}/moreinfo`,
+  ).then((response) => response.data?.moreinfo ?? null).catch(() => null);
+};
+
+/**
+ * Fetches additional information for a manga (separate endpoint in Jikan v4)
+ */
+export const getMangaMoreInfo = async (id: number): Promise<string | null> => {
+  const service = getService();
+  return await request<{ data: { moreinfo?: string | null } }>(
+    `${service.url}/manga/${id}/moreinfo`,
+  ).then((response) => response.data?.moreinfo ?? null).catch(() => null);
+};

@@ -52,6 +52,11 @@ interface MalResource {
   background: string;
   rating?: string;
   title_synonyms?: string[];
+  /**
+   * Additional information text fetched from the `/moreinfo` endpoint.
+   * Not part of the base Jikan resource payload – populated via separate call.
+   */
+  moreinfo?: string | null;
 }
 
 export interface AnimeResource extends MalResource {
