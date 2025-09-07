@@ -1,5 +1,6 @@
 ---
 applyTo: '**'
+description: "Guidelines for AI code generation, editing, and review in the 'on-the-edge' Deno TypeScript service repository. Includes project overview, repository structure, coding standards, prompting conventions, quality gates, security practices, and example workflows."
 ---
 
 This repository ("on-the-edge") is a Deno TypeScript service implementing API routes and application logic for AniTrend. The codebase is organized under `src/` and contains core infrastructure (logging, OTEL), middleware, feature experiments, and domain modules such as `news` and `series` with sources, repositories, services, transformers, and tests.
@@ -82,9 +83,9 @@ When creating, editing, or reviewing code, follow these rules strictly:
 	1. Create `src/<domain>/service/<name>.service.ts` and test file.
 	2. Export in module `index.ts` and update mappings.
 	3. Implement repository/transformer as needed.
-	4. Run `deno test` for new files.
+	4. Run `deno task test` for new files.
 - **Fix a failing test**:
-	1. Run `deno test --filter <name>`.
+	1. Run `deno task test --filter <name>`.
 	2. Apply minimal code change and update tests.
 	3. Run `deno fmt` & `deno lint` before commit.
 

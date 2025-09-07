@@ -9,7 +9,7 @@ The goal is to materialize a unified domain model (`JikanAnime` / `JikanManga`) 
 
 ## Type Layers
 
-1. Remote resource types (`AnimeResource`, `MangaResource`) represent the raw payload returned by the core endpoints. These deliberately include an optional `moreinfo` property so the transformer can operate on a single shape after aggregation.
+1. Remote resource types (`AnimeResource`, `MangaResource`) represent the raw payload returned by the core endpoints. These now include expanded coverage: titles, images (jpg/webp), trailer (with optional image variants), aired/published period, broadcast (anime), producers/licensors/studios, authors/serializations (manga), genres, explicit_genres, themes, demographics and an optional `moreinfo` aggregation field.
 2. Domain types (`JikanAnime`, `JikanManga`) extend the remote resource and guarantee the presence of the `moreinfo` key (as `string | null`) post-transform.
 
 ```mermaid
