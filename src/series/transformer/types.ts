@@ -9,8 +9,7 @@ export type MergedEpisode = {
   stillPath: string;
   voteAverage: number;
   voteCount: number;
-  crew: TmdbCrew[];
-  guestStars: TmdbCrew[];
+  staff: TmdbCrew[];
 } & SkyhookEpisode;
 
 export type MergedSeason = {

@@ -5,7 +5,8 @@ import { ImageProviderType } from '../service/tmdb/utils/image-provider.ts';
 import {
   SeriesEpisode,
   SeriesEpisodeCrew,
-  SeriesImageBackdrop,
+  SeriesImageAttributes,
+  SeriesImageSimple,
   SeriesSeason,
 } from '../types.ts';
 import { MergedEpisode, MergedSeason } from './types.ts';
@@ -13,7 +14,7 @@ import { MergedEpisode, MergedSeason } from './types.ts';
 const transformImage = (
   imageType: ImageProviderType,
   images?: TmdbImage[],
-): SeriesImageBackdrop[] =>
+): SeriesImageAttributes[] =>
   images?.map((data) => ({
     locale: data.iso_639_1,
     height: data.height,
@@ -58,6 +59,31 @@ const transformEpisode = (episode: MergedEpisode): SeriesEpisode => ({
   guests: episode.guestStars.map(transformCrew),
 });
 
+const pickBestCandidate = (
+  attributes?: SeriesImageAttributes[],
+): string | undefined =>
+  attributes && attributes.length > 0 ? attributes[0].url : undefined;
+
+const toSeasonImage = (season: MergedSeason): SeriesImageSimple => {
+  const backdrops = transformImage(
+    ImageProviderType.BACKDROP,
+    season.images?.backdrops,
+  );
+  const posters = transformImage(
+    ImageProviderType.POSTER,
+    season.images?.posters,
+  );
+  const logos = transformImage(ImageProviderType.LOGO, season.images?.logos);
+
+  return {
+    extraLarge: pickBestCandidate(backdrops),
+    large: pickBestCandidate(posters),
+    medium: provider.getImageUrl('w300', season.poster_path),
+    banner: pickBestCandidate(backdrops) ?? null,
+    logo: pickBestCandidate(logos) ?? null,
+  };
+};
+
 export const seasonTransformer = (
   seasons: MergedSeason[] | undefined,
 ): SeriesSeason[] =>
@@ -69,13 +95,6 @@ export const seasonTransformer = (
     overview: season.overview,
     number: season.season_number,
     cover: provider.getImageUrl('original', season.poster_path),
-    image: {
-      backdrops: transformImage(
-        ImageProviderType.BACKDROP,
-        season.images?.backdrops,
-      ),
-      logos: transformImage(ImageProviderType.LOGO, season.images?.logos),
-      posters: transformImage(ImageProviderType.POSTER, season.images?.posters),
-    },
+    image: toSeasonImage(season),
     episodes: season.episodes.map(transformEpisode),
   })) ?? [];

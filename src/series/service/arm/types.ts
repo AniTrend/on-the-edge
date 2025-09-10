@@ -1,4 +1,4 @@
-export type AnimeRelationId = {
+export type SeriesRelationId = {
   anidb?: number;
   anilist?: number;
   animePlanet?: string;

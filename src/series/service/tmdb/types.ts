@@ -1,10 +1,11 @@
 import { RCF822Date } from '../../../common/types/core.ts';
 import { TmdbDepartment } from './enums.ts';
+import { Image, Images, Season, SpokenLanguage } from './remote/types.ts';
 
-export interface TmdbGenre {
+export type TmdbGenre = {
   id: number;
   name: string;
-}
+};
 
 export interface TmdbEpisodeToAir {
   id: number;
@@ -33,39 +34,13 @@ export interface TmdbProductionCountry {
   name: string;
 }
 
-export interface TmdbSeason {
-  air_date: RCF822Date;
-  episode_count: number;
-  id: number;
-  name: string;
-  overview: string;
-  poster_path: string | null;
-  season_number: number;
-  episodes: TmdbEpisode[] | null;
-  images: TmdbImages | null;
-}
+export type TmdbSeason = Season;
 
-export interface TmdbSpokenLanguage {
-  english_name: string;
-  iso_639_1: string;
-  name: string;
-}
+export type TmdbSpokenLanguage = SpokenLanguage;
 
-export interface TmdbImage {
-  aspect_ratio: number;
-  height: number;
-  iso_639_1: null | string;
-  file_path: string;
-  vote_average: number;
-  vote_count: number;
-  width: number;
-}
+export type TmdbImage = Image;
 
-export interface TmdbImages {
-  backdrops: TmdbImage[];
-  logos: TmdbImage[];
-  posters: TmdbImage[];
-}
+export type TmdbImages = Images;
 
 export interface TmdbCrew {
   job?: string;
@@ -85,7 +60,8 @@ export interface TmdbCrew {
 
 export interface TmdbEpisode {
   air_date: string;
-  episode_number: string;
+  episode_number: number;
+  episode_type: string | 'standard';
   id: number;
   name: string;
   overview: string;

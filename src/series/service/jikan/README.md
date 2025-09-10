@@ -2,8 +2,8 @@
 
 This module provides access to a subset of the **Jikan v4** API focused only on:
 
-* `GET /anime/{id}` + `GET /anime/{id}/moreinfo`
-* `GET /manga/{id}` + `GET /manga/{id}/moreinfo`
+- `GET /anime/{id}` + `GET /anime/{id}/moreinfo`
+- `GET /manga/{id}` + `GET /manga/{id}/moreinfo`
 
 The goal is to materialize a unified domain model (`JikanAnime` / `JikanManga`) that merges the primary resource payload with the optional `moreinfo` text. The `moreinfo` field is fetched via a secondary call and appended (null-safe) during transformation.
 
@@ -24,15 +24,22 @@ flowchart LR
 
 `animeTransform` / `mangaTransform` are intentionally shallow; they copy the resource and coerce `moreinfo` to `null` if absent. Any enrichment logic (e.g. combining synopsis & moreinfo) happens at higher-level transformers (see `series.transformer.ts`).
 
+## Domain Consumption (Discriminated Union)
+
+In the series domain we now expose a discriminated union `MediaUnion = AnimeMedia | MangaMedia` distinguished by the `kind` field (`'ANIME' | 'MANGA'`). Manga–specific structural data (chapters, volumes, publishedFrom/To) is grouped under a single `manga` object rather than a scatter of nullable top-level fields. This improves type safety and makes future media-type extensions (e.g. LightNovels) straightforward.
+
+`moreinfo` is appended to the final user-facing description (a double line break separator) only if both synopsis/summary and moreinfo are present, preserving readability.
+
 ## Testing Strategy
 
 Focused unit tests (`jikan.service.test.ts`, `jikan.manga.transformer.test.ts`) assert the preservation of `moreinfo`. Broader integration behavior (concatenating into series description) is validated in the series transformer tests.
 
 ## Future Extensions
 
-* Add light validation against the bundled JSON schema fixtures.
-* Support pagination for related endpoints if needed.
-* Normalise `titles` into a map keyed by type for faster lookups.
+- Add light validation against the bundled JSON schema fixtures.
+- Support pagination for related endpoints if needed.
+- Normalise `titles` into a map keyed by type for faster lookups.
 
 ---
+
 Generated as part of the Jikan type model rewrite.
