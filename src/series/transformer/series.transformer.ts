@@ -218,9 +218,9 @@ export const seriesTransform = (
   trakt?: TraktShow,
 ): MediaUnion => {
   const isManga = (candidate: Jikan | undefined): candidate is JikanManga =>
-    !!candidate && 'chapters' in candidate;
+    !!candidate && candidate.type === 'manga';
   const isAnime = (candidate: Jikan | undefined): candidate is JikanAnime =>
-    !!candidate && 'episodes' in candidate;
+    !!candidate && candidate.type === 'anime';
 
   const kind: MediaKind = isManga(jikan) ? 'MANGA' : 'ANIME';
 
