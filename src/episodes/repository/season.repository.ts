@@ -1,20 +1,13 @@
 import { zip } from '@std/collections';
 import { getTmdbSeason } from '../../service/tmdb/index.ts';
-import { isMovie } from '../../series/utils/index.ts';
+import { isMovie } from './helpers/qualifier.ts';
 import { NotifyAnime } from '../../service/notify/types.ts';
 import { SkyhookEpisode, SkyhookShow } from '../../service/skyhook/types.ts';
 import { TmdbEpisode, TmdbSeason, TmdbShow } from '../../service/tmdb/types.ts';
-import { MergedEpisode, MergedSeason } from '../../series/transformer/types.ts';
+import { MergedEpisode, MergedSeason } from '../episodes.types.ts';
 import { logger } from '../../common/core/index.ts';
 import { Season } from '../../service/tmdb/remote/index.ts';
-// import { SeasonCorrelationMapper } from './season-correlation/index.ts';
 
-/**
- * DEPRECATED: SeasonRepository
- * This repository is slated for removal. Season-based integration is now orchestrated
- * by EpisodesRepository using helpers under src/series/episodes/helpers/.
- * Keep only as a temporary shim for any legacy references.
- */
 export default class SeasonRepository {
   constructor(
     private readonly filters: {

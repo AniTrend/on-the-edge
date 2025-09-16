@@ -8,7 +8,7 @@ import { getTmdbShow } from '../../service/tmdb/index.ts';
 import { getTraktShow } from '../../service/trakt/index.ts';
 import { seriesTransform } from '../transformer/series.transformer.ts';
 import { MediaEntity } from '../types.ts';
-import { isManga } from '../utils/index.ts';
+import { isManga } from './helpers/qualifier.ts';
 import LocalSource from '../local/series.local.source.ts';
 import { Theme } from '../../service/theme/transformer/types.ts';
 import { SkyhookShow } from '../../service/skyhook/types.ts';

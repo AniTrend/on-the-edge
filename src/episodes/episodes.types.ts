@@ -1,6 +1,31 @@
 import { Instant, toInstant } from '../common/helpers/index.ts';
 import { IPaging } from '../common/types/paging.ts';
 import { AnimeEpisode } from '../service/jikan/remote/types.ts';
+import { SkyhookEpisode } from '../service/skyhook/types.ts';
+import { TmdbCrew, TmdbImages } from '../service/tmdb/types.ts';
+
+export type MergedEpisode = {
+  id: number;
+  name: string;
+  tmdbShowId: string;
+  productionCode: string;
+  stillPath: string;
+  voteAverage: number;
+  voteCount: number;
+  staff: TmdbCrew[];
+} & SkyhookEpisode;
+
+export type MergedSeason = {
+  episodes: MergedEpisode[];
+  air_date: string;
+  episode_count: number;
+  id: number;
+  name: string;
+  overview: string;
+  poster_path: string;
+  season_number: number;
+  images?: TmdbImages;
+};
 
 // Canonical kind taxonomy across sources
 export type EpisodeKind =
