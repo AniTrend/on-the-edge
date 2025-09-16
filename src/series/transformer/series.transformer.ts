@@ -1,6 +1,7 @@
 import { currentDate, toEpotch } from '../../common/core/utils.ts';
 import { toInstant } from '../../common/helpers/date.ts';
 import { SeriesRelationId } from '../service/arm/types.ts';
+import { MalType } from '../service/jikan/remote/enums.ts';
 import { Jikan, JikanAnime, JikanManga } from '../service/jikan/types.ts';
 import { NotifyAnime } from '../service/notify/types.ts';
 import { SkyhookShow } from '../service/skyhook/types.ts';
@@ -218,9 +219,9 @@ export const seriesTransform = (
   trakt?: TraktShow,
 ): MediaUnion => {
   const isManga = (candidate: Jikan | undefined): candidate is JikanManga =>
-    !!candidate && candidate.type === 'manga';
+    !!candidate && candidate.type === MalType.Manga;
   const isAnime = (candidate: Jikan | undefined): candidate is JikanAnime =>
-    !!candidate && candidate.type === 'anime';
+    !!candidate && candidate.type === MalType.TV;
 
   const kind: MediaKind = isManga(jikan) ? 'MANGA' : 'ANIME';
 
