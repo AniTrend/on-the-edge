@@ -1,5 +1,5 @@
-import { Instant, toInstant } from '../../common/helpers/index.ts';
-import { IPaging } from '../../common/types/paging.ts';
+import { Instant, toInstant } from '../common/helpers/index.ts';
+import { IPaging } from '../common/types/paging.ts';
 import { AnimeEpisode } from '../service/jikan/remote/types.ts';
 
 // Canonical kind taxonomy across sources

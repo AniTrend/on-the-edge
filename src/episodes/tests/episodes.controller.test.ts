@@ -1,9 +1,9 @@
 import { assert, assertEquals } from '@std/assert';
-import { seriesEpisodes } from '../episodes.controller.ts';
+import { episodes } from '../episodes.controller.ts';
 import { toCanonicalEpisode } from '../episodes.types.ts';
-import { AppContext, Local } from '../../../common/types/core.ts';
-import { setEnvScoped } from '../../../common/testing/env.ts';
-import { json, onGet, stubFetch } from '../../../common/testing/net.ts';
+import { AppContext, Local } from '../../common/types/core.ts';
+import { setEnvScoped } from '../../common/testing/env.ts';
+import { json, onGet, stubFetch } from '../../common/testing/net.ts';
 
 // Minimal mock of AppContext & in-memory collection identical to repository unit test approach
 interface MemDoc {
@@ -75,9 +75,9 @@ Deno.test('seriesEpisodes basic response returns paged data', async () => {
     }),
   ]);
   const ctx = mockCtx(
-    `http://localhost/series/episodes?id=${seriesKey}&limit=2`,
+    `http://localhost/episodes?id=${seriesKey}&limit=2`,
   );
-  await seriesEpisodes(ctx);
+  await episodes(ctx);
   interface Resp {
     data: ReturnType<typeof toCanonicalEpisode>[];
     diagnostics?: unknown;

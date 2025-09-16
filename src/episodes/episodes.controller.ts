@@ -1,5 +1,5 @@
 import { Status } from '@oak';
-import { AppContext, ErrorResponse } from '../../common/types/core.ts';
+import { AppContext, ErrorResponse } from '../common/types/core.ts';
 import { EpisodesRepository } from './repository/episodes.repository.ts';
 import { getAniListRelationId } from '../service/arm/index.ts';
 import type { SeriesRelationId } from '../service/arm/types.ts';
@@ -9,13 +9,13 @@ import {
   parseCursor,
   parseFilters,
 } from './episodes.params.ts';
-import { collection } from '../../common/mongo/collection.ts';
+import { collection } from '../common/mongo/collection.ts';
 import { EpisodeLocalSource } from './collection/episode.collection.ts';
 import type { EpisodeDocument } from './store/types.ts';
-import SeriesLocalSource from '../local/series.local.source.ts';
-import { logger } from '../../common/core/logger.ts';
+import SeriesLocalSource from '../series/local/series.local.source.ts';
+import { logger } from '../common/core/logger.ts';
 
-export const seriesEpisodes = async (
+export const episodes = async (
   { request, response, state }: AppContext,
 ) => {
   const params = request.url.searchParams;
