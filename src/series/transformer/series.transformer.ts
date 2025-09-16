@@ -242,12 +242,18 @@ export const seriesTransform = (
   if (!isAnime) {
     const jikanManga = jikan as JikanManga;
     const manga: MangaMetadata = {
-      chapters: typeof jikanManga.chapters === 'number' ? jikanManga.chapters : null,
-      volumes: typeof jikanManga.volumes === 'number' ? jikanManga.volumes : null,
+      chapters: typeof jikanManga.chapters === 'number'
+        ? jikanManga.chapters
+        : null,
+      volumes: typeof jikanManga.volumes === 'number'
+        ? jikanManga.volumes
+        : null,
       publishedFrom: jikanManga.published?.from
         ? toInstant(jikanManga.published.from)
         : null,
-      publishedTo: jikanManga.published?.to ? toInstant(jikanManga.published.to) : null,
+      publishedTo: jikanManga.published?.to
+        ? toInstant(jikanManga.published.to)
+        : null,
     };
 
     return { ...base, ...manga };
