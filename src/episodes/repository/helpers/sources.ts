@@ -12,9 +12,9 @@ import { toCanonicalFromTrakt } from '../../../service/trakt/transformer/index.t
 import EpisodeSeasonRepository from '../season.repository.ts';
 import { getTmdbShow } from '../../../service/tmdb/index.ts';
 import { provider } from '../../../service/tmdb/transformer/index.ts';
-import { toInstant } from '../../../../common/helpers/date.ts';
+import { toInstant } from '../../../common/helpers/date.ts';
 import { getNotifyAnime } from '../../../service/notify/notify.service.ts';
-import { logger } from '../../../../common/core/index.ts';
+import { logger } from '../../../common/core/index.ts';
 
 export type SourceSlice = {
   source: 'JIKAN' | 'SKYHOOK' | 'TRAKT';

@@ -1,5 +1,5 @@
-import { TmdbSeason } from '../../service/tmdb/types.ts';
-import { SkyhookEpisode } from '../../service/skyhook/types.ts';
+import { TmdbSeason } from '../../../service/tmdb/types.ts';
+import { SkyhookEpisode } from '../../../service/skyhook/types.ts';
 import { MappingPattern } from './types/index.ts';
 import { AnimeSeasonConfig } from './config.ts';
 

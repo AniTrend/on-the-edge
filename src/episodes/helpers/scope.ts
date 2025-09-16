@@ -3,7 +3,7 @@ import type {
   SkyhookEpisode,
   SkyhookShow,
 } from '../../service/skyhook/types.ts';
-import { toInstant } from '../../../common/helpers/date.ts';
+import { toInstant } from '../../common/helpers/date.ts';
 
 export type SeasonEpisodePair = { season: number; episode: number };
 

@@ -1,18 +1,18 @@
 import { currentDate, toEpotch } from '../../common/core/utils.ts';
 import { toInstant } from '../../common/helpers/date.ts';
-import { SeriesRelationId } from '../service/arm/types.ts';
-import { MalType } from '../service/jikan/remote/enums.ts';
-import { Jikan, JikanAnime, JikanManga } from '../service/jikan/types.ts';
-import { NotifyAnime } from '../service/notify/types.ts';
-import { SkyhookShow } from '../service/skyhook/types.ts';
-import { AnimeTheme } from '../service/theme/types.ts';
-import { Images } from '../service/tmdb/remote/types.ts';
+import { SeriesRelationId } from '../../service/arm/types.ts';
+import { MalType } from '../../service/jikan/remote/enums.ts';
+import { Jikan, JikanAnime, JikanManga } from '../../service/jikan/types.ts';
+import { NotifyAnime } from '../../service/notify/types.ts';
+import { SkyhookShow } from '../../service/skyhook/types.ts';
+import { AnimeTheme } from '../../service/theme/types.ts';
+import { Images } from '../../service/tmdb/remote/types.ts';
 import {
   TmdbEpisodeToAir,
   TmdbNetwork,
   TmdbShow,
-} from '../service/tmdb/types.ts';
-import { TraktShow } from '../service/trakt/types.ts';
+} from '../../service/tmdb/types.ts';
+import { TraktShow } from '../../service/trakt/types.ts';
 import {
   AnimeMetadata,
   MangaMetadata,

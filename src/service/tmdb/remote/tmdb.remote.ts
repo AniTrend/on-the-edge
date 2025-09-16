@@ -1,6 +1,6 @@
-import { env } from '../../../../common/core/env.ts';
-import { Service } from '../../../../common/types/state.ts';
-import { request } from '../../../../common/core/request.ts';
+import { env } from '../../../common/core/env.ts';
+import { Service } from '../../../common/types/state.ts';
+import { request } from '../../../common/core/request.ts';
 import { Configuration, Movie, Season, Show } from './types.ts';
 
 const getService = (): Service => ({

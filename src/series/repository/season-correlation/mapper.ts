@@ -1,7 +1,11 @@
-import { SeriesRelationId } from '../../service/arm/types.ts';
-import { NotifyAnime } from '../../service/notify/types.ts';
-import { SkyhookEpisode, SkyhookShow } from '../../service/skyhook/types.ts';
-import { TmdbEpisode, TmdbSeason, TmdbShow } from '../../service/tmdb/types.ts';
+import { SeriesRelationId } from '../../../service/arm/types.ts';
+import { NotifyAnime } from '../../../service/notify/types.ts';
+import { SkyhookEpisode, SkyhookShow } from '../../../service/skyhook/types.ts';
+import {
+  TmdbEpisode,
+  TmdbSeason,
+  TmdbShow,
+} from '../../../service/tmdb/types.ts';
 import { zip } from '@std/collections';
 
 import {

@@ -1,7 +1,7 @@
 import type { EpisodeCanonical } from '../episodes.types.ts';
 import type { SeriesRelationId } from '../../service/arm/types.ts';
-import { toInstant } from '../../../common/helpers/date.ts';
-import { logger } from '../../../common/core/logger.ts';
+import { toInstant } from '../../common/helpers/date.ts';
+import { logger } from '../../common/core/logger.ts';
 import { getTmdbSeason, getTmdbShow } from '../../service/tmdb/index.ts';
 import { provider as tmdbProvider } from '../../service/tmdb/transformer/index.ts';
 import { getNotifyAnime } from '../../service/notify/notify.service.ts';

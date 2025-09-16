@@ -1,7 +1,7 @@
-import { Transform } from '../../../../common/transformer/types.ts';
+import { Transform } from '../../../common/transformer/types.ts';
 import { ShowModel } from '../remote/types.ts';
 import { Show } from './types.ts';
-import { toInstant } from '../../../../common/helpers/date.ts';
+import { toInstant } from '../../../common/helpers/date.ts';
 
 export const transform: Transform<ShowModel, Show> = (
   sourceData,

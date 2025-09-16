@@ -5,9 +5,9 @@ import type {
   FindOneAndReplaceOptions,
 } from '@mongodb';
 import { between } from '@optic';
-import { logger } from '../../../common/core/logger.ts';
+import { logger } from '../../common/core/logger.ts';
 import type { EpisodeDocument } from '../store/types.ts';
-import { Instant } from '../../../common/helpers/index.ts';
+import { Instant } from '../../common/helpers/index.ts';
 
 export interface EpisodeCollection {
   lastUpdated(seriesKey: string): Promise<Instant | null>;

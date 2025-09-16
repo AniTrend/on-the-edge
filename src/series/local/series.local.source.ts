@@ -12,7 +12,7 @@ import { MediaDocument } from './types.ts';
 import { MediaParamId } from './types.ts';
 import { FindOptions } from '@mongodb';
 import { between } from '@optic';
-import { SeriesRelationId } from '../service/arm/types.ts';
+import { SeriesRelationId } from '../../service/arm/types.ts';
 
 export default class LocalSource {
   constructor(

@@ -1,4 +1,4 @@
-import { Transform } from '../../../../common/transformer/types.ts';
+import { Transform } from '../../../common/transformer/types.ts';
 import { Show } from '../remote/types.ts';
 import { TmdbShow } from '../types.ts';
 import { ImageProvider, ImageProviderType } from '../utils/image-provider.ts';

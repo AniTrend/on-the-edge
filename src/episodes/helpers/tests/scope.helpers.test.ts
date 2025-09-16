@@ -4,7 +4,7 @@ import {
   helpers as scopeHelpers,
 } from '../../helpers/scope.ts';
 import type { EpisodeCanonical } from '../../episodes.types.ts';
-import { toInstant } from '../../../../common/helpers/date.ts';
+import { toInstant } from '../../../common/helpers/date.ts';
 import type { SkyhookShow } from '../../../service/skyhook/types.ts';
 
 const canon = (

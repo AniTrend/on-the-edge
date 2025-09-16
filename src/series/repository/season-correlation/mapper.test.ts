@@ -1,14 +1,14 @@
 import { assertEquals } from '@std/assert';
 import { MappingPattern, SeasonCorrelationMapper } from './index.ts';
-import { NotifyAnime } from '../../service/notify/types.ts';
-import { SkyhookShow } from '../../service/skyhook/types.ts';
-import { TmdbShow } from '../../service/tmdb/types.ts';
+import { NotifyAnime } from '../../../service/notify/types.ts';
+import { SkyhookShow } from '../../../service/skyhook/types.ts';
+import { TmdbShow } from '../../../service/tmdb/types.ts';
 import { toInstant } from '../../../common/helpers/index.ts';
 import {
   Format,
   Source,
   Status,
-} from '../../service/notify/transformer/index.ts';
+} from '../../../service/notify/transformer/index.ts';
 
 Deno.test('SeasonCorrelationMapper - Basic correlation', () => {
   // Setup test data

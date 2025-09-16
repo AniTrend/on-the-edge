@@ -1,4 +1,4 @@
-import { RCF822Date } from '../../../../common/types/core.ts';
+import { RCF822Date } from '../../../common/types/core.ts';
 
 interface AirsModel {
   day: string;

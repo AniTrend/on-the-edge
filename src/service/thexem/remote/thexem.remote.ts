@@ -1,6 +1,6 @@
-import { env } from '../../../../common/core/env.ts';
-import { request } from '../../../../common/core/request.ts';
-import { Service } from '../../../../common/types/state.ts';
+import { env } from '../../../common/core/env.ts';
+import { request } from '../../../common/core/request.ts';
+import { Service } from '../../../common/types/state.ts';
 import { TheXemDataModel } from './types.ts';
 
 const getService = (): Service => ({

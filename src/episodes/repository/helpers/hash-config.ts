@@ -1,4 +1,4 @@
-import { env } from '../../../../common/core/env.ts';
+import { env } from '../../../common/core/env.ts';
 import type { HashConfig, HashMethod } from './hash.ts';
 
 /**

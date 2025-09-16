@@ -1,5 +1,5 @@
-import { SkyhookEpisode } from '../service/skyhook/types.ts';
-import { TmdbCrew, TmdbImages } from '../service/tmdb/types.ts';
+import { SkyhookEpisode } from '../../service/skyhook/types.ts';
+import { TmdbCrew, TmdbImages } from '../../service/tmdb/types.ts';
 
 export type MergedEpisode = {
   id: number;

@@ -1,6 +1,6 @@
-import { env } from '../../../../common/core/env.ts';
-import { defaults, request } from '../../../../common/core/request.ts';
-import { Service } from '../../../../common/types/state.ts';
+import { env } from '../../../common/core/env.ts';
+import { defaults, request } from '../../../common/core/request.ts';
+import { Service } from '../../../common/types/state.ts';
 import { EpisodeModel, SeasonModel } from './types.ts';
 
 // Note: Tests should prefer stubbing fetch() or request() rather than using globals.

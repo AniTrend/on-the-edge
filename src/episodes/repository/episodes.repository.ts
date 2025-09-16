@@ -1,4 +1,4 @@
-import type { Features } from '../../../common/types/core.ts';
+import type { Features } from '../../common/types/core.ts';
 import type { EpisodeCollection } from '../collection/episode.collection.ts';
 import { buildFilterHash } from './helpers/cursor.ts';
 import {
@@ -10,7 +10,7 @@ import { mergeEpisodes } from '../aggregator/merge.ts';
 import {
   getTitleSimThreshold,
   isXemNormalizationEnabled,
-} from '../../../common/experiment/index.ts';
+} from '../../common/experiment/index.ts';
 import type { SeriesRelationId } from '../../service/arm/types.ts';
 import { logMergeStats } from './helpers/stats.ts';
 import { fetchCanonical, load, persist } from './helpers/loader.ts';
@@ -24,7 +24,7 @@ import {
 import { getSkyhookShow } from '../../service/skyhook/index.ts';
 import { applyFilters } from './helpers/filters.ts';
 import { cursors, paginate } from './helpers/paginate.ts';
-import { logger } from '../../../common/core/logger.ts';
+import { logger } from '../../common/core/logger.ts';
 import { getAniListRelationId } from '../../service/arm/index.ts';
 import { getTraktSlice } from './helpers/sources.ts';
 import { MergeResult } from '../aggregator/types.ts';

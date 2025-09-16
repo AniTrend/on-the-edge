@@ -3,7 +3,7 @@ import { describe, it } from '@std/testing/bdd';
 import { ThemeModel } from '../remote/types.ts';
 import { transform } from './index.ts';
 import { Theme } from './types.ts';
-import { env } from '../../../../common/core/env.ts';
+import { env } from '../../../common/core/env.ts';
 
 describe('theme transformer test', () => {
   const baseUrl: string = env('THEMES');

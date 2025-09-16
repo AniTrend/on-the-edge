@@ -1,10 +1,10 @@
 import { describe, it } from '@std/testing/bdd';
 import { assertEquals } from '@std/assert';
 import { seriesTransform } from './series.transformer.ts';
-import { SeriesRelationId } from '../service/arm/types.ts';
-import { JikanAnime } from '../service/jikan/types.ts';
+import { SeriesRelationId } from '../../service/arm/types.ts';
+import { JikanAnime } from '../../service/jikan/types.ts';
 import { MediaUnion } from '../types.ts';
-import { MalType } from '../service/jikan/remote/enums.ts';
+import { MalType } from '../../service/jikan/remote/enums.ts';
 
 // Minimal anime fixture focusing on discriminated union behavior
 

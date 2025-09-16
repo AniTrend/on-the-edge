@@ -1,5 +1,5 @@
 import { EpisodeCanonical } from '../../../episodes/episodes.types.ts';
-import { toInstant } from '../../../../common/helpers/date.ts';
+import { toInstant } from '../../../common/helpers/date.ts';
 import { EpisodeModel } from '../remote/types.ts';
 
 const episodeKind = (model: EpisodeModel): 'main' | 'filler' | 'recap' => {

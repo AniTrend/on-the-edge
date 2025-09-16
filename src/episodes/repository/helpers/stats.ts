@@ -1,5 +1,5 @@
 import type { MergedEpisode } from '../../aggregator/types.ts';
-import { logger } from '../../../../common/core/logger.ts';
+import { logger } from '../../../common/core/logger.ts';
 
 export function logMergeStats(
   merged: MergedEpisode[],

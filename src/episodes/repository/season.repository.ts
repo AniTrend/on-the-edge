@@ -1,11 +1,11 @@
 import { zip } from '@std/collections';
 import { getTmdbSeason } from '../../service/tmdb/index.ts';
-import { isMovie } from '../../utils/index.ts';
+import { isMovie } from '../../series/utils/index.ts';
 import { NotifyAnime } from '../../service/notify/types.ts';
 import { SkyhookEpisode, SkyhookShow } from '../../service/skyhook/types.ts';
 import { TmdbEpisode, TmdbSeason, TmdbShow } from '../../service/tmdb/types.ts';
-import { MergedEpisode, MergedSeason } from '../../transformer/types.ts';
-import { logger } from '../../../common/core/index.ts';
+import { MergedEpisode, MergedSeason } from '../../series/transformer/types.ts';
+import { logger } from '../../common/core/index.ts';
 import { Season } from '../../service/tmdb/remote/index.ts';
 // import { SeasonCorrelationMapper } from './season-correlation/index.ts';
 

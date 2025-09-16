@@ -5,9 +5,9 @@ import {
   currentDate,
   isOlderThan,
   toEpotch,
-} from '../../../../common/core/utils.ts';
+} from '../../../common/core/utils.ts';
 import { EpisodeCanonical, toCanonicalEpisode } from '../../episodes.types.ts';
-import { logger } from '../../../../common/core/index.ts';
+import { logger } from '../../../common/core/index.ts';
 import { MergeResult } from '../../aggregator/types.ts';
 
 export async function persist(

@@ -1,4 +1,4 @@
-import { logger } from '../../../common/core/logger.ts';
+import { logger } from '../../common/core/logger.ts';
 import { transform } from './transformer/index.ts';
 import { getThemesByMalId } from './remote/index.ts';
 import { AnimeTheme } from './types.ts';

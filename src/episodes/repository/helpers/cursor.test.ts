@@ -6,7 +6,7 @@ import {
   decodeCursor,
   encodeCursor,
 } from './cursor.ts';
-import { setEnvScoped } from '../../../../common/testing/env.ts';
+import { setEnvScoped } from '../../../common/testing/env.ts';
 
 describe('Cursor Hash Implementation', () => {
   describe('buildFilterHash', () => {

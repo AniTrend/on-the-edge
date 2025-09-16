@@ -1,4 +1,4 @@
-import { RCF822Date } from '../../../common/types/core.ts';
+import { RCF822Date } from '../../common/types/core.ts';
 import { TmdbDepartment } from './enums.ts';
 import { Image, Images, Season, SpokenLanguage } from './remote/types.ts';
 

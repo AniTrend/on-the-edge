@@ -1,4 +1,4 @@
-import { logger } from '../../../common/core/logger.ts';
+import { logger } from '../../common/core/logger.ts';
 import { animeTransform, mangaTransform } from './transformer/index.ts';
 import {
   getAnimeEpisodes,
