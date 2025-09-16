@@ -85,13 +85,13 @@ export async function enrichWithTmdbImages(
         const t = epMap.get(Number(epNum));
         if (t?.still_path) {
           // Prefer provider with fixed size
-          image = provider.getImageUrl(stillSize, t.still_path) ?? undefined;
+          image = provider.getImageUrl(stillSize, t.still_path) ?? null;
         }
         if (!tmdbId && typeof t?.id === 'number') tmdbId = t.id;
       }
       if (!poster && seasonPosterPath) {
         // Build poster sizes via provider
-        poster = provider.getImageUrl(posterSize, seasonPosterPath);
+        poster = provider.getImageUrl(posterSize, seasonPosterPath) ?? null;
       }
 
       return (image !== e.image || poster !== e.poster || tmdbId !== e.tmdbId)

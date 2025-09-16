@@ -49,5 +49,6 @@
       "run": true
     }
   },
-  "nodeModulesDir": "auto"
+  "nodeModulesDir": "auto",
+  "workspace": ["src/*"]
 }
