@@ -23,7 +23,7 @@ This repository, "on-the-edge", is a Deno TypeScript service for AniTrend. It im
 Key files and folders:
 - `deno.json`, `deno.lock`
 	- Deno configurations and lockfile. Use Deno CLI for execution, tests, and formatting by default.
-- `src/server.ts`, `src/routes.ts`
+- `src/mod.ts`, `src/routes.ts`
 	- Entry points for server bootstrap and route definitions.
 - `src/common/`
 	- Shared core: environment loading, logging, OTEL tracing, middleware, MongoDB factory.
