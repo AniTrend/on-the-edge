@@ -1,4 +1,4 @@
-name: deno-cd
+name: deploy
 
 on:
   workflow_call:
@@ -8,6 +8,14 @@ on:
         description: 'Tag to build against'
         required: true
         default: 'latest'
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
   push:
     branches:
       - dev
@@ -15,8 +23,10 @@ on:
       - '*'
 
 jobs:
-  build-image:
+  deploy:
     runs-on: ubuntu-latest
+    environment: 
+      name: ${{ github.event.inputs.environment || 'production' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -53,3 +63,24 @@ jobs:
           --tag ghcr.io/anitrend/on-the-edge:${{ steps.set-tag.outputs.tag }} \
           --push .
         working-directory: .
+
+  notify:
+    name: Notify Deployment
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: always()
+    steps:
+      - name: Notify success
+        if: needs.deploy.result == 'success'
+        run: |
+          echo "Deployed successfully!"
+          echo "Environment: ${{ github.event.inputs.environment || 'production' }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "Timestamp: $(date -u)"
+
+      - name: Notify failure
+        if: needs.deploy.result == 'failure'
+        run: |
+          echo "Deployment failed!"
+          echo "Please check the deployment logs and try again."
+          exit 1

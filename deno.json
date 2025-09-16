@@ -19,9 +19,35 @@
   },
   "tasks": {
     "check": "deno check src/mod.ts",
-    "test": "deno test --allow-read --allow-env --allow-net",
-    "start": "deno run --unstable-otel --allow-read --allow-env --allow-net --allow-sys --allow-run --allow-scripts ./src/mod.ts",
-    "dev": "deno run --allow-read --allow-env --allow-net --allow-sys --allow-run --allow-scripts --watch ./src/mod.ts"
+    "start": "deno run -P=default --unstable-otel --allow-scripts=npm:protobufjs ./src/mod.ts",
+    "test": "deno test -P --coverage=coverage",
+    "build": "deno compile -P --unstable-otel --allow-scripts=npm:protobufjs --output=./build/on-the-edge src/mod.ts"
+  },
+  "permissions": {
+    "default": {
+      "read": true,
+      "env": true,
+      "net": true,
+      "sys": true,
+      "run": true
+    }
+  },
+  "test": {
+    "permissions": {
+      "read": true,
+      "env": true,
+      "net": true
+    }
+  },
+  "compile": {
+    "permissions": {
+      "write": true,
+      "read": true,
+      "env": true,
+      "net": true,
+      "sys": true,
+      "run": true
+    }
   },
   "nodeModulesDir": "auto"
 }

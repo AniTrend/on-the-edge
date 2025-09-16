@@ -1,4 +1,4 @@
-name: deno-dependency
+name: quality
 
 on:
   workflow_dispatch:
@@ -6,7 +6,7 @@ on:
     - cron: "0 2 * * 5"
 
 jobs:
-  update-dependencies:
+  dependency-check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/create-github-app-token@v2
@@ -20,8 +20,7 @@ jobs:
         with:
           cache: true
       - name: Config properties file
-        run: |
-          cp .env.defaults .env
+        run: bash .github/scripts/config-env.sh
       - name: Check dependency updates
         run: |
           deno update --compatible --frozen=false
