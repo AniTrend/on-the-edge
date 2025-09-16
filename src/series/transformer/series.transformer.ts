@@ -251,12 +251,7 @@ export const seriesTransform = (
       publishedTo: jikan.published?.to ? toInstant(jikan.published.to) : null,
     };
 
-    // For manga resources, append Jikan.moreinfo to the description when available
-    const mergedDescription = jikan.moreinfo
-      ? [base.description, jikan.moreinfo].filter(Boolean).join(' ')
-      : base.description;
-
-    return { ...base, ...manga, description: mergedDescription };
+    return { ...base, ...manga };
   }
 
   if (isAnime(jikan)) {
