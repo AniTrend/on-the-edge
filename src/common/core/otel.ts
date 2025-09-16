@@ -15,86 +15,97 @@ import { env } from './env.ts';
 import { between } from '@optic';
 import { logger } from './logger.ts';
 
-// Create resource with service information
-const resource = resourceFromAttributes({
-  [ATTR_SERVICE_NAME]: env<string>('OTEL_DENO_SERVICE_NAME'),
-  [ATTR_SERVICE_VERSION]: env<string>('DENO_VERSION'),
-  'service.instance.id': `deno-${Date.now()}`,
-  'deployment.environment': env<string>('DENO_ENV'),
-});
-
-// Initialize logs provider if logs endpoint is configured
+let sdk: NodeSDK | undefined;
 let loggerProvider: LoggerProvider | undefined;
 let logRecordProcessor: BatchLogRecordProcessor | undefined;
-try {
-  const logsEndpoint = env<string>('OTEL_EXPORTER_OTLP_LOGS_ENDPOINT');
-  if (logsEndpoint) {
-    const logExporter = new OTLPLogExporter({
-      url: logsEndpoint,
-    });
+let initialized = false;
 
-    logRecordProcessor = new BatchLogRecordProcessor(logExporter, {
-      exportTimeoutMillis: 30000,
-      maxExportBatchSize: 512,
-      maxQueueSize: 2048,
-      scheduledDelayMillis: 5000,
-    });
+const init = (): void => {
+  if (initialized) return;
+  // Create resource with service information
+  const resource = resourceFromAttributes({
+    [ATTR_SERVICE_NAME]: env<string>('OTEL_DENO_SERVICE_NAME'),
+    [ATTR_SERVICE_VERSION]: env<string>('DENO_VERSION'),
+    'service.instance.id': `deno-${Date.now()}`,
+    'deployment.environment': env<string>('DENO_ENV'),
+  });
 
-    loggerProvider = new LoggerProvider({
-      resource,
-    });
+  // Initialize logs provider if logs endpoint is configured
+  try {
+    const logsEndpoint = env<string>('OTEL_EXPORTER_OTLP_LOGS_ENDPOINT');
+    if (logsEndpoint) {
+      const logExporter = new OTLPLogExporter({
+        url: logsEndpoint,
+      });
 
-    logs.setGlobalLoggerProvider(loggerProvider);
-    logger.info('common.core.otel: Logs provider initialized');
+      logRecordProcessor = new BatchLogRecordProcessor(logExporter, {
+        exportTimeoutMillis: 30000,
+        maxExportBatchSize: 512,
+        maxQueueSize: 2048,
+        scheduledDelayMillis: 5000,
+      });
+
+      loggerProvider = new LoggerProvider({
+        resource,
+      });
+
+      logs.setGlobalLoggerProvider(loggerProvider);
+      logger.info('common.core.otel: Logs provider initialized');
+    }
+  } catch (_error) {
+    logger.warn(
+      'common.core.otel: Logs endpoint not configured, skipping logs provider initialization',
+    );
   }
-} catch (_error) {
-  logger.warn(
-    'common.core.otel: Logs endpoint not configured, skipping logs provider initialization',
-  );
-}
 
-// Initialize the SDK with current best practices
-const sdk = new NodeSDK({
-  resource,
-  traceExporter: new OTLPTraceExporter({
-    url: env<string>('OTEL_EXPORTER_OTLP_TRACES_ENDPOINT'),
-  }),
-  metricReader: new PeriodicExportingMetricReader({
-    exporter: new OTLPMetricExporter({
-      url: env<string>('OTEL_EXPORTER_OTLP_METRICS_ENDPOINT'),
+  // Initialize the SDK with current best practices
+  sdk = new NodeSDK({
+    resource,
+    traceExporter: new OTLPTraceExporter({
+      url: env<string>('OTEL_EXPORTER_OTLP_TRACES_ENDPOINT'),
     }),
-    exportIntervalMillis: 30000, // Export metrics every 30 seconds
-  }),
-  // Add logs exporter if available
-  ...(loggerProvider && {
-    loggerProvider,
-  }),
-  instrumentations: [
-    getNodeAutoInstrumentations({
-      // Enable auto-instrumentation for HTTP, MongoDB, etc.
-      '@opentelemetry/instrumentation-fs': {
-        enabled: false, // Disable file system instrumentation for performance
-      },
+    metricReader: new PeriodicExportingMetricReader({
+      exporter: new OTLPMetricExporter({
+        url: env<string>('OTEL_EXPORTER_OTLP_METRICS_ENDPOINT'),
+      }),
+      exportIntervalMillis: 30000, // Export metrics every 30 seconds
     }),
-  ],
-});
+    // Add logs exporter if available
+    ...(loggerProvider && {
+      loggerProvider,
+    }),
+    instrumentations: [
+      getNodeAutoInstrumentations({
+        // Enable auto-instrumentation for HTTP, MongoDB, etc.
+        '@opentelemetry/instrumentation-fs': {
+          enabled: false, // Disable file system instrumentation for performance
+        },
+      }),
+    ],
+  });
 
-try {
-  logger.mark('otel-init-start');
-  logger.info('common.core.otel: Initializing OTEL SDK');
-  sdk.start();
-  logger.info('common.core.otel: OTEL SDK initialized successfully');
-} catch (error) {
-  logger.error('common.core.otel: Failed to initialize OTEL SDK:', error);
-} finally {
-  logger.mark('otel-init-end');
-  logger.measure(between('otel-init-start', 'otel-init-end'));
-}
+  try {
+    logger.mark('otel-init-start');
+    logger.info('common.core.otel: Initializing OTEL SDK');
+    sdk.start();
+    logger.info('common.core.otel: OTEL SDK initialized successfully');
+  } catch (error) {
+    logger.error('common.core.otel: Failed to initialize OTEL SDK:', error);
+  } finally {
+    logger.mark('otel-init-end');
+    logger.measure(between('otel-init-start', 'otel-init-end'));
+  }
+
+  initialized = true;
+};
 
 const shutdown = async (): Promise<void> => {
+  if (!sdk && !loggerProvider && !logRecordProcessor) return; // nothing to do
   logger.mark('otel-shutdown-start');
   try {
-    await sdk.shutdown();
+    if (sdk) {
+      await sdk.shutdown();
+    }
     // Shutdown logs provider and processor if they were initialized
     if (logRecordProcessor) {
       await logRecordProcessor.shutdown();
@@ -111,4 +122,4 @@ const shutdown = async (): Promise<void> => {
   }
 };
 
-export { shutdown };
+export { init, shutdown };

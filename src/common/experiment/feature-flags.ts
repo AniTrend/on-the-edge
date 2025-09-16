@@ -23,3 +23,9 @@ export const getPlatformSource = (
 
 export const isAnalyticsEnabled = (growth: Features): boolean =>
   invoke(() => growth.isOn('enable-analytics'));
+
+export const isXemNormalizationEnabled = (growth: Features): boolean =>
+  invoke(() => growth.isOn('episode-number-normalize-xem'));
+
+export const getTitleSimThreshold = (growth: Features): number | undefined =>
+  invoke(() => growth.getFeatureValue('episode-align-title-sim', undefined));

@@ -6,12 +6,13 @@ import {
 } from '@mongodb';
 import { logger } from '../../common/core/logger.ts';
 import { IResponse } from '../../common/types/response.ts';
-import { MediaEntity, MediaWithSeason } from '../types.ts';
+import { MediaEntity, MediaUnion } from '../types.ts';
 import { transform } from './series.local.transformer.ts';
 import { MediaDocument } from './types.ts';
 import { MediaParamId } from './types.ts';
 import { FindOptions } from '@mongodb';
 import { between } from '@optic';
+import { SeriesRelationId } from '../service/arm/types.ts';
 
 export default class LocalSource {
   constructor(
@@ -52,7 +53,48 @@ export default class LocalSource {
     };
   };
 
-  save = async (media: MediaWithSeason): Promise<IResponse<MediaEntity>> => {
+  getIds = async (anilist: number): Promise<SeriesRelationId | undefined> => {
+    const filter: Filter<Document> = {
+      'mediaId.anilist': anilist,
+    };
+    const options: FindOptions<MediaDocument> = {
+      projection: { mediaId: 1 },
+    };
+    const document = await this.collection
+      ?.findOne(filter, options)
+      ?.then((document) => {
+        logger.debug(
+          `seriese.local.source:getIds: Result from collection lookup`,
+          document?._id,
+        );
+        return document;
+      })
+      ?.catch((e) => {
+        logger.warn(
+          `seriese.local.source:getIds: Unable to find media in collection`,
+          [anilist, e],
+        );
+        return undefined;
+      });
+
+    return document
+      ? {
+        anidb: document.mediaId.anidb ?? undefined,
+        anilist: document.mediaId.anilist ?? undefined,
+        animePlanet: document.mediaId.animePlanet ?? undefined,
+        anisearch: document.mediaId.anisearch ?? undefined,
+        imdb: document.mediaId.imdb ?? undefined,
+        kitsu: document.mediaId.kitsu ?? undefined,
+        livechart: document.mediaId.livechart ?? undefined,
+        notify: document.mediaId.notify ?? undefined,
+        themoviedb: document.mediaId.themoviedb ?? undefined,
+        thetvdb: document.mediaId.tvdb ?? undefined,
+        myanimelist: document.mediaId.myanimelist ?? undefined,
+      }
+      : undefined;
+  };
+
+  save = async (media: MediaUnion): Promise<IResponse<MediaEntity>> => {
     if (!this.collection) {
       logger.error('seriese.local.source:save: Collection is not initialized');
       throw new Error('Collection not initialized');

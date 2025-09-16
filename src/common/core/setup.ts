@@ -1,4 +1,4 @@
-import { shutdown } from './otel.ts';
+import { init, shutdown } from './otel.ts';
 import { env } from './env.ts';
 import { State } from '../types/state.ts';
 import { GrowthBook } from '@growthbook';
@@ -37,6 +37,12 @@ Deno.addSignalListener('SIGTERM', onTerminationRequest);
 
 export const createState = async (): Promise<State> => {
   logger.mark('setup-start');
+  // Initialize OTEL only when building application state (server/runtime), not during unit tests indirectly
+  try {
+    init();
+  } catch (_err) {
+    // Best-effort init; continue without tracing if it fails
+  }
   const state = {
     credential: {
       supabase: {

@@ -1,7 +1,8 @@
 import { currentDate, toEpotch } from '../../common/core/utils.ts';
 import { toInstant } from '../../common/helpers/date.ts';
-import { AnimeRelationId } from '../service/arm/types.ts';
-import { Jikan } from '../service/jikan/types.ts';
+import { SeriesRelationId } from '../service/arm/types.ts';
+import { MalType } from '../service/jikan/remote/enums.ts';
+import { Jikan, JikanAnime, JikanManga } from '../service/jikan/types.ts';
 import { NotifyAnime } from '../service/notify/types.ts';
 import { SkyhookShow } from '../service/skyhook/types.ts';
 import { AnimeTheme } from '../service/theme/types.ts';
@@ -13,11 +14,14 @@ import {
 } from '../service/tmdb/types.ts';
 import { TraktShow } from '../service/trakt/types.ts';
 import {
-  Media,
+  AnimeMetadata,
+  MangaMetadata,
+  MediaKind,
+  MediaUnion,
   NetworkCategory,
   SeriesCoverImage,
   SeriesId,
-  SeriesImage,
+  SeriesImageAttributes,
   SeriesNetwork,
   SeriesSchedule,
   SeriesScheduleEpisode,
@@ -26,7 +30,7 @@ import {
 } from '../types.ts';
 
 const seriesId = (
-  relation?: AnimeRelationId,
+  relation?: SeriesRelationId,
   skyhook?: SkyhookShow,
   tmdb?: TmdbShow,
   notify?: NotifyAnime,
@@ -51,6 +55,9 @@ const seriesId = (
   trakt: trakt?.mediaId?.trakt ?? null,
 });
 
+// Derives a composite title set from available providers.
+// Supports both Anime (Jikan anime) and Manga (Jikan manga) resources –
+// Jikan's title fields are consistent across media types so we can treat them uniformly.
 const seriesTitle = (
   tmdb?: TmdbShow,
   notify?: NotifyAnime,
@@ -62,7 +69,11 @@ const seriesTitle = (
   japanese: jikan?.title_japanese ?? notify?.title?.native ??
     tmdb?.original_name ?? null,
   romaji: notify?.title.romaji ?? null,
-  synonyms: jikan?.title_synonyms ?? notify?.title?.synonyms ?? null,
+  // Prefer Jikan synonyms (works for anime & manga). If empty array, fallback to notify synonyms.
+  synonyms:
+    (jikan?.title_synonyms && jikan.title_synonyms.length > 0
+      ? jikan.title_synonyms
+      : notify?.title?.synonyms) ?? null,
 });
 
 const seriesScheduleEpisode = (
@@ -151,35 +162,34 @@ const seriesDescription = (
     skyhook?.overview ?? trakt?.overview ?? null;
 };
 
-const seriesImage = (images?: Images): SeriesImage => {
+const seriesImages = (images?: Images): SeriesImageAttributes[] => {
   if (!images) {
-    return {
-      backdrops: [],
-      posters: [],
-      logos: [],
-    };
+    return [];
   }
 
-  return {
-    backdrops: images.backdrops.map((data) => ({
-      locale: data.iso_639_1,
-      height: data.height,
-      width: data.width,
-      url: data.file_path,
-    })),
-    posters: images.posters.map((data) => ({
-      locale: data.iso_639_1,
-      height: data.height,
-      width: data.width,
-      url: data.file_path,
-    })),
-    logos: images.logos.map((data) => ({
-      locale: data.iso_639_1,
-      height: data.height,
-      width: data.width,
-      url: data.file_path,
-    })),
-  };
+  const backdrops = images.backdrops.map<SeriesImageAttributes>((data) => ({
+    locale: data.iso_639_1,
+    height: data.height,
+    width: data.width,
+    url: data.file_path,
+    type: 'BACKDROP',
+  }));
+  const posters = images.posters.map<SeriesImageAttributes>((data) => ({
+    locale: data.iso_639_1,
+    height: data.height,
+    width: data.width,
+    url: data.file_path,
+    type: 'POSTER',
+  }));
+  const logos = images.logos.map<SeriesImageAttributes>((data) => ({
+    locale: data.iso_639_1,
+    height: data.height,
+    width: data.width,
+    url: data.file_path,
+    type: 'LOGO',
+  }));
+
+  return [...posters, ...backdrops, ...logos];
 };
 
 const seriesTrailers = (notify?: NotifyAnime): SeriesTrailer[] =>
@@ -200,37 +210,68 @@ const seriesCover = (
 });
 
 export const seriesTransform = (
-  relation?: AnimeRelationId,
+  relation?: SeriesRelationId,
   skyhook?: SkyhookShow,
   tmdb?: TmdbShow,
   themes?: AnimeTheme[],
   notify?: NotifyAnime,
   jikan?: Jikan,
   trakt?: TraktShow,
-): Media => ({
-  mediaId: seriesId(relation, skyhook, tmdb, notify, jikan, trakt),
-  banner: tmdb?.backdrop_path ?? skyhook?.banner ?? null,
-  cover: seriesCover(notify, jikan),
-  fanart: skyhook?.fanart ?? null,
-  format: notify?.format ?? null,
-  source: notify?.source ?? null,
-  status: notify?.status ?? null,
-  title: seriesTitle(tmdb, notify, jikan),
-  themeSongs: themes ?? [],
-  schedule: seriesSchedule(tmdb),
-  ageRating: seriesContentRating(jikan, skyhook, trakt),
-  isAdult: tmdb?.adult ?? null,
-  trailers: seriesTrailers(notify),
-  networks: seriesNetworks(skyhook, trakt, tmdb),
-  image: seriesImage(tmdb?.images),
-  homepage: trakt?.homepage ?? tmdb?.homepage ?? null,
-  updatedAt: trakt?.updatedAt ?? toEpotch(currentDate()),
-  description: seriesDescription(
-    skyhook,
-    tmdb,
-    notify,
-    jikan,
-    trakt,
-  ),
-  airedEpisodes: trakt?.airedEpisodes ?? null,
-});
+): MediaUnion => {
+  const isAnime = jikan?.type === MalType.ANIME;
+
+  const kind: MediaKind = isAnime ? 'ANIME' : 'MANGA';
+
+  const base = {
+    kind,
+    mediaId: seriesId(relation, skyhook, tmdb, notify, jikan, trakt),
+    banner: tmdb?.backdrop_path ?? skyhook?.banner ?? null,
+    cover: seriesCover(notify, jikan),
+    fanart: skyhook?.fanart ?? null,
+    format: notify?.format ?? null,
+    source: notify?.source ?? null,
+    status: notify?.status ?? null,
+    title: seriesTitle(tmdb, notify, jikan),
+    ageRating: seriesContentRating(jikan, skyhook, trakt),
+    images: seriesImages(tmdb?.images),
+    moreInfo: jikan?.moreinfo ?? null,
+    updatedAt: trakt?.updatedAt ?? toEpotch(currentDate()),
+    description: seriesDescription(skyhook, tmdb, notify, jikan, trakt),
+  };
+
+  if (!isAnime) {
+    const jikanManga = jikan as JikanManga;
+    const manga: MangaMetadata = {
+      chapters: typeof jikanManga.chapters === 'number'
+        ? jikanManga.chapters
+        : null,
+      volumes: typeof jikanManga.volumes === 'number'
+        ? jikanManga.volumes
+        : null,
+      publishedFrom: jikanManga.published?.from
+        ? toInstant(jikanManga.published.from)
+        : null,
+      publishedTo: jikanManga.published?.to
+        ? toInstant(jikanManga.published.to)
+        : null,
+    };
+
+    return { ...base, ...manga };
+  }
+
+  if (isAnime) {
+    const jikanAnime = jikan as JikanAnime;
+    const anime: AnimeMetadata = {
+      themeSongs: themes ?? [],
+      schedule: seriesSchedule(tmdb),
+      trailers: seriesTrailers(notify),
+      broadcast: jikanAnime.broadcast?.string ?? null,
+      airedEpisodes: trakt?.airedEpisodes ?? null,
+      networks: seriesNetworks(skyhook, trakt, tmdb),
+      isAdult: tmdb?.adult ?? null,
+      homepage: trakt?.homepage ?? tmdb?.homepage ?? null,
+    };
+    return { ...base, ...anime };
+  }
+  return base;
+};

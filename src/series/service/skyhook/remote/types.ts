@@ -59,6 +59,10 @@ export type SkyhookModel = {
   firstAired: Date;
   lastAired: Date;
   tvMazeId: number;
+  tmdbId: number;
+  imdbId: string;
+  malIds: number[];
+  aniListIds: number[];
   lastUpdated: Date;
   status: string;
   runtime: number;
@@ -69,7 +73,6 @@ export type SkyhookModel = {
   contentRating: string;
   rating?: RatingModel;
   alternativeTitles?: AlternativeTitlesModel;
-  imdbId: string;
   actors: ActorModel[];
   images: ImageModel[];
   seasons: SeasonModel[];

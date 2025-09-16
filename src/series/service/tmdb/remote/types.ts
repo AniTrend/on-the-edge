@@ -44,7 +44,7 @@ export interface Season {
   images: Images | null;
 }
 
-interface SpokenLanguage {
+export interface SpokenLanguage {
   english_name: string;
   iso_639_1: string;
   name: string;
@@ -84,7 +84,8 @@ interface Crew {
 
 interface Episode {
   air_date: string;
-  episode_number: string;
+  episode_number: number;
+  episode_type: string | 'standard';
   id: number;
   name: string;
   overview: string;

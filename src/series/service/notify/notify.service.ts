@@ -10,6 +10,7 @@ export type EnrichedAnimeData = Omit<AnimeModel, 'episodes'> & {
 
 export const getNotifyAnime = async (
   notify?: string,
+  opts: { withEpisodes: boolean } = { withEpisodes: false },
 ): Promise<NotifyAnime | undefined> => {
   if (!notify) {
     logger.warn('The parameter `notify` is undefined');
@@ -19,9 +20,11 @@ export const getNotifyAnime = async (
   try {
     const model = await getAnime(notify);
 
-    const episodes: EpisodeModel[] = await Promise.all(
-      model.episodes.map(getEpisode),
-    );
+    const episodes: EpisodeModel[] = opts.withEpisodes
+      ? await Promise.all(
+        model.episodes.map(getEpisode),
+      )
+      : [];
 
     return transform({
       ...model,

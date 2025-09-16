@@ -61,17 +61,27 @@ export type SeriesNetwork = {
   category: NetworkCategory;
 };
 
-export type SeriesImageBackdrop = {
+export type SeriesImageAttributes = {
   locale: string | null;
   height: number;
   width: number;
   url: string;
+  type: 'BACKDROP' | 'POSTER' | 'LOGO';
 };
 
+// Full image sets used for top-level media image
 export type SeriesImage = {
-  backdrops: SeriesImageBackdrop[];
-  logos: SeriesImageBackdrop[];
-  posters: SeriesImageBackdrop[];
+  backdrops: SeriesImageAttributes[];
+  logos: SeriesImageAttributes[];
+  posters: SeriesImageAttributes[];
+};
+
+export type SeriesImageSimple = {
+  extraLarge?: string;
+  large?: string;
+  medium?: string;
+  banner?: string | null;
+  logo?: string | null;
 };
 
 export interface SeriesEpisodeCrew {
@@ -119,7 +129,7 @@ export type SeriesSeason = {
   overview: string;
   number: number;
   cover?: string;
-  image: SeriesImage;
+  image: SeriesImageSimple;
   episodes: SeriesEpisode[];
 };
 
@@ -137,6 +147,7 @@ export type SeriesCoverImage = {
 };
 
 export interface Media {
+  kind: MediaKind;
   mediaId: SeriesId;
   cover: SeriesCoverImage;
   banner: string | null;
@@ -145,23 +156,38 @@ export interface Media {
   status: Status | null;
   source: Source | null;
   title: SeriesTitle;
-  themeSongs: AnimeTheme[];
-  schedule: SeriesSchedule | null;
   ageRating: string | null;
-  isAdult: boolean | null;
-  trailers: SeriesTrailer[];
-  networks: SeriesNetwork[];
-  image: SeriesImage;
-  homepage: string | null;
+  images: SeriesImageAttributes[];
   description: string | null;
   updatedAt: Instant;
+  moreInfo: string | null;
+}
+
+export type MediaKind = 'ANIME' | 'MANGA';
+
+export type MangaMetadata = {
+  chapters: number | null;
+  volumes: number | null;
+  publishedFrom: Instant | null;
+  publishedTo: Instant | null;
+};
+
+export type AnimeMetadata = {
+  themeSongs: AnimeTheme[];
+  schedule: SeriesSchedule | null;
+  trailers: SeriesTrailer[];
+  networks: SeriesNetwork[];
   airedEpisodes: number | null;
-}
+  broadcast: string | null;
+  isAdult: boolean | null;
+  homepage: string | null;
+};
 
-export interface MediaWithSeason extends Media {
-  seasons: SeriesSeason[];
-}
+export type MediaUnion =
+  | Media
+  | (Media & AnimeMetadata)
+  | (Media & MangaMetadata);
 
-export type MediaEntity = Media & MediaWithSeason & {
+export type MediaEntity = MediaUnion & {
   id: string;
 };

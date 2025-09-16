@@ -1,4 +1,4 @@
-import { AnimeRelationId } from '../../service/arm/types.ts';
+import { SeriesRelationId } from '../../service/arm/types.ts';
 import { NotifyAnime } from '../../service/notify/types.ts';
 import { SkyhookEpisode, SkyhookShow } from '../../service/skyhook/types.ts';
 import { TmdbEpisode, TmdbSeason, TmdbShow } from '../../service/tmdb/types.ts';
@@ -23,7 +23,7 @@ export class SeasonCorrelationMapper {
     private readonly notify: NotifyAnime | undefined,
     private readonly skyhook: SkyhookShow | undefined,
     private readonly tmdb: TmdbShow | undefined,
-    private readonly relations: AnimeRelationId[],
+    private readonly relations: SeriesRelationId[],
   ) {}
 
   /**
@@ -236,7 +236,8 @@ export class SeasonCorrelationMapper {
         const tmdbEpisode: TmdbEpisode = specialSeason.episodes?.[index] || {
           id: -1,
           air_date: skyhookEpisode.airDate?.toString() || '',
-          episode_number: skyhookEpisode.episodeNumber.toString(),
+          episode_number: skyhookEpisode.episodeNumber,
+          episode_type: 'standard',
           name: skyhookEpisode.title || '',
           overview: skyhookEpisode.overview || '',
           production_code: '',
@@ -530,7 +531,8 @@ export class SeasonCorrelationMapper {
           tmdbEpisode = {
             id: -1,
             air_date: episode.airDate.toString() || '',
-            episode_number: episode.episodeNumber.toString(),
+            episode_number: episode.episodeNumber,
+            episode_type: 'standard',
             name: episode.title || '',
             overview: episode.overview || '',
             production_code: '',
@@ -546,7 +548,7 @@ export class SeasonCorrelationMapper {
         }
 
         return this.mergeEpisodeData(
-          tmdbEpisode,
+          tmdbEpisode!,
           episode,
           isSpecial ? 'Integrated special episode' : 'Regular episode',
           animeData,
@@ -924,8 +926,7 @@ export class SeasonCorrelationMapper {
       stillPath: tmdbEpisode.still_path || '',
       voteAverage: tmdbEpisode.vote_average || 0,
       voteCount: tmdbEpisode.vote_count || 0,
-      crew: tmdbEpisode.crew || [],
-      guestStars: tmdbEpisode.guest_stars || [],
+      staff: [...tmdbEpisode.crew, ...tmdbEpisode.guest_stars],
 
       // Anime-specific fields
       animeEpisodeIds,
@@ -942,7 +943,7 @@ export class SeasonCorrelationMapper {
         confidence: confidenceScore,
         mappingNotes: mappingNote,
       },
-    } as EnhancedMergedEpisode;
+    };
   }
 
   /**

@@ -32,27 +32,40 @@ export const request = async <T>(
   logger.mark('request-start');
   const { safeUrl, host } = sanitize(url);
   logger.debug(`----> HTTP ${options.method}: ${safeUrl}`);
-  return await fetch(url, {
-    headers: {
-      ...options.headers,
-      host: host,
-    },
-  }).then((response) => {
-    logger.debug(`<---- HTTP/${response.status} ${options.method}: ${safeUrl}`);
+
+  let response: Response | undefined;
+  try {
+    response = await fetch(url, {
+      headers: {
+        ...options.headers,
+        host: host,
+      },
+    });
+
+    logger.debug(
+      `<---- HTTP/${response.status} ${options.method}: ${safeUrl}`,
+    );
     logger.mark('request-end');
     logger.measure(between('request-start', 'request-end'), host);
+
+    const contentType = response.headers.get('Content-Type') ?? '';
+
     if (!response.ok) {
+      // Consume the body to avoid Deno leak detector warnings; don't cancel a locked stream
+      await response.arrayBuffer().catch(() => undefined);
       throw new Error(
         `<---- HTTP/${response.status} ${options.method}: ${safeUrl}`,
       );
     }
-    const contentType = response.headers.get('Content-Type');
-    if (contentType && contentType.includes('application/json')) {
-      return response.json();
+
+    if (contentType.includes('application/json')) {
+      return await response.json() as T;
     } else {
-      return response.text();
+      return await response.text() as unknown as T;
     }
-  }).catch((error) => {
+  } catch (error) {
     logger.warn(error);
-  });
+    // Preserve previous behavior: resolve to undefined on failure
+    return undefined as unknown as T;
+  }
 };

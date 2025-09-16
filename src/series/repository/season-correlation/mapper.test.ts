@@ -752,6 +752,9 @@ Deno.test('SeasonCorrelationMapper - Basic correlation', () => {
 
   const mockSkyhook: SkyhookShow = {
     tvdbId: 359274,
+    tmdbId: 88803,
+    malIds: [1],
+    aniListIds: [1],
     title: 'Vinland Saga',
     overview:
       "For a thousand years, the Vikings have made quite a name and reputation for themselves as the strongest families with a thirst for violence. Thorfinn, the son of one of the Vikings' greatest warriors, spends his boyhood in a battlefield enhancing his skills in his adventure to redeem his most-desired revenge after his father was murdered.",
@@ -1733,7 +1736,8 @@ Deno.test('SeasonCorrelationMapper - Special episodes handling', () => {
             name: 'Special 1',
             overview: 'Special episode',
             air_date: '2021-12-25',
-            episode_number: '1',
+            episode_number: 1,
+            episode_type: 'special',
             season_number: 0,
             still_path: '/special1.jpg',
             vote_average: 7.5,
@@ -1749,7 +1753,8 @@ Deno.test('SeasonCorrelationMapper - Special episodes handling', () => {
             name: 'Special 2',
             overview: 'Special episode',
             air_date: '2022-06-30',
-            episode_number: '2',
+            episode_number: 2,
+            episode_type: 'special',
             season_number: 0,
             still_path: '/special2.jpg',
             vote_average: 7.8,
@@ -1777,7 +1782,8 @@ Deno.test('SeasonCorrelationMapper - Special episodes handling', () => {
             name: 'Episode 1',
             overview: 'First regular episode',
             air_date: '2022-01-01',
-            episode_number: '1',
+            episode_number: 1,
+            episode_type: 'standard',
             season_number: 1,
             still_path: '/ep1.jpg',
             vote_average: 8.0,
@@ -1828,6 +1834,9 @@ Deno.test('SeasonCorrelationMapper - Special episodes handling', () => {
 
   const mockSkyhook: SkyhookShow = {
     tvdbId: 67890,
+    tmdbId: 88803,
+    malIds: [1],
+    aniListIds: [1],
     title: 'Test Anime',
     overview: 'This is a test anime for special episodes handling.',
     slug: 'test-anime',

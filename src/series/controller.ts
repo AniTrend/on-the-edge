@@ -2,7 +2,6 @@ import { Status } from '@oak';
 import { AppContext, ErrorResponse } from '../common/types/core.ts';
 import LocalSource from './local/series.local.source.ts';
 import SeriesRepository from './repository/series.repository.ts';
-import SeasonRepository from './repository/season.repository.ts';
 import { collection } from '../common/mongo/index.ts';
 
 export const series = async ({ request, response, state }: AppContext) => {
@@ -12,7 +11,6 @@ export const series = async ({ request, response, state }: AppContext) => {
 
     const series = await new SeriesRepository(
       new LocalSource(collection('series', state.local)),
-      new SeasonRepository(),
     ).getById({ anilist: id });
 
     response.type = 'application/json';
