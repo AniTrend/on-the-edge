@@ -21,24 +21,42 @@ const normTitle = (
 };
 
 // Bigram Dice coefficient similarity for normalized strings
-const dice = (a: string, b: string): number => {
-  if (!a || !b) return 0;
-  if (a === b) return 1;
-  if (a.length < 2 || b.length < 2) return 0;
-  const grams = (s: string) => {
+// Uses memoization to cache bigram generation for improved performance
+const dice = (() => {
+  // Simple LRU-style cache for bigram maps (max 100 entries to prevent memory bloat)
+  const cache = new Map<string, Map<string, number>>();
+  const MAX_CACHE_SIZE = 100;
+
+  const grams = (s: string): Map<string, number> => {
+    if (cache.has(s)) return cache.get(s)!;
+
     const m = new Map<string, number>();
     for (let i = 0; i < s.length - 1; i++) {
       const g = s.substring(i, i + 2);
       m.set(g, (m.get(g) ?? 0) + 1);
     }
+
+    // Simple cache size management: clear oldest entries when limit exceeded
+    if (cache.size >= MAX_CACHE_SIZE) {
+      const firstKey = cache.keys().next().value;
+      if (firstKey) cache.delete(firstKey);
+    }
+    cache.set(s, m);
     return m;
   };
-  const A = grams(a), B = grams(b);
-  let overlap = 0;
-  for (const [g, c] of A) overlap += Math.min(c, B.get(g) ?? 0);
-  const total = (a.length - 1) + (b.length - 1);
-  return (2 * overlap) / total;
-};
+
+  return (a: string, b: string): number => {
+    if (!a || !b) return 0;
+    if (a === b) return 1;
+    if (a.length < 2 || b.length < 2) return 0;
+
+    const A = grams(a), B = grams(b);
+    let overlap = 0;
+    for (const [g, c] of A) overlap += Math.min(c, B.get(g) ?? 0);
+    const total = (a.length - 1) + (b.length - 1);
+    return (2 * overlap) / total;
+  };
+})();
 
 // Extract day bucket (UTC midnight) from Instant (seconds) as integer days since epoch
 const toDay = (instant?: number | null): number | undefined =>
