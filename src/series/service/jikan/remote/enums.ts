@@ -1,4 +1,4 @@
 export enum MalType {
-  TV,
+  ANIME,
   Manga,
 }

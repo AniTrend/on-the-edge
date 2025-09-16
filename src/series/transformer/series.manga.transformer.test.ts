@@ -78,7 +78,7 @@ describe('seriesTransform (manga support)', () => {
     assertEquals(media.cover.large, 'img_l.jpg');
     assertStringIncludes(media.description!, 'A concise synopsis.');
     assertStringIncludes(
-      media.description!,
+      media.moreInfo!,
       'Extended background information.',
     );
     // Manga metadata

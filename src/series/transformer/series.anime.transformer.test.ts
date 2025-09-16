@@ -4,6 +4,7 @@ import { seriesTransform } from './series.transformer.ts';
 import { SeriesRelationId } from '../service/arm/types.ts';
 import { JikanAnime } from '../service/jikan/types.ts';
 import { MediaUnion } from '../types.ts';
+import { MalType } from '../service/jikan/remote/enums.ts';
 
 // Minimal anime fixture focusing on discriminated union behavior
 
@@ -38,7 +39,7 @@ describe('seriesTransform (anime union)', () => {
       title_english: 'Primary Anime Title EN',
       title_japanese: 'アニメ',
       title_synonyms: ['Alt Anime Title'],
-      type: 1, // MalType.Anime equivalent
+      type: MalType.ANIME,
       score: 0,
       scored_by: 0,
       rank: null,

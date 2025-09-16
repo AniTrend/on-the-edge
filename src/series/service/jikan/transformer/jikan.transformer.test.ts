@@ -32,7 +32,7 @@ Deno.test('animeTransform should preserve episodes_list and moreinfo', () => {
     title_english: null,
     title_japanese: null,
     title_synonyms: null,
-    type: MalType.TV,
+    type: MalType.ANIME,
     score: 0,
     scored_by: 0,
     rank: null,

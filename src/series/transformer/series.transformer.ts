@@ -218,12 +218,9 @@ export const seriesTransform = (
   jikan?: Jikan,
   trakt?: TraktShow,
 ): MediaUnion => {
-  const isManga = (candidate: Jikan | undefined): candidate is JikanManga =>
-    !!candidate && candidate.type === MalType.Manga;
-  const isAnime = (candidate: Jikan | undefined): candidate is JikanAnime =>
-    !!candidate && candidate.type === MalType.TV;
+  const isAnime = jikan?.type === MalType.ANIME;
 
-  const kind: MediaKind = isManga(jikan) ? 'MANGA' : 'ANIME';
+  const kind: MediaKind = isAnime ? 'ANIME' : 'MANGA';
 
   const base = {
     kind,
@@ -242,25 +239,27 @@ export const seriesTransform = (
     description: seriesDescription(skyhook, tmdb, notify, jikan, trakt),
   };
 
-  if (isManga(jikan)) {
+  if (!isAnime) {
+    const jikanManga = jikan as JikanManga;
     const manga: MangaMetadata = {
-      chapters: typeof jikan.chapters === 'number' ? jikan.chapters : null,
-      volumes: typeof jikan.volumes === 'number' ? jikan.volumes : null,
-      publishedFrom: jikan.published?.from
-        ? toInstant(jikan.published.from)
+      chapters: typeof jikanManga.chapters === 'number' ? jikanManga.chapters : null,
+      volumes: typeof jikanManga.volumes === 'number' ? jikanManga.volumes : null,
+      publishedFrom: jikanManga.published?.from
+        ? toInstant(jikanManga.published.from)
         : null,
-      publishedTo: jikan.published?.to ? toInstant(jikan.published.to) : null,
+      publishedTo: jikanManga.published?.to ? toInstant(jikanManga.published.to) : null,
     };
 
     return { ...base, ...manga };
   }
 
-  if (isAnime(jikan)) {
+  if (isAnime) {
+    const jikanAnime = jikan as JikanAnime;
     const anime: AnimeMetadata = {
       themeSongs: themes ?? [],
       schedule: seriesSchedule(tmdb),
       trailers: seriesTrailers(notify),
-      broadcast: jikan.broadcast?.string ?? null,
+      broadcast: jikanAnime.broadcast?.string ?? null,
       airedEpisodes: trakt?.airedEpisodes ?? null,
       networks: seriesNetworks(skyhook, trakt, tmdb),
       isAdult: tmdb?.adult ?? null,
