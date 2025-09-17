@@ -1,5 +1,5 @@
 import { News } from '../types.ts';
-import { latestNews } from '../service/index.ts';
+import { latestNews } from '@scope/service/news';
 import LocalSource from '../local/news.local.source.ts';
 import { IPaging } from '../../common/types/paging.ts';
 import { transform } from '../transformer/news.transformer.ts';
