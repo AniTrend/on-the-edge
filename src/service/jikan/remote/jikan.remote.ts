@@ -1,8 +1,8 @@
-import { env } from '../../../common/core/env.ts';
-import { request } from '../../../common/core/request.ts';
+import { env } from '@scope/common/core';
+import { request } from '@scope/common/core';
 import { AnimeEpisode, AnimeResource, MangaResource } from './types.ts';
-import { Service } from '../../../common/types/state.ts';
-import { type IResponse } from '../../../common/types/response.ts';
+import { Service } from '@scope/common/types';
+import { type IResponse } from '@scope/common/types';
 
 const getService = (): Service => ({
   url: env<string>('MAL'),

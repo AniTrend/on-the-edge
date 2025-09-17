@@ -1,8 +1,8 @@
-import { Instant, toInstant } from '../common/helpers/index.ts';
-import { IPaging } from '../common/types/paging.ts';
-import { AnimeEpisode } from '../service/jikan/remote/types.ts';
-import { SkyhookEpisode } from '../service/skyhook/types.ts';
-import { TmdbCrew, TmdbImages } from '../service/tmdb/types.ts';
+import { Instant, toInstant } from '@scope/common/helpers';
+import { IPaging } from '@scope/common/types';
+import { AnimeEpisode } from '@scope/service/jikan';
+import { SkyhookEpisode } from '@scope/service/skyhook';
+import { TmdbCrew, TmdbImages } from '@scope/service/tmdb';
 
 export type MergedEpisode = {
   id: number;

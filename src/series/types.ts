@@ -1,6 +1,6 @@
-import { Instant } from '../common/helpers/date.ts';
-import { Format, Source, Status } from '../service/notify/transformer/enums.ts';
-import { AnimeTheme } from '../service/theme/types.ts';
+import { Instant } from '@scope/common/helpers';
+import { Format, Source, Status } from '@scope/service/notify';
+import { AnimeTheme } from '@scope/service/theme';
 
 export type SeriesId = {
   anidb: number | null;

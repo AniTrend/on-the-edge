@@ -1,6 +1,6 @@
 import { assertEquals } from '@std/assert';
-import { toCanonicalFromTrakt } from './trakt.episodes.transformer.ts';
-import { EpisodeModel } from '../remote/types.ts';
+import { toCanonicalFromTrakt } from './episode.transformer.ts';
+import { EpisodeModel } from '@scope/service/trakt';
 
 Deno.test('toCanonicalFromTrakt maps Trakt episode to EpisodeCanonical', () => {
   const src: EpisodeModel = {

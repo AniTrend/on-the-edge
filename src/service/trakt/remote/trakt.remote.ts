@@ -1,6 +1,6 @@
-import { env } from '../../../common/core/env.ts';
-import { defaults, request } from '../../../common/core/request.ts';
-import { Service } from '../../../common/types/state.ts';
+import { env } from '@scope/common/core';
+import { defaults, request } from '@scope/common/core';
+import { Service } from '@scope/common/types';
 import { ShowModel } from './types.ts';
 
 const getService = (): Service => ({

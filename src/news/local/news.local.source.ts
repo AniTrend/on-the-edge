@@ -1,12 +1,12 @@
 import { Collection, Filter, FindOptions, ObjectId, WithId } from '@mongodb';
-import { logger } from '../../common/core/logger.ts';
-import { IPaging } from '../../common/types/paging.ts';
-import { IResponse } from '../../common/types/response.ts';
+import { logger } from '@scope/common/core';
+import { IPaging } from '@scope/common/types';
+import { IResponse } from '@scope/common/types';
 import { toDocument, toEntity } from '../mapper/index.ts';
 import { News } from '../types.ts';
 import { NewsDocument, NewsPagingParam } from './types.ts';
 import { between } from '@optic';
-import { projectionOf, sortOf } from '../../common/mongo/index.ts';
+import { projectionOf, sortOf } from '@scope/common/mongo';
 
 export default class LocalSource {
   constructor(

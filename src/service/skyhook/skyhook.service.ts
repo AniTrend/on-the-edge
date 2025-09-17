@@ -1,4 +1,4 @@
-import { logger } from '../../common/core/logger.ts';
+import { logger } from '@scope/common/core';
 import { transform } from './transformer/index.ts';
 import { getShowByTvdb } from './remote/index.ts';
 import { SkyhookShow } from './types.ts';

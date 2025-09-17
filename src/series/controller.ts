@@ -1,8 +1,8 @@
 import { Status } from '@oak';
-import { AppContext, ErrorResponse } from '../common/types/core.ts';
+import { AppContext, ErrorResponse } from '@scope/common/types';
 import LocalSource from './local/series.local.source.ts';
 import SeriesRepository from './repository/series.repository.ts';
-import { collection } from '../common/mongo/index.ts';
+import { collection } from '@scope/common/mongo';
 
 export const series = async ({ request, response, state }: AppContext) => {
   const params = request.url.searchParams;

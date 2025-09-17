@@ -1,6 +1,6 @@
-import { Transform } from '../../../common/transformer/types.ts';
+import { Transform } from '@scope/common/transformer';
+import { toInstant } from '@scope/common/helpers';
 import { SkyhookModel } from '../remote/types.ts';
-import { toInstant } from '../../../common/helpers/date.ts';
 import { SkyhookShow } from '../types.ts';
 
 export const transform: Transform<SkyhookModel, SkyhookShow> = (

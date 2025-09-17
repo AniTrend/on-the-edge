@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema",
-  "importMap": "./import_map.json",
+  "importMap": "./src/import_map.json",
   "lint": {
     "include": ["src"],
     "exclude": [".github", "README.md"],
@@ -19,34 +19,32 @@
   },
   "tasks": {
     "check": "deno check src/mod.ts",
-    "start": "deno run -P=default --unstable-otel --allow-scripts=npm:protobufjs ./src/mod.ts",
-    "test": "deno test -P --coverage=coverage",
+    "start": "deno run -P --unstable-otel --allow-scripts=npm:protobufjs ./src/mod.ts",
+    "test": "deno test -P --coverage=coverage --allow-sys=osRelease",
     "build": "deno compile -P --unstable-otel --allow-scripts=npm:protobufjs --output=./build/on-the-edge src/mod.ts"
   },
   "permissions": {
     "default": {
-      "read": true,
+      "read": [".env", "/.dockerenv"],
       "env": true,
       "net": true,
-      "sys": true,
-      "run": true
+      "sys": ["osRelease", "uid", "gid", "hostname", "userInfo"],
+      "run": ["/bin/sh"]
     }
   },
   "test": {
     "permissions": {
-      "read": true,
-      "env": true,
-      "net": true
+      "read": [".env"],
+      "env": true
     }
   },
   "compile": {
     "permissions": {
-      "write": true,
-      "read": true,
+      "read": [".env", "/.dockerenv"],
       "env": true,
       "net": true,
-      "sys": true,
-      "run": true
+      "sys": ["osRelease", "uid", "gid", "hostname", "userInfo"],
+      "run": ["/bin/sh"]
     }
   },
   "nodeModulesDir": "auto",

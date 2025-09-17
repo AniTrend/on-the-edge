@@ -1,4 +1,4 @@
-import { Instant } from '../../../common/helpers/date.ts';
+import { Instant } from '@scope/common/helpers';
 import { Format, Source, Status } from './enums.ts';
 
 export interface Title {

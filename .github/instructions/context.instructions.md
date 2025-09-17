@@ -74,6 +74,13 @@ Implementation preferences (to reduce ambiguity)
 - Prefer explicit domain types over `any`; surface narrow interfaces to improve refactor safety.
 - Use variable and function names that clearly convey intent and domain meaning. Avoid generic names like `data`, `info`, or `handle`, or short abbreviations that obscure purpose.
 
+Import conventions and module boundaries
+- Use `@scope/*` imports for external module dependencies (cross-module imports). Example: `import { logger } from '@scope/common/core';` when importing common utilities from outside the common module.
+- Use relative imports for files within the same module. Example: `import { helper } from './utils.ts';` for files in the same directory or module.
+- Each module should have a `deno.json` with an `exports` field defining its public API surface. This determines what external modules can import via `@scope/*` patterns.
+- Pattern: External imports use `@scope/<module>/<subpath>` based on the target module's exports configuration. Internal imports use relative paths (`./`, `../`).
+- Avoid deep relative imports across module boundaries (e.g., `../../other-module/internal/file.ts`). Use `@scope/*` imports that respect the target module's exports instead.
+
 - Autonomy & feedback policy
 	- Proceed without asking for interim feedback; complete the full task per the checklist/todos. Provide compact progress updates after meaningful batches of actions (3–5 tool calls or >3 files changed). Ask the user only when an essential detail is missing and assumptions would be risky.
 
@@ -143,11 +150,13 @@ Developer communication
 
 Example workflows for common tasks
 ---------------------------------
-- Add a new domain service:
+- **Add a new domain service**:
 	1. Create `src/<domain>/service/<name>.service.ts` alongside tests in the same folder.
  2. Wire it into the domain `index.ts` and export from the module.
  3. Add or update any repository/transformer files as needed.
  4. Write tests and run `deno task test` for the new files.
+ 5. Update the module's `deno.json` exports field to expose the new service's public API.
+ 6. Use `@scope/<domain>/<export-path>` for external imports and relative paths for internal module imports.
 
 - Fix a failing test:
  1. Run `deno task test --filter <test-name>` and inspect failure.

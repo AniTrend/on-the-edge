@@ -1,9 +1,9 @@
 import { Router } from '@oak';
-import type { AppContext } from './common/types/core.ts';
-import { config } from './config/index.ts';
-import { news, newsWorker } from './news/index.ts';
-import { series } from './series/index.ts';
-import { episodes } from './episodes/episodes.controller.ts';
+import type { AppContext } from '@scope/common/types';
+import { config } from '@scope/config';
+import { news, newsWorker } from '@scope/news';
+import { series } from '@scope/series';
+import { episodes } from '@scope/episodes';
 
 const router = new Router({
   methods: ['GET'],

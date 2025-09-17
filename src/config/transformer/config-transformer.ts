@@ -2,13 +2,13 @@ import { WithId } from '@mongodb';
 import {
   getPlatformSource,
   isAnalyticsEnabled,
-} from '../../common/experiment/index.ts';
-import { Transform } from '../../common/transformer/types.ts';
-import { Features } from '../../common/types/core.ts';
+} from '@scope/common/experiment';
+import { Transform } from '@scope/common/transformer';
+import { Features } from '@scope/common/types';
+import { idOf } from '@scope/common/mongo';
+import { PlatformSource } from '@scope/common/experiment';
 import { ConfigDocument } from '../local/types.ts';
 import { ClientConfiguration } from './types.ts';
-import { PlatformSource } from '../../common/experiment/types.ts';
-import { idOf } from '../../common/mongo/index.ts';
 
 const toImageUrl = (image: string, source?: PlatformSource): string => {
   if (source) {

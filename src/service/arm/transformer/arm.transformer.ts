@@ -1,6 +1,6 @@
 import { ArmModel } from '../remote/types.ts';
 import { SeriesRelationId } from '../types.ts';
-import { Transform } from '../../../common/transformer/types.ts';
+import { Transform } from '@scope/common/transformer';
 
 export const transform: Transform<ArmModel, SeriesRelationId> = (
   sourceData,

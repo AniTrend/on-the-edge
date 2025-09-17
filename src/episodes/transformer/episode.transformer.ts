@@ -1,6 +1,6 @@
-import { EpisodeCanonical } from '../../../episodes/episodes.types.ts';
-import { toInstant } from '../../../common/helpers/date.ts';
-import { EpisodeModel } from '../remote/types.ts';
+import { EpisodeModel } from '@scope/service/trakt';
+import { toInstant } from '@scope/common/helpers';
+import { EpisodeCanonical } from '../episodes.types.ts';
 
 const episodeKind = (model: EpisodeModel): 'main' | 'filler' | 'recap' => {
   // Trakt does not provide explicit kind, so we derive based on available flags
