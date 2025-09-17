@@ -19,7 +19,6 @@ OpenTelemetry initialization is now lazy and opt-in to avoid side effects during
 - Tests: Importing modules will not auto-start OTEL; tests run without initializing the SDK. Shutdown remains available via `shutdown()` for runtime signals.
 - Configuration: Set the following env variables to enable exporters. If a given endpoint is omitted, that exporter is skipped.
 	- `OTEL_DENO_SERVICE_NAME` (service name)
-	- `DENO_VERSION` (service version)
 	- `DENO_ENV` (deployment environment)
 	- `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`
 	- `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT`

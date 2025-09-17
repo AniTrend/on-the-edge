@@ -25,7 +25,7 @@ const init = (): void => {
   // Create resource with service information
   const resource = resourceFromAttributes({
     [ATTR_SERVICE_NAME]: env<string>('OTEL_DENO_SERVICE_NAME'),
-    [ATTR_SERVICE_VERSION]: env<string>('DENO_VERSION'),
+    [ATTR_SERVICE_VERSION]: Deno.version.deno,
     'service.instance.id': `deno-${Date.now()}`,
     'deployment.environment': env<string>('DENO_ENV'),
   });
@@ -77,6 +77,12 @@ const init = (): void => {
     instrumentations: [
       getNodeAutoInstrumentations({
         // Enable auto-instrumentation for HTTP, MongoDB, etc.
+        '@opentelemetry/instrumentation-mongodb': {
+          enabled: true,
+        },
+        '@opentelemetry/instrumentation-http': {
+          enabled: true,
+        },
         '@opentelemetry/instrumentation-fs': {
           enabled: false, // Disable file system instrumentation for performance
         },
