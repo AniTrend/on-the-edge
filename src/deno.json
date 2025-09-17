@@ -1,9 +1,0 @@
-{
-  "name": "@scope/src",
-  "version": "0.1.0",
-  "exports": {
-    ".": "./mod.ts"
-  },
-  "workspace": ["src/*"],
-  "importMap": "../import_map.json"
-}

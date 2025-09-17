@@ -1,5 +1,4 @@
-import factory from './common/core/factory.ts';
-import { port } from './common/core/utils.ts';
+import factory, { port } from '@scope/common/core';
 import router from './routes.ts';
 
 const instance = await factory({
