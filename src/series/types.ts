@@ -1,6 +1,6 @@
-import { Instant } from '../common/helpers/date.ts';
-import { Format, Source, Status } from './service/notify/transformer/enums.ts';
-import { AnimeTheme } from './service/theme/types.ts';
+import { Instant } from '@scope/common/helpers';
+import { Format, Source, Status } from '@scope/service/notify';
+import { AnimeTheme } from '@scope/service/theme';
 
 export type SeriesId = {
   anidb: number | null;
@@ -67,70 +67,6 @@ export type SeriesImageAttributes = {
   width: number;
   url: string;
   type: 'BACKDROP' | 'POSTER' | 'LOGO';
-};
-
-// Full image sets used for top-level media image
-export type SeriesImage = {
-  backdrops: SeriesImageAttributes[];
-  logos: SeriesImageAttributes[];
-  posters: SeriesImageAttributes[];
-};
-
-export type SeriesImageSimple = {
-  extraLarge?: string;
-  large?: string;
-  medium?: string;
-  banner?: string | null;
-  logo?: string | null;
-};
-
-export interface SeriesEpisodeCrew {
-  job?: string;
-  department?: string;
-  creditId: string;
-  adult?: boolean;
-  id: number;
-  knownFor: string;
-  name: string;
-  originalName: string;
-  popularity: number;
-  image?: string;
-  character?: string;
-  order?: number;
-}
-
-export type SeriesEpisode = {
-  id: number;
-  tvdbShowId: number;
-  tvdbId: number;
-  seasonNumber: number;
-  episodeNumber: number;
-  absoluteEpisodeNumber?: number;
-  airedBeforeSeasonNumber?: number;
-  airedBeforeEpisodeNumber?: number;
-  airedAfterSeasonNumber?: number;
-  airedAfterEpisodeNumber?: number;
-  title?: string;
-  airDate: Instant;
-  runtime?: number;
-  overview?: string;
-  image?: string;
-  name?: string;
-  poster?: string;
-  crew: SeriesEpisodeCrew[];
-  guests: SeriesEpisodeCrew[];
-};
-
-export type SeriesSeason = {
-  tmdbId: number;
-  airDate: Instant;
-  episodeCount: number;
-  name: string;
-  overview: string;
-  number: number;
-  cover?: string;
-  image: SeriesImageSimple;
-  episodes: SeriesEpisode[];
 };
 
 export type SeriesTrailer = {

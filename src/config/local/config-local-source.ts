@@ -1,7 +1,7 @@
 import { Collection, WithId } from '@mongodb';
-import { logger } from '../../common/core/logger.ts';
+import { logger } from '@scope/common/core';
+import { Optional } from '@scope/common/mongo';
 import { ConfigDocument } from './types.ts';
-import { Optional } from '../../common/mongo/types.ts';
 
 export class LocalSource {
   constructor(

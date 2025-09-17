@@ -2,8 +2,8 @@ import { describe, it } from '@std/testing/bdd';
 import { assertEquals, assertStringIncludes } from '@std/assert';
 import { MangaMetadata, MediaUnion } from '../types.ts';
 import { seriesTransform } from './series.transformer.ts';
-import { SeriesRelationId } from '../service/arm/types.ts';
-import { JikanManga } from '../service/jikan/types.ts';
+import { SeriesRelationId } from '../../service/arm/types.ts';
+import { JikanManga } from '../../service/jikan/types.ts';
 
 describe('seriesTransform (manga support)', () => {
   it('should map core fields and append moreinfo to description for manga', () => {

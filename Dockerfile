@@ -8,11 +8,11 @@ RUN apt-get upgrade -y
 RUN apt-get install unzip
 
 FROM scaffold AS cache
-RUN deno cache --allow-scripts src/server.ts
+RUN deno cache --allow-scripts src/mod.ts
 
 FROM cache AS build
-RUN deno check src/server.ts
-RUN deno compile --unstable-otel --allow-net --allow-env --allow-read --allow-sys --allow-run --allow-scripts --output=/usr/on-the-edge src/server.ts 
+RUN deno check src/mod.ts
+RUN deno compile --unstable-otel --allow-net --allow-env --allow-read --allow-sys --allow-run --allow-scripts --output=/usr/on-the-edge src/mod.ts 
 
 FROM build AS final
 RUN rm -r /usr/app

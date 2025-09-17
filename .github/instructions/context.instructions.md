@@ -11,7 +11,7 @@ When creating, editing, or reviewing code, follow these rules strictly:
 Contributing quick-start (checklist)
 - Create or update code with small, focused changes; keep one logical change per PR.
 - Write or update deterministic tests alongside code (use fetch stubs and in-memory adapters).
-- Run local gates: `deno fmt`, `deno lint`, and `deno test` (targeted where possible).
+- Run local gates: `deno fmt`, `deno lint`, and `deno task test` (targeted where possible).
 - Document behavior changes in README or `docs/` and note any feature flags/config.
 - Prefer DI: inject collections/clients/features; avoid global state in business logic.
 
@@ -23,7 +23,7 @@ This repository, "on-the-edge", is a Deno TypeScript service for AniTrend. It im
 Key files and folders:
 - `deno.json`, `deno.lock`
 	- Deno configurations and lockfile. Use Deno CLI for execution, tests, and formatting by default.
-- `src/server.ts`, `src/routes.ts`
+- `src/mod.ts`, `src/routes.ts`
 	- Entry points for server bootstrap and route definitions.
 - `src/common/`
 	- Shared core: environment loading, logging, OTEL tracing, middleware, MongoDB factory.
@@ -74,28 +74,35 @@ Implementation preferences (to reduce ambiguity)
 - Prefer explicit domain types over `any`; surface narrow interfaces to improve refactor safety.
 - Use variable and function names that clearly convey intent and domain meaning. Avoid generic names like `data`, `info`, or `handle`, or short abbreviations that obscure purpose.
 
+Import conventions and module boundaries
+- Use `@scope/*` imports for external module dependencies (cross-module imports). Example: `import { logger } from '@scope/common/core';` when importing common utilities from outside the common module.
+- Use relative imports for files within the same module. Example: `import { helper } from './utils.ts';` for files in the same directory or module.
+- Each module should have a `deno.json` with an `exports` field defining its public API surface. This determines what external modules can import via `@scope/*` patterns.
+- Pattern: External imports use `@scope/<module>/<subpath>` based on the target module's exports configuration. Internal imports use relative paths (`./`, `../`).
+- Avoid deep relative imports across module boundaries (e.g., `../../other-module/internal/file.ts`). Use `@scope/*` imports that respect the target module's exports instead.
+
 - Autonomy & feedback policy
 	- Proceed without asking for interim feedback; complete the full task per the checklist/todos. Provide compact progress updates after meaningful batches of actions (3–5 tool calls or >3 files changed). Ask the user only when an essential detail is missing and assumptions would be risky.
 
-- For any code edits, run quick validation steps: `deno fmt`, `deno lint` and `deno test` (targeted to changed files when possible). Report pass/fail.
+- For any code edits, run quick validation steps: `deno fmt`, `deno lint` and `deno task test` (targeted to changed files when possible). Report pass/fail.
 
 ## 4. Prompting Conventions
 1. Derive a checklist of requirements from user requests; log tasks via todo lists.
 2. Apply one logical change per patch; group multi-file updates in a single PR with summary.
-3. Validate edits with `deno fmt`, `deno lint`, `deno test --filter` and report outcomes.
+3. Validate edits with `deno fmt`, `deno lint`, `deno task test --filter` and report outcomes.
 4. Include unit tests (happy path + edge case) for new behaviors.
 
 
 ## 5. Quality Gates
 - **Build**: run `deno cache` after adding dependencies.
 - **Lint/Format**: run `deno fmt` and `deno lint`.
-- **Tests**: run `deno test --filter <module>`; ensure coverage for changes.
+- **Tests**: run `deno task test --filter <module>`; ensure coverage for changes.
 
 ------------
 ## 6. Assumptions
-- Default to Deno CLI (`deno run --allow-net ...`) if runtime unspecified.
+- Default to Deno CLI (`deno task start`) if runtime unspecified.
 - Assume environment vars are managed externally (Docker, Compose, CI).
-- For new config, prefer `src/config` and `deno.json` updates.
+- For new config, prefer `deno.json` updates.
 
 - Lint/Format: run `deno fmt` and `deno lint`.
 
@@ -143,14 +150,16 @@ Developer communication
 
 Example workflows for common tasks
 ---------------------------------
-- Add a new domain service:
+- **Add a new domain service**:
 	1. Create `src/<domain>/service/<name>.service.ts` alongside tests in the same folder.
  2. Wire it into the domain `index.ts` and export from the module.
  3. Add or update any repository/transformer files as needed.
- 4. Write tests and run `deno test` for the new files.
+ 4. Write tests and run `deno task test` for the new files.
+ 5. Update the module's `deno.json` exports field to expose the new service's public API.
+ 6. Use `@scope/<domain>/<export-path>` for external imports and relative paths for internal module imports.
 
 - Fix a failing test:
- 1. Run `deno test --filter <test-name>` and inspect failure.
+ 1. Run `deno task test --filter <test-name>` and inspect failure.
  2. Make minimal code change with accompanying unit test update.
  3. Run `deno fmt` and `deno lint` before committing.
 
@@ -179,6 +188,6 @@ Observability
 
 Ways of working (contributor checklist)
 - Keep PRs small and focused on one logical change. Include tests and a brief doc update if public behavior changes.
-- Run `deno fmt`, `deno lint`, and relevant `deno test` locally before pushing.
+- Run `deno fmt`, `deno lint`, and relevant `deno task test` locally before pushing.
 - Prefer extracting helpers and writing characterization tests before refactors. Default to interfaces + adapters for external systems.
 - Document new flags and configuration under `docs/` (e.g., domain-specific README) and update references.

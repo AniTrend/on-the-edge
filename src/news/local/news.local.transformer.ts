@@ -1,5 +1,5 @@
-import { Document } from 'npm/mongodb';
-import { Transform } from '../../common/transformer/types.ts';
+import { Document } from '@mongodb';
+import { Transform } from '@scope/common/transformer';
 import { News } from '../types.ts';
 
 export const transform: Transform<Document, News> = (

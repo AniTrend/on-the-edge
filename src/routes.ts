@@ -1,9 +1,9 @@
 import { Router } from '@oak';
-import { AppContext } from './common/types/core.ts';
-import { config } from './config/index.ts';
-import { news, newsWorker } from './news/index.ts';
-import { series } from './series/index.ts';
-import { seriesEpisodes } from './series/episodes/episodes.controller.ts';
+import type { AppContext } from '@scope/common/types';
+import { config } from '@scope/config';
+import { news, newsWorker } from '@scope/news';
+import { series } from '@scope/series';
+import { episodes } from '@scope/episodes';
 
 const router = new Router({
   methods: ['GET'],
@@ -27,8 +27,8 @@ router.get('/series', async (ctx: AppContext) => {
   await series(ctx);
 });
 
-router.get('/series/episodes', async (ctx: AppContext) => {
-  await seriesEpisodes(ctx);
+router.get('/episodes', async (ctx: AppContext) => {
+  await episodes(ctx);
 });
 
 export default router;

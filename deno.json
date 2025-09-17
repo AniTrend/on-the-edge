@@ -18,10 +18,35 @@
     "proseWrap": "preserve"
   },
   "tasks": {
-    "check": "deno check src/server.ts",
-    "test": "deno test --allow-read --allow-env --allow-net",
-    "start": "deno run --unstable-otel --allow-read --allow-env --allow-net --allow-sys --allow-run --allow-scripts ./src/server.ts",
-    "dev": "deno run --allow-read --allow-env --allow-net --allow-sys --allow-run --allow-scripts --watch ./src/server.ts"
+    "check": "deno check src/mod.ts",
+    "start": "deno run -P --unstable-otel --allow-scripts=npm:protobufjs ./src/mod.ts",
+    "test": "deno test -P --coverage=coverage --allow-sys=osRelease",
+    "build": "deno compile -P --unstable-otel --allow-scripts=npm:protobufjs --output=./build/on-the-edge src/mod.ts"
   },
-  "nodeModulesDir": "auto"
+  "permissions": {
+    "default": {
+      "read": [".env", "/.dockerenv"],
+      "env": true,
+      "net": true,
+      "sys": ["osRelease", "uid", "gid", "hostname", "userInfo"],
+      "run": ["/bin/sh"]
+    }
+  },
+  "test": {
+    "permissions": {
+      "read": [".env"],
+      "env": true
+    }
+  },
+  "compile": {
+    "permissions": {
+      "read": [".env", "/.dockerenv"],
+      "env": true,
+      "net": true,
+      "sys": ["osRelease", "uid", "gid", "hostname", "userInfo"],
+      "run": ["/bin/sh"]
+    }
+  },
+  "nodeModulesDir": "auto",
+  "workspace": ["src/*"]
 }

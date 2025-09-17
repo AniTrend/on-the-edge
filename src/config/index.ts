@@ -1,8 +1,8 @@
-import { AppContext, ErrorResponse } from '../common/types/core.ts';
+import { Status } from '@oak';
+import { collection } from '@scope/common/mongo';
+import type { AppContext, ErrorResponse } from '@scope/common/types';
 import { ConfigRepository } from './repository/index.ts';
 import { LocalSource } from './local/index.ts';
-import { collection } from '../common/mongo/index.ts';
-import { Status } from '@oak';
 
 export const config = async ({ state, response }: AppContext) => {
   const localSource = new LocalSource(collection('config', state.local));

@@ -9,7 +9,7 @@ on:
     inputs: 
       pullRequestNumber:
         description: Pull request number to auto-approve
-        required: false
+        required: true
   
 jobs:
   auto-approve:

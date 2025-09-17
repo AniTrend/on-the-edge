@@ -1,8 +1,8 @@
-import type { AppContext } from '../common/types/core.ts';
-import { isNewsApiv2Enabled } from '../common/experiment/index.ts';
+import type { AppContext } from '@scope/common/types';
+import { isNewsApiv2Enabled } from '@scope/common/experiment';
 import LocalSource from './local/news.local.source.ts';
 import { Status } from '@oak';
-import { collection } from '../common/mongo/index.ts';
+import { collection } from '@scope/common/mongo';
 import { NewsRepository } from './repository/index.ts';
 
 export const newsWorker = async ({ response, state }: AppContext) => {

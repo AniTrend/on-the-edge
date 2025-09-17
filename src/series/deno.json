@@ -1,0 +1,11 @@
+{
+  "extends": "../../deno.json",
+  "name": "@scope/series",
+  "version": "0.1.0",
+  "exports": {
+    ".": "./index.ts",
+    "./local": "./local/index.ts",
+    "./transformer": "./transformer/index.ts",
+    "./types": "./types.ts"
+  }
+}

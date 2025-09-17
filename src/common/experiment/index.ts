@@ -1,2 +1,2 @@
 export * from './feature-flags.ts';
-export type { PlatformSource } from './types.ts';
+export type * from './types.ts';
