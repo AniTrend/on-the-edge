@@ -8,13 +8,13 @@ import {
   getTheXemMappingsByTvdb,
 } from '../../../service/thexem/index.ts';
 import { getTraktSeasons } from '../../../service/trakt/remote/index.ts';
-import { toCanonicalFromTrakt } from '../../../service/trakt/transformer/index.ts';
 import EpisodeSeasonRepository from '../season.repository.ts';
 import { getTmdbShow } from '../../../service/tmdb/index.ts';
 import { provider } from '../../../service/tmdb/transformer/index.ts';
 import { toInstant } from '../../../common/helpers/date.ts';
 import { getNotifyAnime } from '../../../service/notify/notify.service.ts';
 import { logger } from '../../../common/core/index.ts';
+import { toCanonicalFromTrakt } from '../../transformer/episode.transformer.ts';
 
 export type SourceSlice = {
   source: 'JIKAN' | 'SKYHOOK' | 'TRAKT';
