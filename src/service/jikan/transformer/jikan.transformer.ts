@@ -1,6 +1,6 @@
 import { AnimeResource, MangaResource } from '../remote/types.ts';
 import { JikanAnime, JikanManga } from '../types.ts';
-import { Transform } from '../../../common/transformer/types.ts';
+import { Transform } from '@scope/common/transformer';
 
 export const animeTransform: Transform<AnimeResource, JikanAnime> = (
   sourceData,

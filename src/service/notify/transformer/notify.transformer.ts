@@ -1,5 +1,5 @@
-import { toInstant } from '../../../common/helpers/index.ts';
-import { Transform } from '../../../common/transformer/types.ts';
+import { toInstant } from '@scope/common/helpers';
+import { Transform } from '@scope/common/transformer';
 import {
   EpisodeModel,
   ImageModel,

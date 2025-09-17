@@ -1,4 +1,4 @@
-import { logger } from '../../common/core/logger.ts';
+import { logger } from '@scope/common/core';
 import { transform } from './transformer/arm.transformer.ts';
 import { getByAnilist, getByTvdb } from './remote/index.ts';
 import { SeriesRelationId } from './types.ts';

@@ -1,7 +1,7 @@
 import { getTheXemByTvdb } from './remote/thexem.remote.ts';
 import { TheXem, TheXemScene } from './types.ts';
 import { TheXemDataModel, TheXemModel } from './remote/types.ts';
-import { env } from '../../common/core/env.ts';
+import { env } from '@scope/common/core';
 
 const mapScene = (
   s: { season: number; episode: number; absolute: number },

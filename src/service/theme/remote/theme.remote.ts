@@ -1,7 +1,7 @@
-import { env } from '../../../common/core/env.ts';
-import { logger } from '../../../common/core/logger.ts';
-import { request } from '../../../common/core/request.ts';
-import { Service } from '../../../common/types/state.ts';
+import { env } from '@scope/common/core';
+import { logger } from '@scope/common/core';
+import { request } from '@scope/common/core';
+import { Service } from '@scope/common/types';
 import { ThemeModel } from './types.ts';
 
 const getService = (): Service => ({

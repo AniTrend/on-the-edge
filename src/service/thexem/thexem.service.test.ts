@@ -1,12 +1,11 @@
 import { assertEquals } from '@std/assert';
+import { setEnvScoped, json, onGet, stubFetch  } from '@scope/common/testing';
 import {
   buildTvdbAbsoluteMap,
   buildTvdbSeasonEpisodeToAbsoluteMap,
   clearTheXemCache,
   getTheXemMappingsByTvdb,
 } from './thexem.service.ts';
-import { setEnvScoped } from '../../common/testing/env.ts';
-import { json, onGet, stubFetch } from '../../common/testing/net.ts';
 import { TheXem } from './types.ts';
 
 Deno.test('buildTvdbAbsoluteMap builds a map from tvdb.absolute to absolute', () => {
