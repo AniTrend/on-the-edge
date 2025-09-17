@@ -21,6 +21,8 @@ jobs:
           cache: true
       - name: Config properties file
         run: bash .github/scripts/config-env.sh
+      - name: Cache dependencies
+        run: deno cache --import-map=src/import_map.json
       - name: Check dependency updates
         run: |
           deno update --compatible --frozen=false
