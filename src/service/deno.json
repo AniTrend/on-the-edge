@@ -1,0 +1,15 @@
+{
+  "extends": "../../deno.json",
+  "name": "@scope/service",
+  "version": "0.1.0",
+  "exports": {
+    "./arm": "./arm/index.ts",
+    "./jikan": "./jikan/index.ts",
+    "./notify": "./notify/index.ts",
+    "./skyhook": "./skyhook/index.ts",
+    "./theme": "./theme/index.ts",
+    "./thexem": "./thexem/index.ts",
+    "./tmdb": "./tmdb/index.ts",
+    "./trakt": "./trakt/index.ts"
+  }
+}
