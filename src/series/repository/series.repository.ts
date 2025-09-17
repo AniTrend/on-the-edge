@@ -1,20 +1,20 @@
-import { IResponse } from '../../common/types/response.ts';
-import { getAniListRelationId } from '../../service/arm/index.ts';
-import { getJikanAnime } from '../../service/jikan/index.ts';
-import { getNotifyAnime } from '../../service/notify/index.ts';
-import { getSkyhookShow } from '../../service/skyhook/index.ts';
-import { getThemesForAnime } from '../../service/theme/index.ts';
-import { getTmdbShow } from '../../service/tmdb/index.ts';
-import { getTraktShow } from '../../service/trakt/index.ts';
+import { IResponse } from '@scope/common/types';
+import { getAniListRelationId } from '@scope/service/arm';
+import { getJikanAnime } from '@scope/service/jikan';
+import { getNotifyAnime } from '@scope/service/notify';
+import { getSkyhookShow } from '@scope/service/skyhook';
+import { getThemesForAnime } from '@scope/service/theme';
+import { getTmdbShow } from '@scope/service/tmdb';
+import { getTraktShow } from '@scope/service/trakt';
 import { seriesTransform } from '../transformer/series.transformer.ts';
 import { MediaEntity } from '../types.ts';
 import { isManga } from './helpers/qualifier.ts';
 import LocalSource from '../local/series.local.source.ts';
-import { Theme } from '../../service/theme/transformer/types.ts';
-import { SkyhookShow } from '../../service/skyhook/types.ts';
-import { Show } from '../../service/trakt/transformer/types.ts';
-import { TmdbShow } from '../../service/tmdb/types.ts';
-import { currentDate, isOlderThan } from '../../common/core/utils.ts';
+import { Theme } from '@scope/service/theme';
+import { SkyhookShow } from '@scope/service/skyhook';
+import { Show } from '@scope/service/trakt';
+import { TmdbShow } from '@scope/service/tmdb';
+import { currentDate, isOlderThan } from '@scope/common/core';
 import { MediaParamId } from '../local/index.ts';
 
 export default class SeriesRepository {

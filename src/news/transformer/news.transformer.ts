@@ -1,5 +1,5 @@
-import { logger } from '../../common/core/logger.ts';
-import { toEpotch } from '../../common/core/utils.ts';
+import { logger } from '@scope/common/core';
+import { toEpotch } from '@scope/common/core';
 import { News } from '../types.ts';
 
 const sanitize = (content: string): string => {

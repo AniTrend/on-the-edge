@@ -1,5 +1,5 @@
 import { assertEquals } from '@std/assert';
-import { setEnvScoped, json, onGet, stubFetch  } from '@scope/common/testing';
+import { json, onGet, setEnvScoped, stubFetch } from '@scope/common/testing';
 import {
   buildTvdbAbsoluteMap,
   buildTvdbSeasonEpisodeToAbsoluteMap,

@@ -1,12 +1,12 @@
 import { News } from '../types.ts';
 import { latestNews } from '@scope/service/news';
 import LocalSource from '../local/news.local.source.ts';
-import { IPaging } from '../../common/types/paging.ts';
+import { IPaging } from '@scope/common/types';
 import { transform } from '../transformer/news.transformer.ts';
-import { currentDate, isOlderThan } from '../../common/core/utils.ts';
-import { IResponse } from '../../common/types/response.ts';
+import { currentDate, isOlderThan } from '@scope/common/core';
+import { IResponse } from '@scope/common/types';
 import { parse } from '@xml';
-import { logger } from '../../common/core/logger.ts';
+import { logger } from '@scope/common/core';
 import { NewsPagingParam } from '../local/types.ts';
 import { between } from '@optic';
 

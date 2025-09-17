@@ -1,19 +1,19 @@
 import { Status } from '@oak';
-import { AppContext, ErrorResponse } from '../common/types/core.ts';
+import { AppContext, ErrorResponse } from '@scope/common/types';
 import { EpisodesRepository } from './repository/episodes.repository.ts';
-import { getAniListRelationId } from '../service/arm/index.ts';
-import type { SeriesRelationId } from '../service/arm/types.ts';
+import { getAniListRelationId } from '@scope/service/arm';
+import type { SeriesRelationId } from '@scope/service/arm';
 import {
   clampLimit,
   parseBeforeCursor,
   parseCursor,
   parseFilters,
 } from './episodes.params.ts';
-import { collection } from '../common/mongo/collection.ts';
+import { collection } from '@scope/common/mongo';
 import { EpisodeLocalSource } from './collection/episode.collection.ts';
 import type { EpisodeDocument } from './store/types.ts';
-import SeriesLocalSource from '../series/local/series.local.source.ts';
-import { logger } from '../common/core/logger.ts';
+import SeriesLocalSource from '@scope/series/local';
+import { logger } from '@scope/common/core';
 
 export const episodes = async (
   { request, response, state }: AppContext,

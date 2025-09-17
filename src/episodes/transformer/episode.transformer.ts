@@ -2,7 +2,6 @@ import { EpisodeModel } from '@scope/service/trakt';
 import { toInstant } from '@scope/common/helpers';
 import { EpisodeCanonical } from '../episodes.types.ts';
 
-
 const episodeKind = (model: EpisodeModel): 'main' | 'filler' | 'recap' => {
   // Trakt does not provide explicit kind, so we derive based on available flags
   if (model.after_credits || model.during_credits) {
