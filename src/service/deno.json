@@ -5,6 +5,7 @@
   "exports": {
     "./arm": "./arm/index.ts",
     "./jikan": "./jikan/index.ts",
+    "./news": "./news/index.ts",
     "./notify": "./notify/index.ts",
     "./skyhook": "./skyhook/index.ts",
     "./theme": "./theme/index.ts",
