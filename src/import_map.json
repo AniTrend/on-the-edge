@@ -18,7 +18,7 @@
     "@mongodb": "npm:mongodb@^6.20.0",
     "@otel": "npm:@opentelemetry/api@^1.9.0",
     "@otel/sdk-node": "npm:@opentelemetry/sdk-node@^0.205.0",
-    "@otel/auto-instrumentations-node": "npm:@opentelemetry/auto-instrumentations-node@^0.64.1",
+    "@otel/auto-instrumentations-node": "npm:@opentelemetry/auto-instrumentations-node@^0.64.6",
     "@otel/exporter-trace-otlp-http": "npm:@opentelemetry/exporter-trace-otlp-http@^0.205.0",
     "@otel/exporter-metrics-otlp-http": "npm:@opentelemetry/exporter-metrics-otlp-http@^0.205.0",
     "@otel/exporter-logs-otlp-http": "npm:@opentelemetry/exporter-logs-otlp-http@^0.205.0",
