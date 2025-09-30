@@ -1,4 +1,4 @@
-name: deploy
+name: Deploy
 
 on:
   workflow_call:
@@ -22,6 +22,10 @@ on:
     tags: 
       - '*'
 
+env:
+  IMAGE_NAME: ghcr.io/anitrend/on-the-edge
+  CACHE_REF: ghcr.io/anitrend/on-the-edge:cache
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -40,29 +44,27 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Set Tag
+      - name: Set tag
         id: set-tag
         run: |
           if [[ -n "${{ github.event.inputs.tag }}" ]]; then
-            echo "::set-output name=tag::${{ github.event.inputs.tag }}"
+            tag=${{ github.event.inputs.tag }}
           elif [[ "${{ github.ref }}" =~ ^refs/tags/ ]]; then
-            echo "::set-output name=tag::${GITHUB_REF#refs/tags/}"
+            tag=${GITHUB_REF#refs/tags/}
           else
-            echo "::set-output name=tag::latest"
+            tag=latest
           fi
-      - name: Show Generated Tag
-        run: |
-          echo "Tag: ${{ steps.set-tag.outputs.tag }}"
-      - name: Build and Push Docker Image
-        run: |
-          docker buildx create --use
-          docker buildx build \
-          --platform linux/amd64,linux/arm64 \
-          --cache-from type=registry,ref=ghcr.io/anitrend/on-the-edge:cache,mode=max \
-          --cache-to type=registry,ref=ghcr.io/anitrend/on-the-edge:cache,mode=max \
-          --tag ghcr.io/anitrend/on-the-edge:${{ steps.set-tag.outputs.tag }} \
-          --push .
-        working-directory: .
+          echo "Tag: $tag"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+      - name: Build and push snapshot image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=registry,ref=${{ env.CACHE_REF }},mode=max
+          cache-to: type=registry,ref=${{ env.CACHE_REF }},mode=max
+          tags: ${{ env.IMAGE_NAME }}:${{ steps.set-tag.outputs.tag }}
 
   notify:
     name: Notify Deployment
