@@ -13,10 +13,11 @@ export default async (opts: FactoryOptions): Promise<Application> => {
   const app = new Application({
     state: await createState(),
     contextState: 'prototype',
-    jsonBodyReplacer: (key, _value, _context) => {
+    jsonBodyReplacer: (key, value, _context) => {
       if (key === '_id') {
         return undefined;
       }
+      return value;
     },
   });
 
