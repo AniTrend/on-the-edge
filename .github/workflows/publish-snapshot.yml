@@ -9,7 +9,7 @@ on:
     inputs:
       branch:
         description: 'Git ref to build (branch or tag)'
-        required: false
+        required: true
       image-tag:
         description: 'Override the Docker tag (defaults to sanitized branch)'
         required: false
@@ -78,9 +78,4 @@ jobs:
       - name: Summarize snapshot
         run: |
           cat <<SUMMARY >> "$GITHUB_STEP_SUMMARY"
-          ## Snapshot published
-          - Ref: `${{ steps.resolve.outputs.ref }}`
-          - Tag: `${{ steps.tag.outputs.tag }}`
-          - Image: `${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.tag }}`
-          - Command: `docker pull ${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.tag }}`
           SUMMARY
