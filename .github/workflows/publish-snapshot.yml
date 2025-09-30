@@ -1,0 +1,86 @@
+name: Publish Snapshot
+
+env:
+  IMAGE_NAME: ghcr.io/anitrend/on-the-edge
+  CACHE_REF: ghcr.io/anitrend/on-the-edge:cache
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Git ref to build (branch or tag)'
+        required: false
+      image-tag:
+        description: 'Override the Docker tag (defaults to sanitized branch)'
+        required: false
+
+jobs:
+  build-snapshot:
+    name: Build Snapshot Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Resolve ref
+        id: resolve
+        env:
+          INPUT_BRANCH: ${{ github.event.inputs.branch }}
+          WORKFLOW_REF: ${{ github.ref }}
+        run: |
+          if [[ -n "$INPUT_BRANCH" ]]; then
+            ref="$INPUT_BRANCH"
+          else
+            ref=$(echo "$WORKFLOW_REF" | sed -E 's#^refs/(heads|tags)/##')
+          fi
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+      - name: Derive image tag
+        id: tag
+        env:
+          TAG_OVERRIDE: ${{ github.event.inputs.image-tag }}
+          SOURCE_REF: ${{ steps.resolve.outputs.ref }}
+        run: |
+          if [[ -n "$TAG_OVERRIDE" ]]; then
+            tag="$TAG_OVERRIDE"
+          else
+            base="$SOURCE_REF"
+            base="${base,,}"
+            tag=$(echo "$base" | sed -E 's/[^a-z0-9._-]+/-/g' | sed -E 's/^-+|-+$//g')
+            if [[ -z "$tag" ]]; then
+              tag="manual-snapshot"
+            fi
+            tag=${tag:0:120}
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ steps.resolve.outputs.ref }}
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push snapshot image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=registry,ref=${{ env.CACHE_REF }},mode=max
+          cache-to: type=registry,ref=${{ env.CACHE_REF }},mode=max
+          tags: ${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.tag }}
+      - name: Summarize snapshot
+        run: |
+          cat <<SUMMARY >> "$GITHUB_STEP_SUMMARY"
+          ## Snapshot published
+          - Ref: `${{ steps.resolve.outputs.ref }}`
+          - Tag: `${{ steps.tag.outputs.tag }}`
+          - Image: `${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.tag }}`
+          - Command: `docker pull ${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.tag }}`
+          SUMMARY
