@@ -1,18 +1,17 @@
-import { currentDate, toEpotch } from '../../common/core/utils.ts';
-import { toInstant } from '../../common/helpers/date.ts';
-import { SeriesRelationId } from '../../service/arm/types.ts';
-import { MalType } from '../../service/jikan/remote/enums.ts';
-import { Jikan, JikanAnime, JikanManga } from '../../service/jikan/types.ts';
-import { NotifyAnime } from '../../service/notify/types.ts';
-import { SkyhookShow } from '../../service/skyhook/types.ts';
-import { AnimeTheme } from '../../service/theme/types.ts';
-import { Images } from '../../service/tmdb/remote/types.ts';
-import {
+import { currentDate, toEpotch } from '@scope/common/core';
+import { toInstant } from '@scope/common/helpers';
+import { SeriesRelationId } from '@scope/service/arm';
+import { Jikan, JikanAnime, JikanManga, MalType } from '@scope/service/jikan';
+import { NotifyAnime } from '@scope/service/notify';
+import { SkyhookShow } from '@scope/service/skyhook';
+import { AnimeTheme } from '@scope/service/theme';
+import type {
+  Images,
   TmdbEpisodeToAir,
   TmdbNetwork,
   TmdbShow,
-} from '../../service/tmdb/types.ts';
-import { TraktShow } from '../../service/trakt/types.ts';
+} from '@scope/service/tmdb';
+import { TraktShow } from '@scope/service/trakt';
 import {
   AnimeMetadata,
   MangaMetadata,

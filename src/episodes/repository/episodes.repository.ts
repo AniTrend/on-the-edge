@@ -1,4 +1,4 @@
-import type { Features } from '../../common/types/core.ts';
+import type { Features } from '@scope/common/types';
 import type { EpisodeCollection } from '../collection/episode.collection.ts';
 import { buildFilterHash } from './helpers/cursor.ts';
 import {
@@ -10,8 +10,11 @@ import { mergeEpisodes } from '../aggregator/merge.ts';
 import {
   getTitleSimThreshold,
   isXemNormalizationEnabled,
-} from '../../common/experiment/index.ts';
-import type { SeriesRelationId } from '../../service/arm/types.ts';
+} from '@scope/common/experiment';
+import {
+  getAniListRelationId,
+  type SeriesRelationId,
+} from '@scope/service/arm';
 import { logMergeStats } from './helpers/stats.ts';
 import { fetchCanonical, load, persist } from './helpers/loader.ts';
 import { deriveSeasonScope } from '../helpers/scope.ts';
@@ -21,11 +24,10 @@ import {
   getTmdbSliceByCanonical,
   getTmdbSliceForScope,
 } from '../helpers/sources.ts';
-import { getSkyhookShow } from '../../service/skyhook/index.ts';
+import { getSkyhookShow } from '@scope/service/skyhook';
 import { applyFilters } from './helpers/filters.ts';
 import { cursors, paginate } from './helpers/paginate.ts';
-import { logger } from '../../common/core/logger.ts';
-import { getAniListRelationId } from '../../service/arm/index.ts';
+import { logger } from '@scope/common/core';
 import { getTraktSlice } from './helpers/sources.ts';
 import { MergeResult } from '../aggregator/types.ts';
 

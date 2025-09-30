@@ -1,12 +1,15 @@
 import type { EpisodeCanonical } from '../episodes.types.ts';
-import type { SeriesRelationId } from '../../service/arm/types.ts';
-import { toInstant } from '../../common/helpers/date.ts';
-import { logger } from '../../common/core/logger.ts';
-import { getTmdbSeason, getTmdbShow } from '../../service/tmdb/index.ts';
-import { provider as tmdbProvider } from '../../service/tmdb/transformer/index.ts';
-import { getNotifyAnime } from '../../service/notify/notify.service.ts';
-import type { SkyhookShow } from '../../service/skyhook/types.ts';
-import type { TmdbShow } from '../../service/tmdb/types.ts';
+import type { SeriesRelationId } from '@scope/service/arm';
+import { toInstant } from '@scope/common/helpers';
+import { logger } from '@scope/common/core';
+import {
+  getTmdbSeason,
+  getTmdbShow,
+  provider as tmdbProvider,
+  type TmdbShow,
+} from '@scope/service/tmdb';
+import { getNotifyAnime } from '@scope/service/notify';
+import type { SkyhookShow } from '@scope/service/skyhook';
 import type { SeasonEpisodePair } from './scope.ts';
 import { buildXemMaps, remapEpisodeNumber } from './xem.ts';
 

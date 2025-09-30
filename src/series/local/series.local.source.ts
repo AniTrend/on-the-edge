@@ -4,15 +4,15 @@ import {
   Filter,
   FindOneAndReplaceOptions,
 } from '@mongodb';
-import { logger } from '../../common/core/logger.ts';
-import { IResponse } from '../../common/types/response.ts';
+import { logger } from '@scope/common/core';
+import { IResponse } from '@scope/common/types';
 import { MediaEntity, MediaUnion } from '../types.ts';
 import { transform } from './series.local.transformer.ts';
 import { MediaDocument } from './types.ts';
 import { MediaParamId } from './types.ts';
 import { FindOptions } from '@mongodb';
 import { between } from '@optic';
-import { SeriesRelationId } from '../../service/arm/types.ts';
+import { SeriesRelationId } from '@scope/service/arm';
 
 export default class LocalSource {
   constructor(

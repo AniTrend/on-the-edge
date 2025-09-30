@@ -1,13 +1,8 @@
 import type { EpisodeCollection } from '../../collection/episode.collection.ts';
 import type { EpisodeDocument } from '../../store/types.ts';
-import { getJikanAnime, JikanAnime } from '../../../service/jikan/index.ts';
-import {
-  currentDate,
-  isOlderThan,
-  toEpotch,
-} from '../../../common/core/utils.ts';
+import { getJikanAnime, JikanAnime } from '@scope/service/jikan';
+import { currentDate, isOlderThan, logger, toEpotch } from '@scope/common/core';
 import { EpisodeCanonical, toCanonicalEpisode } from '../../episodes.types.ts';
-import { logger } from '../../../common/core/index.ts';
 import { MergeResult } from '../../aggregator/types.ts';
 
 export async function persist(

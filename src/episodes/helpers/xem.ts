@@ -2,7 +2,7 @@ import {
   buildTvdbAbsoluteMap,
   buildTvdbSeasonEpisodeToAbsoluteMap,
   getTheXemMappingsByTvdb,
-} from '../../service/thexem/index.ts';
+} from '@scope/service/thexem';
 
 export interface XemMaps {
   seasonMap: Map<string, number> | null; // key `${season}-${episode}` -> abs

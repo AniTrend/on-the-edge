@@ -1,9 +1,8 @@
 import { assert, assertEquals } from '@std/assert';
 import { episodes } from '../episodes.controller.ts';
 import { toCanonicalEpisode } from '../episodes.types.ts';
-import { AppContext, Local } from '../../common/types/core.ts';
-import { setEnvScoped } from '../../common/testing/env.ts';
-import { json, onGet, stubFetch } from '../../common/testing/net.ts';
+import { AppContext, Local } from '@scope/common/types';
+import { json, onGet, setEnvScoped, stubFetch } from '@scope/common/testing';
 
 // Minimal mock of AppContext & in-memory collection identical to repository unit test approach
 interface MemDoc {
