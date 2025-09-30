@@ -6,9 +6,10 @@ import { MediaDocument } from './types.ts';
 
 // Current schema only: assumes documents already conform to discriminated union shape.
 const map = (document: WithId<MediaDocument>): MediaEntity => {
+  const { _id, ...rest } = document;
   return {
-    ...document,
-    id: idOf(document._id),
+    ...rest,
+    id: idOf(_id),
   };
 };
 
