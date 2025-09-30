@@ -1,4 +1,4 @@
-import { logger } from '../../common/core/logger.ts';
+import { logger } from '@scope/common/core';
 import { transform } from './transformer/index.ts';
 import { getAnime, getEpisode } from './remote/index.ts';
 import { NotifyAnime } from './types.ts';

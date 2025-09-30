@@ -1,12 +1,15 @@
 import { zip } from '@std/collections';
-import { getTmdbSeason } from '../../service/tmdb/index.ts';
+import {
+  getTmdbSeason,
+  TmdbEpisode,
+  TmdbSeason,
+  TmdbShow,
+} from '@scope/service/tmdb';
 import { isMovie } from './helpers/qualifier.ts';
-import { NotifyAnime } from '../../service/notify/types.ts';
-import { SkyhookEpisode, SkyhookShow } from '../../service/skyhook/types.ts';
-import { TmdbEpisode, TmdbSeason, TmdbShow } from '../../service/tmdb/types.ts';
+import { NotifyAnime } from '@scope/service/notify';
+import { SkyhookEpisode, SkyhookShow } from '@scope/service/skyhook';
 import { MergedEpisode, MergedSeason } from '../episodes.types.ts';
-import { logger } from '../../common/core/index.ts';
-import { Season } from '../../service/tmdb/remote/index.ts';
+import { logger } from '@scope/common/core';
 
 export default class SeasonRepository {
   constructor(
@@ -19,7 +22,7 @@ export default class SeasonRepository {
   private getFilteredTmdbSeasons = async (
     id: number,
     seasonNumbers: number[],
-  ): Promise<Season[]> => {
+  ): Promise<TmdbSeason[]> => {
     const tmdbSeasonsPromise = seasonNumbers?.map((seasonNumber) =>
       getTmdbSeason(seasonNumber, id)
     );

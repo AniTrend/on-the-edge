@@ -1,19 +1,20 @@
 import type { EpisodeCanonical } from '../../episodes.types.ts';
-import { getAniListRelationId } from '../../../service/arm/index.ts';
-import type { SeriesRelationId } from '../../../service/arm/types.ts';
-import { getSkyhookShow } from '../../../service/skyhook/index.ts';
+import {
+  getAniListRelationId,
+  type SeriesRelationId,
+} from '@scope/service/arm';
+import { getSkyhookShow } from '@scope/service/skyhook';
 import {
   buildTvdbAbsoluteMap,
   buildTvdbSeasonEpisodeToAbsoluteMap,
   getTheXemMappingsByTvdb,
-} from '../../../service/thexem/index.ts';
-import { getTraktSeasons } from '../../../service/trakt/remote/index.ts';
+} from '@scope/service/thexem';
+import { getTraktSeasons } from '@scope/service/trakt';
 import EpisodeSeasonRepository from '../season.repository.ts';
-import { getTmdbShow } from '../../../service/tmdb/index.ts';
-import { provider } from '../../../service/tmdb/transformer/index.ts';
-import { toInstant } from '../../../common/helpers/date.ts';
-import { getNotifyAnime } from '../../../service/notify/notify.service.ts';
-import { logger } from '../../../common/core/index.ts';
+import { getTmdbShow, provider } from '@scope/service/tmdb';
+import { toInstant } from '@scope/common/helpers';
+import { getNotifyAnime } from '@scope/service/notify';
+import { logger } from '@scope/common/core';
 import { toCanonicalFromTrakt } from '../../transformer/episode.transformer.ts';
 
 export type SourceSlice = {

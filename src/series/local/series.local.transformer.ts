@@ -1,7 +1,7 @@
 import { WithId } from '@mongodb';
-import { Transform } from '../../common/transformer/types.ts';
+import { Transform } from '@scope/common/transformer';
 import { MediaEntity } from '../types.ts';
-import { idOf, Optional } from '../../common/mongo/index.ts';
+import { idOf, Optional } from '@scope/common/mongo';
 import { MediaDocument } from './types.ts';
 
 // Current schema only: assumes documents already conform to discriminated union shape.

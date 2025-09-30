@@ -110,10 +110,8 @@ export function analyzeRelativeImport(
   };
 }
 
-type RuleContext = Deno.lint.RuleContext;
-
 function reportForSpecifier(
-  context: RuleContext,
+  context: Deno.lint.RuleContext,
   node: any,
   specifier: string,
 ) {
@@ -146,7 +144,7 @@ const rule = {
     },
     type: 'problem',
   },
-  create(context: RuleContext) {
+  create(context: Deno.lint.RuleContext) {
     return {
       ImportDeclaration(node: any) {
         if (typeof node.source.value === 'string') {

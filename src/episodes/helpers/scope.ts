@@ -1,9 +1,6 @@
 import type { EpisodeCanonical } from '../episodes.types.ts';
-import type {
-  SkyhookEpisode,
-  SkyhookShow,
-} from '../../service/skyhook/types.ts';
-import { toInstant } from '../../common/helpers/date.ts';
+import type { SkyhookEpisode, SkyhookShow } from '@scope/service/skyhook';
+import { toInstant } from '@scope/common/helpers';
 
 export type SeasonEpisodePair = { season: number; episode: number };
 

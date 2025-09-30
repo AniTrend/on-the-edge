@@ -1,8 +1,9 @@
 import type { EpisodeCanonical } from '../../episodes.types.ts';
-import { getAniListRelationId } from '../../../service/arm/index.ts';
-import type { SeriesRelationId } from '../../../service/arm/types.ts';
-import { getTmdbSeason } from '../../../service/tmdb/index.ts';
-import { provider } from '../../../service/tmdb/transformer/index.ts';
+import {
+  getAniListRelationId,
+  type SeriesRelationId,
+} from '@scope/service/arm';
+import { getTmdbSeason, provider } from '@scope/service/tmdb';
 
 export async function enrichWithTmdbRuntimes(
   episodes: EpisodeCanonical[],

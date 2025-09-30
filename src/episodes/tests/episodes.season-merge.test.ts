@@ -3,11 +3,10 @@ import { EpisodesRepository } from '../repository/episodes.repository.ts';
 import { toCanonicalEpisode } from '../episodes.types.ts';
 import type { EpisodeCollection } from '../collection/episode.collection.ts';
 import type { EpisodeDocument } from '../store/types.ts';
-import { AppFeatures } from '../../common/experiment/types.ts';
-import { Features } from '../../common/types/core.ts';
-import { json, onGet, stubFetch } from '../../common/testing/net.ts';
-import { setEnvScoped } from '../../common/testing/env.ts';
-import { Instant } from '../../common/helpers/date.ts';
+import { AppFeatures } from '@scope/common/experiment';
+import { Features } from '@scope/common/types';
+import { json, onGet, setEnvScoped, stubFetch } from '@scope/common/testing';
+import { Instant } from '@scope/common/helpers';
 
 // In-memory EpisodeCollection for tests
 const memory: (EpisodeDocument & { _id: string })[] = [];
