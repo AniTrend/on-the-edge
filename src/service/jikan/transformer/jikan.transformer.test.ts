@@ -1,7 +1,6 @@
 import { assertEquals } from '@std/assert';
 import { animeTransform } from './jikan.transformer.ts';
 import { AnimeEpisode, AnimeResource } from '../remote/types.ts';
-import { MalType } from '../remote/enums.ts';
 
 Deno.test('animeTransform should preserve episodes_list and moreinfo', () => {
   const episodes: AnimeEpisode[] = [
@@ -32,7 +31,7 @@ Deno.test('animeTransform should preserve episodes_list and moreinfo', () => {
     title_english: null,
     title_japanese: null,
     title_synonyms: null,
-    type: MalType.ANIME,
+    type: 'TV',
     score: 0,
     scored_by: 0,
     rank: null,

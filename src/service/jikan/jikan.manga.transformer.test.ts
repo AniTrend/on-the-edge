@@ -17,7 +17,7 @@ describe('jikan manga transformer', () => {
       title: 'Manga Title',
       title_english: 'Manga English',
       title_japanese: 'マンガ',
-      type: 1, // MalType.Manga
+      type: 'Manga',
       score: 0,
       scored_by: 0,
       rank: 0,

@@ -8,7 +8,7 @@ import { getTmdbShow } from '@scope/service/tmdb';
 import { getTraktShow } from '@scope/service/trakt';
 import { seriesTransform } from '../transformer/series.transformer.ts';
 import { MediaEntity } from '../types.ts';
-import { isManga } from './helpers/qualifier.ts';
+import { isAnime } from './helpers/qualifier.ts';
 import LocalSource from '../local/series.local.source.ts';
 import { Theme } from '@scope/service/theme';
 import { SkyhookShow } from '@scope/service/skyhook';
@@ -36,7 +36,7 @@ export default class SeriesRepository {
       skyhook: SkyhookShow | undefined,
       trakt: Show | undefined,
       tmdb: TmdbShow | undefined;
-    if (!isManga(mal?.type)) {
+    if (isAnime(mal?.type)) {
       [themes, skyhook] = await Promise.all([
         getThemesForAnime(relation?.myanimelist),
         getSkyhookShow(relation?.thetvdb),

@@ -19,7 +19,7 @@ describe('jikan anime transformer', () => {
       title: 'Title',
       title_english: 'English Title',
       title_japanese: '日本語',
-      type: 0, // MalType.TV
+      type: 'TV',
       score: 0,
       scored_by: 0,
       rank: 0,

@@ -1,7 +1,7 @@
 import { currentDate, toEpotch } from '@scope/common/core';
 import { toInstant } from '@scope/common/helpers';
 import { SeriesRelationId } from '@scope/service/arm';
-import { Jikan, JikanAnime, JikanManga, MalType } from '@scope/service/jikan';
+import { Jikan, JikanAnime, JikanManga } from '@scope/service/jikan';
 import { NotifyAnime } from '@scope/service/notify';
 import { SkyhookShow } from '@scope/service/skyhook';
 import { AnimeTheme } from '@scope/service/theme';
@@ -27,6 +27,7 @@ import {
   SeriesTitle,
   SeriesTrailer,
 } from '../types.ts';
+import { isAnime, isManga } from '../repository/helpers/qualifier.ts';
 
 const seriesId = (
   relation?: SeriesRelationId,
@@ -50,7 +51,7 @@ const seriesId = (
   tvMazeId: skyhook?.tvMazeId ?? null,
   tvrage: trakt?.mediaId?.tvrage ?? null,
   slug: relation?.animePlanet ?? trakt?.mediaId?.slug ?? skyhook?.slug ?? null,
-  shoboi: Number(notify?.mediaId?.shoboi),
+  shoboi: notify?.mediaId?.shoboi ? Number(notify.mediaId.shoboi) : null,
   trakt: trakt?.mediaId?.trakt ?? null,
 });
 
@@ -102,8 +103,8 @@ const seriesSchedule = (
   if (!tmdb) return null;
 
   return {
-    firstAirDate: toInstant(tmdb?.first_air_date),
-    lastAirDate: toInstant(tmdb?.last_air_date),
+    firstAirDate: tmdb?.first_air_date ? toInstant(tmdb.first_air_date) : null,
+    lastAirDate: tmdb?.last_air_date ? toInstant(tmdb.last_air_date) : null,
     lastAiredEpisode: seriesScheduleEpisode(tmdb?.last_episode_to_air),
     nextEpisodeToAir: seriesScheduleEpisode(tmdb?.next_episode_to_air),
   };
@@ -217,9 +218,7 @@ export const seriesTransform = (
   jikan?: Jikan,
   trakt?: TraktShow,
 ): MediaUnion => {
-  const isAnime = jikan?.type === MalType.ANIME;
-
-  const kind: MediaKind = isAnime ? 'ANIME' : 'MANGA';
+  const kind: MediaKind = isAnime(jikan?.type) ? 'ANIME' : 'MANGA';
 
   const base = {
     kind,
@@ -238,7 +237,7 @@ export const seriesTransform = (
     description: seriesDescription(skyhook, tmdb, notify, jikan, trakt),
   };
 
-  if (!isAnime) {
+  if (isManga(jikan?.type)) {
     const jikanManga = jikan as JikanManga;
     const manga: MangaMetadata = {
       chapters: typeof jikanManga.chapters === 'number'
@@ -258,7 +257,7 @@ export const seriesTransform = (
     return { ...base, ...manga };
   }
 
-  if (isAnime) {
+  if (isAnime(jikan?.type)) {
     const jikanAnime = jikan as JikanAnime;
     const anime: AnimeMetadata = {
       themeSongs: themes ?? [],

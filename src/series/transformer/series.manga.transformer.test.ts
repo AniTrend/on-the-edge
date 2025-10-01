@@ -36,7 +36,7 @@ describe('seriesTransform (manga support)', () => {
       title_english: 'Primary Manga Title EN',
       title_japanese: 'マンガ',
       title_synonyms: ['Alt Title'],
-      type: 1, // MalType.Manga
+      type: 'Manga',
       score: 0,
       scored_by: 0,
       rank: null,
