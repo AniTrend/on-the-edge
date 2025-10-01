@@ -1,7 +1,7 @@
 import { currentDate, toEpotch } from '@scope/common/core';
 import { toInstant } from '@scope/common/helpers';
 import { SeriesRelationId } from '@scope/service/arm';
-import { Jikan, JikanAnime, JikanManga, MalType } from '@scope/service/jikan';
+import { Jikan, JikanAnime, JikanManga } from '@scope/service/jikan';
 import { NotifyAnime } from '@scope/service/notify';
 import { SkyhookShow } from '@scope/service/skyhook';
 import { AnimeTheme } from '@scope/service/theme';
@@ -27,6 +27,7 @@ import {
   SeriesTitle,
   SeriesTrailer,
 } from '../types.ts';
+import { isAnime } from '../repository/helpers/qualifier.ts';
 
 const seriesId = (
   relation?: SeriesRelationId,
@@ -217,9 +218,7 @@ export const seriesTransform = (
   jikan?: Jikan,
   trakt?: TraktShow,
 ): MediaUnion => {
-  const isAnime = jikan?.type === MalType.ANIME;
-
-  const kind: MediaKind = isAnime ? 'ANIME' : 'MANGA';
+  const kind: MediaKind = isAnime(jikan?.type) ? 'ANIME' : 'MANGA';
 
   const base = {
     kind,
@@ -258,7 +257,7 @@ export const seriesTransform = (
     return { ...base, ...manga };
   }
 
-  if (isAnime) {
+  if (kind === 'ANIME') {
     const jikanAnime = jikan as JikanAnime;
     const anime: AnimeMetadata = {
       themeSongs: themes ?? [],

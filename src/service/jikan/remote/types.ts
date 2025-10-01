@@ -1,4 +1,4 @@
-import { MalType } from './enums.ts';
+export type MalType = 'TV' | 'Manga';
 
 /**
  * Enumerations derived from the Jikan v4 OpenAPI schema (or stable MAL canonical vocabularies).
