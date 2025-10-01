@@ -27,7 +27,7 @@ import {
   SeriesTitle,
   SeriesTrailer,
 } from '../types.ts';
-import { isAnime } from '../repository/helpers/qualifier.ts';
+import { isAnime, isManga } from '../repository/helpers/qualifier.ts';
 
 const seriesId = (
   relation?: SeriesRelationId,
@@ -237,7 +237,7 @@ export const seriesTransform = (
     description: seriesDescription(skyhook, tmdb, notify, jikan, trakt),
   };
 
-  if (!isAnime) {
+  if (isManga(jikan?.type)) {
     const jikanManga = jikan as JikanManga;
     const manga: MangaMetadata = {
       chapters: typeof jikanManga.chapters === 'number'
@@ -257,7 +257,7 @@ export const seriesTransform = (
     return { ...base, ...manga };
   }
 
-  if (kind === 'ANIME') {
+  if (isAnime(jikan?.type)) {
     const jikanAnime = jikan as JikanAnime;
     const anime: AnimeMetadata = {
       themeSongs: themes ?? [],

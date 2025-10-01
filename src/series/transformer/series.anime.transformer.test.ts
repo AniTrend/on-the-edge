@@ -4,7 +4,6 @@ import { seriesTransform } from './series.transformer.ts';
 import { SeriesRelationId } from '@scope/service/arm';
 import { JikanAnime } from '@scope/service/jikan';
 import { MediaUnion } from '../types.ts';
-import { MalType } from '@scope/service/jikan';
 
 // Minimal anime fixture focusing on discriminated union behavior
 
