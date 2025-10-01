@@ -17,7 +17,7 @@ export type SeriesId = {
   tvMazeId: number | null;
   tvrage: string | null;
   slug: string | null;
-  shoboi: number;
+  shoboi: number | null;
   trakt: number | null;
 };
 
@@ -44,8 +44,8 @@ export type SeriesScheduleEpisode = {
 };
 
 export type SeriesSchedule = {
-  firstAirDate: Instant;
-  lastAirDate: Instant;
+  firstAirDate: Instant | null;
+  lastAirDate: Instant | null;
   lastAiredEpisode: SeriesScheduleEpisode | null;
   nextEpisodeToAir: SeriesScheduleEpisode | null;
 };

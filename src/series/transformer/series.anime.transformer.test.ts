@@ -39,7 +39,7 @@ describe('seriesTransform (anime union)', () => {
       title_english: 'Primary Anime Title EN',
       title_japanese: 'アニメ',
       title_synonyms: ['Alt Anime Title'],
-      type: MalType.ANIME,
+      type: 'TV',
       score: 0,
       scored_by: 0,
       rank: null,

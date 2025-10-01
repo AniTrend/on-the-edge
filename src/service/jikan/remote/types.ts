@@ -188,7 +188,7 @@ export interface MalResourceBase {
   title_english: string | null;
   title_japanese: string | null;
   title_synonyms?: string[] | null;
-  type: MalType; // numeric enum retained for compatibility within project (TV = 0, Manga = 1)
+  type: MalType;
   score: number; // 0 if unknown
   scored_by: number;
   rank: number | null;

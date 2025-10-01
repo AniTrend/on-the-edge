@@ -31,11 +31,7 @@ export const toFuzzyDate = (date?: string | Date): FuzzyDate => {
   }
 };
 
-export const toInstant = (date?: string | Date): Instant => {
-  if (!date) {
-    return -1;
-  }
-
+export const toInstant = (date: string | Date): Instant => {
   if (date instanceof Date) {
     return date.getTime() / 1000;
   } else {

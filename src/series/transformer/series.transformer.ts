@@ -51,7 +51,7 @@ const seriesId = (
   tvMazeId: skyhook?.tvMazeId ?? null,
   tvrage: trakt?.mediaId?.tvrage ?? null,
   slug: relation?.animePlanet ?? trakt?.mediaId?.slug ?? skyhook?.slug ?? null,
-  shoboi: Number(notify?.mediaId?.shoboi),
+  shoboi: notify?.mediaId?.shoboi ? Number(notify.mediaId.shoboi) : null,
   trakt: trakt?.mediaId?.trakt ?? null,
 });
 
@@ -103,8 +103,8 @@ const seriesSchedule = (
   if (!tmdb) return null;
 
   return {
-    firstAirDate: toInstant(tmdb?.first_air_date),
-    lastAirDate: toInstant(tmdb?.last_air_date),
+    firstAirDate: tmdb?.first_air_date ? toInstant(tmdb.first_air_date) : null,
+    lastAirDate: tmdb?.last_air_date ? toInstant(tmdb.last_air_date) : null,
     lastAiredEpisode: seriesScheduleEpisode(tmdb?.last_episode_to_air),
     nextEpisodeToAir: seriesScheduleEpisode(tmdb?.next_episode_to_air),
   };
