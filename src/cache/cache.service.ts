@@ -3,6 +3,10 @@ import { OnAppClose } from '@danet/core/hook';
 import { CacheKey, CacheOptions, CacheValue } from './cache.types.ts';
 import { computeRank } from './cache.util.ts';
 
+/**
+ * Lightweight in-memory cache for local development and tests.
+ * Lacks persistence and memory limits; replace with Redis in production.
+*/
 @Injectable({ scope: SCOPE.GLOBAL })
 export class CacheService implements OnAppClose {
   // TODO: Replace with actual cache client initialization in this instance `@db/redis`
@@ -20,11 +24,16 @@ export class CacheService implements OnAppClose {
   @Cron(CronExpression.EVERY_30_MINUTES)
   private handleCron() {
     this.logger.log('Running cache cleanup cron job');
-    // Simple cleanup logic: remove entries with rank below a threshold
-    // In a real-world scenario, this could be more sophisticated
-    // e.g., using a priority queue or a sorted set in Redis
-    // Here, we just log the cleanup action
+    const now = Date.now();
     for (const [k, v] of this.client.entries()) {
+      const isExpired = v.expiresAt !== undefined && v.expiresAt <= now;
+      if (isExpired) {
+        this.client.delete(k);
+        this.logger.log(
+          `Disposed expired cache entry with key: ${String(k)}`,
+        );
+        continue;
+      }
       if (v.rank < 0) {
         this.client.delete(k);
         this.logger.log(`Disposed low-rank cache entry with key: ${String(k)}`);
@@ -38,6 +47,10 @@ export class CacheService implements OnAppClose {
     if (!value) {
       return null;
     }
+    if (value.expiresAt !== undefined && value.expiresAt <= Date.now()) {
+      this.client.delete(key);
+      return null;
+    }
     value.hit += 1;
     value.rank = computeRank(value.hit, value.expiresAt);
     this.client.set(key, value);
@@ -45,12 +58,18 @@ export class CacheService implements OnAppClose {
   }
 
   async set<T>(key: CacheKey, value: T, opts?: CacheOptions): Promise<void> {
+    const ttlSeconds = opts?.ttl;
+    let expiresAt: number | undefined;
+    if (ttlSeconds !== undefined) {
+      const normalizedTtl = Math.max(0, ttlSeconds);
+      expiresAt = Date.now() + (normalizedTtl * 1000);
+    }
     this.client.set(
       key,
       {
         data: JSON.stringify(value),
-        expiresAt: opts?.ttl ? (Date.now() + (opts.ttl * 1000)) : undefined,
-        rank: 0,
+        expiresAt,
+        rank: computeRank(0, expiresAt),
         hit: 0,
       },
     );

@@ -17,7 +17,7 @@ import {
 @Injectable()
 export class TheXemService {
   private readonly client: RequestClient;
-  private readonly cacheTtlMs: number = 24 * 60 * 60 * 1000;
+  private readonly cacheTtlSeconds: number = 24 * 60 * 60;
 
   constructor(
     private readonly secret: SecretService,
@@ -56,7 +56,7 @@ export class TheXemService {
         return [] as TheXem[];
       });
 
-    this.cache.set<TheXem[]>(tvdbId, mappings, { ttl: this.cacheTtlMs });
+    this.cache.set<TheXem[]>(tvdbId, mappings, { ttl: this.cacheTtlSeconds });
     return mappings;
   }
 

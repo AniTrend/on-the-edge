@@ -1,6 +1,6 @@
 # Service Audit for Episodes/Series Migration
 
-**Date**: October 7, 2025  
+**Date**: October 7, 2025\
 **Status**: Complete
 
 ## Overview
@@ -11,22 +11,24 @@ This document audits existing service integrations in the Danet repository and i
 
 ### Available Services (src/service/*)
 
-| Service | Purpose | Key Methods | Schema Validation | Test Coverage |
-|---------|---------|-------------|-------------------|---------------|
-| **JikanService** | MyAnimeList API | `getAnime(malId)`, `getManga(malId)` | ✅ Zod | ✅ Complete |
-| **SkyhookService** | TVDB metadata | `getShowByTvdb(tvdbId)` | ✅ Zod | ✅ Complete |
-| **ArmService** | ID mapping/relations | `getAniListRelationId(anilist)`, `getRelationsByTvdb(tvdb)` | ✅ Zod | ✅ Complete |
-| **TmdbService** | TMDB metadata | `getShow(tmdb)`, `getSeason(season, tmdb)` | ✅ Zod | ✅ Complete |
-| **TraktService** | Trakt.tv metadata | `getShow(trakt)` | ✅ Zod | ✅ Complete |
-| **NotifyService** | notify.moe | - | - | - |
-| **ThemeService** | OP/ED themes | - | - | - |
-| **TheXemService** | Episode mapping | - | - | - |
-| **OtakuModeService** | - | - | - | - |
+| Service              | Purpose              | Key Methods                                                 | Schema Validation | Test Coverage |
+| -------------------- | -------------------- | ----------------------------------------------------------- | ----------------- | ------------- |
+| **JikanService**     | MyAnimeList API      | `getAnime(malId)`, `getManga(malId)`                        | ✅ Zod            | ✅ Complete   |
+| **SkyhookService**   | TVDB metadata        | `getShowByTvdb(tvdbId)`                                     | ✅ Zod            | ✅ Complete   |
+| **ArmService**       | ID mapping/relations | `getAniListRelationId(anilist)`, `getRelationsByTvdb(tvdb)` | ✅ Zod            | ✅ Complete   |
+| **TmdbService**      | TMDB metadata        | `getShow(tmdb)`, `getSeason(season, tmdb)`                  | ✅ Zod            | ✅ Complete   |
+| **TraktService**     | Trakt.tv metadata    | `getShow(trakt)`                                            | ✅ Zod            | ✅ Complete   |
+| **NotifyService**    | notify.moe           | -                                                           | -                 | -             |
+| **ThemeService**     | OP/ED themes         | -                                                           | -                 | -             |
+| **TheXemService**    | Episode mapping      | -                                                           | -                 | -             |
+| **OtakuModeService** | -                    | -                                                           | -                 | -             |
 
 ### Service Capabilities
 
 #### JikanService (MyAnimeList API)
+
 **Current Features:**
+
 - ✅ Fetch anime with full details (`/anime/{id}/full`)
 - ✅ Fetch anime moreinfo (`/anime/{id}/moreinfo`)
 - ✅ Fetch paginated episodes with window filtering
@@ -35,6 +37,7 @@ This document audits existing service integrations in the Danet repository and i
 - ✅ Retry configuration (2 retries, 200ms base delay)
 
 **API Coverage:**
+
 ```typescript
 getAnime(malId, options?: {
   episodes?: boolean;
@@ -44,6 +47,7 @@ getAnime(malId, options?: {
 ```
 
 **Episode Data Shape:**
+
 ```typescript
 interface AnimeEpisode {
   mal_id: number;
@@ -62,17 +66,21 @@ interface AnimeEpisode {
 ```
 
 #### SkyhookService (TVDB via Skyhook)
+
 **Current Features:**
+
 - ✅ Fetch show by TVDB ID
 - ✅ Complete show metadata with episodes array
 - ✅ Retry configuration
 
 **API Coverage:**
+
 ```typescript
 getShowByTvdb(tvdbId): Promise<SkyhookShow | undefined>
 ```
 
 **Episode Data Shape:**
+
 ```typescript
 interface SkyhookEpisode {
   tvdbShowId: number;
@@ -91,18 +99,22 @@ interface SkyhookEpisode {
 ```
 
 #### ArmService (Anime Relations Mapper)
+
 **Current Features:**
+
 - ✅ Get relations by AniList ID
 - ✅ Get relations by TVDB ID
 - ✅ Maps between 11 different service IDs
 
 **API Coverage:**
+
 ```typescript
 getAniListRelationId(anilist): Promise<SeriesRelationId | undefined>
 getRelationsByTvdb(tvdb): Promise<SeriesRelationId[]>
 ```
 
 **Relation Shape:**
+
 ```typescript
 interface SeriesRelationId {
   anidb?: number;
@@ -120,19 +132,23 @@ interface SeriesRelationId {
 ```
 
 #### TmdbService (The Movie Database)
+
 **Current Features:**
+
 - ✅ Fetch show by TMDB ID
 - ✅ Fetch season by number
 - ✅ Configuration management (image providers)
 - ✅ Episodes embedded in season response
 
 **API Coverage:**
+
 ```typescript
 getShow(tmdb): Promise<TmdbShow | undefined>
 getSeason(season, tmdb): Promise<TmdbSeason | undefined>
 ```
 
 **Episode Data Shape:**
+
 ```typescript
 interface TmdbEpisode {
   air_date: string;
@@ -154,12 +170,15 @@ interface TmdbEpisode {
 ```
 
 #### TraktService (Trakt.tv)
+
 **Current Features:**
+
 - ✅ Fetch show by Trakt ID or slug
 - ✅ Extended metadata (`?extended=full`)
 - ✅ Custom headers (trakt-api-version, trakt-api-key)
 
 **API Coverage:**
+
 ```typescript
 getShow(trakt: number | string): Promise<TraktShow | undefined>
 ```
@@ -190,15 +209,21 @@ getShow(trakt: number | string): Promise<TraktShow | undefined>
 
 ### Architecture Differences
 
-| Feature | On-the-edge (Deno/Oak) | Danet (Current) | Migration Strategy |
-|---------|------------------------|-----------------|-------------------|
-| **DI Framework** | Manual DI / Factories | Danet decorators (`@Injectable()`) | Port to Danet DI |
-| **HTTP Client** | Global `request()` helper | `RequestClient` (per-service) | Keep Danet pattern |
-| **Persistence** | MongoDB via `@mongodb` driver | Not implemented | Create `Collection<T>` interface + adapters |
-| **Feature Flags** | GrowthBook `Features` interface | Not implemented | Port Features interface |
-| **Logging** | Global `logger` | `LoggerService` injection | Keep Danet pattern |
-| **Configuration** | `env()` helper | `SecretService` | Keep Danet pattern |
-| **Testing** | Manual mocks + stub helpers | Test infrastructure (Phases 1-5) | Use Danet test infrastructure |
+| Feature           | On-the-edge (Deno/Oak)          | Danet (Current)                    | Migration Strategy                          |
+| ----------------- | ------------------------------- | ---------------------------------- | ------------------------------------------- |
+| **DI Framework**  | Manual DI / Factories           | Danet decorators (`@Injectable()`) | Port to Danet DI                            |
+| **HTTP Client**   | Global `request()` helper       | `RequestClient` (per-service)      | Keep Danet pattern                          |
+| **Persistence**   | MongoDB via `@mongodb` driver   | Not implemented                    | Create `Collection<T>` interface + adapters |
+| **Feature Flags** | GrowthBook `Features` interface | Not implemented                    | Port Features interface                     |
+| **Logging**       | Global `logger`                 | `LoggerService` injection          | Keep Danet pattern                          |
+| **Configuration** | `env()` helper                  | `SecretService`                    | Keep Danet pattern                          |
+| **Testing**       | Manual mocks + stub helpers     | Test infrastructure (Phases 1-5)   | Use Danet test infrastructure               |
+
+### Cache Layer (Current State)
+
+- Danet port ships with an in-memory `CacheService`; TTL is enforced on read but the store is non-persistent.
+- No eviction policy or memory ceiling exists, so the cache should be treated as a local/test utility until Redis is wired back in.
+- The cleanup cron only performs best-effort sweeps; production deployments must use the planned Redis client for durability and back-pressure.
 
 ## On-the-Edge: Episodes Module Structure
 
@@ -240,6 +265,7 @@ episodes/
 ### Key Patterns from On-the-Edge
 
 #### 1. Repository Layer
+
 ```typescript
 // On-the-edge pattern
 export class EpisodesRepository {
@@ -256,7 +282,7 @@ export class EpisodesRepository {
       limit: number;
       filters?: FilterOptions;
       relation?: SeriesRelationId;
-    }
+    },
   ): Promise<EpisodesDataResponse> {
     // 1. Load or fetch canonical episodes (Jikan)
     // 2. Optionally enrich with other providers (feature flags)
@@ -269,6 +295,7 @@ export class EpisodesRepository {
 ```
 
 #### 2. Collection Interface
+
 ```typescript
 // On-the-edge pattern
 export interface EpisodeCollection {
@@ -287,6 +314,7 @@ export class EpisodeLocalSource implements EpisodeCollection {
 ```
 
 #### 3. Multi-Source Merging
+
 ```typescript
 // On-the-edge pattern
 const slices: SourceSlice[] = [
@@ -301,11 +329,12 @@ if (features.isOn('episodes.sources.skyhook')) {
 
 const merged = mergeEpisodes(
   { preferRuntime: 'JIKAN', titleSimThreshold: 0.8 },
-  slices
+  slices,
 );
 ```
 
 #### 4. Cursor-Based Pagination
+
 ```typescript
 // On-the-edge pattern
 interface EpisodeCursorPayload {
@@ -344,6 +373,7 @@ series/
 ### Key Patterns
 
 #### 1. Repository Layer
+
 ```typescript
 // On-the-edge pattern
 export default class SeriesRepository {
@@ -368,6 +398,7 @@ export default class SeriesRepository {
 ```
 
 #### 2. Local Source (Cache Layer)
+
 ```typescript
 // On-the-edge pattern
 export default class LocalSource {
@@ -384,7 +415,7 @@ export default class LocalSource {
     await this.collection?.updateOne(
       { anilist: data.id },
       { $set: data },
-      { upsert: true }
+      { upsert: true },
     );
   }
 
@@ -400,6 +431,7 @@ export default class LocalSource {
 ### 1. Service Extensions
 
 #### Extend TraktService
+
 ```typescript
 // Add to src/service/trakt/trakt.service.ts
 async getSeasons(trakt: number | string): Promise<TraktSeason[]>
@@ -410,20 +442,23 @@ async getSeasonEpisodes(
 ```
 
 #### Create TheXemService
+
 ```typescript
 // New: src/service/thexem/thexem.service.ts
 @Injectable()
 export class TheXemService {
-  async getMappingsByTvdb(tvdbId: number): Promise<TheXem[]>
+  async getMappingsByTvdb(tvdbId: number): Promise<TheXem[]>;
 }
 ```
 
 #### Enhance NotifyService & ThemeService
+
 - Review and complete implementation if needed
 
 ### 2. Persistence Layer
 
 #### Create Collection Interface
+
 ```typescript
 // New: src/common/collection/collection.interface.ts
 export interface Collection<T> {
@@ -431,17 +466,18 @@ export interface Collection<T> {
   findOneAndReplace(
     filter: Record<string, unknown>,
     replacement: T,
-    options: { upsert: boolean; returnDocument: 'after' | 'before' }
+    options: { upsert: boolean; returnDocument: 'after' | 'before' },
   ): Promise<T | null>;
   updateOne(
     filter: Record<string, unknown>,
     update: { $set: Partial<T> },
-    options: { upsert: boolean }
+    options: { upsert: boolean },
   ): Promise<void>;
 }
 ```
 
 #### Create MongoDB Adapter
+
 ```typescript
 // New: src/common/collection/mongo.adapter.ts
 export class MongoCollection<T> implements Collection<T> {
@@ -451,6 +487,7 @@ export class MongoCollection<T> implements Collection<T> {
 ```
 
 #### Create In-Memory Adapter
+
 ```typescript
 // New: src/common/collection/memory.adapter.ts
 export class InMemoryCollection<T> implements Collection<T> {
@@ -462,6 +499,7 @@ export class InMemoryCollection<T> implements Collection<T> {
 ### 3. Feature Flags
 
 #### Create Features Interface
+
 ```typescript
 // New: src/common/features/features.interface.ts
 export interface Features {
@@ -538,6 +576,7 @@ src/packages/series/
 ## Testing Strategy
 
 ### Unit Tests (Per Module)
+
 - ✅ Use `InMemoryCollection` adapter
 - ✅ Use `createSecretStub()` for base URLs
 - ✅ Use `mockJsonResponse()` for HTTP stubs
@@ -545,6 +584,7 @@ src/packages/series/
 - ✅ Use `EpisodeBuilder` for test data
 
 ### Integration Tests
+
 - Test full controller → service → repository → collection flow
 - Stub all external HTTP calls
 - Use feature flags to test optional integrations
@@ -552,6 +592,7 @@ src/packages/series/
 - Test multi-source merging
 
 ### Example Test Pattern
+
 ```typescript
 import { createSecretStub } from '@scope/testing';
 import { mockJsonResponse, resetFetch } from '@scope/testing';
