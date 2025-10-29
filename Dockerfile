@@ -15,7 +15,7 @@ RUN deno task check
 RUN deno task build
 
 FROM build AS install
-RUN mv .build/edge /usr/edge
+RUN mv build/edge /usr/edge
 RUN rm -r /usr/app
 
 FROM install AS final
