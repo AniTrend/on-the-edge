@@ -1,10 +1,6 @@
 import { assert, assertEquals } from '@std/assert';
-import {
-  applyEpisodeLimit,
-  classifyEpisodeKind,
-  enrichEpisodes,
-} from './episode-utils.ts';
-import { AnimeEpisode } from './remote/types.ts';
+import { applyEpisodeLimit, classifyEpisodeKind } from './episode-utils.ts';
+import type { AnimeEpisode } from './jikan.types.ts';
 
 const sample = (overrides: Partial<AnimeEpisode> = {}): AnimeEpisode => ({
   mal_id: overrides.mal_id ?? 1,
@@ -18,6 +14,7 @@ const sample = (overrides: Partial<AnimeEpisode> = {}): AnimeEpisode => ({
   recap: overrides.recap ?? false,
   synopsis: null,
   score: overrides.score ?? null,
+  kind: overrides.kind ?? 'main',
 });
 
 Deno.test('applyEpisodeLimit returns truncated slice when over max', () => {
@@ -50,9 +47,4 @@ Deno.test('classifyEpisodeKind identifies filler and recap', () => {
   assertEquals(classifyEpisodeKind(sample({ title: 'OVA Special' })), 'ova');
   assertEquals(classifyEpisodeKind(sample({ title: 'ONA Feature' })), 'ona');
   assertEquals(classifyEpisodeKind(sample({})), 'main');
-});
-
-Deno.test('enrichEpisodes adds kind field', () => {
-  const enriched = enrichEpisodes([sample({ filler: true })]);
-  assertEquals(enriched[0].kind, 'filler');
 });

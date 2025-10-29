@@ -1,2 +1,2 @@
 export * from './arm.service.ts';
-export * from './types.ts';
+export * from './arm.types.ts';

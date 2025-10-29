@@ -1,0 +1,9 @@
+{
+  "extends": "../../deno.json",
+  "name": "@scope/database",
+  "exports": {
+    ".": "./index.ts",
+    "./collection": "./collection/index.ts",
+    "./testing": "./testing/index.ts"
+  }
+}

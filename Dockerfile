@@ -8,14 +8,17 @@ RUN apt-get upgrade -y
 RUN apt-get install unzip
 
 FROM scaffold AS cache
-RUN deno cache --allow-scripts src/mod.ts
+RUN deno task cache
 
 FROM cache AS build
-RUN deno check src/mod.ts
-RUN deno compile --unstable-otel --allow-net --allow-env --allow-read --allow-sys --allow-run --allow-scripts --output=/usr/on-the-edge src/mod.ts 
+RUN deno task check
+RUN deno task build
 
-FROM build AS final
+FROM build AS install
+RUN mv .build/edge /usr/edge
 RUN rm -r /usr/app
+
+FROM install AS final
 WORKDIR /usr
 
-ENTRYPOINT ["/usr/on-the-edge"]
+ENTRYPOINT ["/usr/edge"]

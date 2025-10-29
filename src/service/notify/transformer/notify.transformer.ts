@@ -1,12 +1,10 @@
-import { toInstant } from '@scope/common/helpers';
+import { toInstant } from '@scope/common/utils';
 import { Transform } from '@scope/common/transformer';
 import {
-  EpisodeModel,
-  ImageModel,
-  MappingModel,
-  TrailerModel,
-} from '../remote/types.ts';
-import { EnrichedAnimeData } from '../notify.service.ts';
+  EnrichedAnimeData,
+  NotifyAnimeRemote,
+  NotifyEpisodeRemote,
+} from '../types.ts';
 import {
   Anime,
   MediaId,
@@ -16,8 +14,9 @@ import {
 } from './types.ts';
 import { Format, Source, Status } from './enums.ts';
 
-const mapMediaId = (input: MappingModel[]): MediaId => {
+const mapMediaId = (input: NotifyAnimeRemote['mappings']): MediaId => {
   const mappings: MediaId = {};
+  if (!input) return mappings;
   input.forEach((mapping) => {
     const [serviceKey] = mapping.service.split('/');
     if (serviceKey) {
@@ -27,7 +26,8 @@ const mapMediaId = (input: MappingModel[]): MediaId => {
   return mappings;
 };
 
-const mapTrailer = (trailers: TrailerModel[]): Trailer[] => {
+const mapTrailer = (trailers: NotifyAnimeRemote['trailers']): Trailer[] => {
+  if (!trailers) return [];
   const baseUrl = 'https://www.youtube.com/watch?v=';
   return trailers.map((trailer) => {
     const platform = trailer.service.toLowerCase();
@@ -62,7 +62,7 @@ const mapHSLToHex = (
   return `#${f(0)}${f(8)}${f(4)}`;
 };
 
-const mapPoster = (image: ImageModel): Poster => ({
+const mapPoster = (image: NotifyAnimeRemote['image']): Poster => ({
   color: mapHSLToHex(
     image.averageColor.hue,
     image.averageColor.saturation,
@@ -108,11 +108,16 @@ const mapFormat = (type: string): Format => {
   }
 };
 
-const mapEpisode = (episode: EpisodeModel): TransformedEpisode => ({
+const resolveTitle = (episode: NotifyEpisodeRemote): string => {
+  const base = episode.title.english || episode.title.romaji ||
+    episode.title.japanese;
+  return base?.trim().length ? base : `Episode ${episode.number}`;
+};
+
+const mapEpisode = (episode: NotifyEpisodeRemote): TransformedEpisode => ({
   id: episode.id,
   number: episode.number,
-  title: episode.title.english || episode.title.romaji ||
-    episode.title.japanese,
+  title: resolveTitle(episode),
   startAirDate: episode.airingDate?.start
     ? toInstant(episode.airingDate.start)
     : undefined,
@@ -121,33 +126,41 @@ const mapEpisode = (episode: EpisodeModel): TransformedEpisode => ({
     : undefined,
 });
 
-export const transform: Transform<EnrichedAnimeData, Anime> = (sourceData) => ({
-  id: sourceData.id,
-  title: {
-    english: sourceData.title.english,
-    native: sourceData.title.hiragana,
-    romaji: sourceData.title.romaji,
-    canonical: sourceData.title.canonical,
-    harigana: sourceData.title.hiragana,
-    synonyms: sourceData.title.synonyms,
-  },
-  format: mapFormat(sourceData.type),
-  summary: sourceData.summary,
-  status: mapStatus(sourceData.status),
-  startDate: toInstant(sourceData.startDate),
-  endDate: toInstant(sourceData.endDate),
-  episodeCount: sourceData.episodeCount,
-  episodeLength: sourceData.episodeLength,
-  episodes: sourceData.episodes.map(mapEpisode),
-  source: mapSource(sourceData.source),
-  poster: mapPoster(sourceData.image),
-  rating: sourceData.rating,
-  trailers: mapTrailer(sourceData.trailers),
-  mediaId: mapMediaId(sourceData.mappings),
-  english: sourceData.title.english,
-  native: sourceData.title.hiragana,
-  romaji: sourceData.title.romaji,
-  canonical: sourceData.title.canonical,
-  harigana: sourceData.title.hiragana,
-  synonyms: sourceData.title.synonyms,
-});
+export const transform: Transform<EnrichedAnimeData, Anime> = (sourceData) => {
+  const anime = sourceData as NotifyAnimeRemote & {
+    episodes: NotifyEpisodeRemote[];
+  };
+
+  return {
+    id: anime.id,
+    title: {
+      english: anime.title.english || '',
+      native: anime.title.hiragana || '',
+      romaji: anime.title.romaji || '',
+      canonical: anime.title.canonical || '',
+      harigana: anime.title.hiragana || '',
+      synonyms: anime.title.synonyms ?? [],
+    },
+    format: mapFormat(anime.type ?? ''),
+    summary: anime.summary ?? '',
+    status: mapStatus(anime.status ?? ''),
+    startDate: toInstant(anime.startDate ?? new Date().toISOString()),
+    endDate: toInstant(
+      anime.endDate ?? anime.startDate ?? new Date().toISOString(),
+    ),
+    episodeCount: Number(anime.episodeCount ?? 0),
+    episodeLength: Number(anime.episodeLength ?? 0),
+    episodes: anime.episodes.map(mapEpisode),
+    source: mapSource(anime.source ?? ''),
+    poster: mapPoster(anime.image),
+    rating: anime.rating,
+    trailers: mapTrailer(anime.trailers),
+    mediaId: mapMediaId(anime.mappings),
+    english: anime.title.english || '',
+    native: anime.title.hiragana || '',
+    romaji: anime.title.romaji || '',
+    canonical: anime.title.canonical || '',
+    harigana: anime.title.hiragana || '',
+    synonyms: anime.title.synonyms ?? [],
+  };
+};

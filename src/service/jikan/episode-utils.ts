@@ -1,4 +1,4 @@
-import { AnimeEpisode, AnimeResource } from './remote/types.ts';
+import type { AnimeEpisode, AnimeResource } from './jikan.types.ts';
 
 /** Default maximum episodes fetched unless overridden. */
 export const DEFAULT_MAX_EPISODES = 100;
@@ -48,25 +48,25 @@ export const applyEpisodeLimit = (
  *  - if title contains 'ONA' => 'ona'
  *  - else 'main'
  */
-export const classifyEpisodeKind = (ep: AnimeEpisode): string => {
+export const classifyEpisodeKind = (
+  ep: { title?: string; recap?: boolean; filler?: boolean },
+): 'recap' | 'filler' | 'ova' | 'ona' | 'main' | 'special' => {
   const t = (ep.title ?? '').toLowerCase();
   if (ep.recap) return 'recap';
   if (ep.filler) return 'filler';
   if (t.includes('ova')) return 'ova';
   if (t.includes('ona')) return 'ona';
+  if (t.includes('special')) return 'special';
   return 'main';
 };
-
-export const enrichEpisodes = (episodes: AnimeEpisode[]): AnimeEpisode[] =>
-  episodes.map((ep) => ({ ...ep, kind: classifyEpisodeKind(ep) }));
 
 /** Convenience to apply truncation flags onto resource object. */
 export const attachEpisodes = (
   resource: AnimeResource,
-  episodes: AnimeEpisode[] | undefined,
+  episodes: AnimeEpisode[],
   truncated: boolean,
 ): AnimeResource => ({
   ...resource,
   episodes_list: episodes,
-  episodes_truncated: truncated || undefined,
+  episodes_truncated: truncated,
 });

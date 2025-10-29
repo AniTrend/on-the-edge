@@ -1,0 +1,39 @@
+import { Transform } from '@scope/common/transformer';
+import { ConfigDocument } from './config.document.ts';
+import { Config } from './config.types.ts';
+import { PlatformSource } from '@scope/experiment';
+
+const toImageUrl = (image: string, source: PlatformSource): string => {
+  if (source) {
+    return `${source.media}${image}`;
+  }
+  return image;
+};
+
+export const transform: Transform<
+  {
+    document: ConfigDocument;
+    platformSource: PlatformSource;
+    isAnalyticsEnabled: boolean;
+  },
+  Config
+> = ({ document, platformSource, isAnalyticsEnabled }) => {
+  const { image, _id, genres, navigation } = document;
+  return {
+    id: _id.toString(),
+    settings: {
+      analyticsEnabled: isAnalyticsEnabled,
+      platformSource: platformSource?.api,
+    },
+    genres: genres,
+    image: {
+      banner: toImageUrl(image.banner, platformSource),
+      poster: toImageUrl(image.poster, platformSource),
+      loading: toImageUrl(image.loading, platformSource),
+      error: toImageUrl(image.error, platformSource),
+      info: toImageUrl(image.info, platformSource),
+      default: toImageUrl(image.default, platformSource),
+    },
+    navigation: navigation,
+  };
+};

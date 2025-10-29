@@ -1,8 +1,0 @@
-{
-  "extends": "../../deno.json",
-  "name": "@scope/news",
-  "version": "0.1.0",
-  "exports": {
-    ".": "./index.ts"
-  }
-}

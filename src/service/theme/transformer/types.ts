@@ -4,7 +4,7 @@ export type Theme = {
   id: string;
   name: string;
   video: string;
-  audio?: string;
+  audio: string | null;
   meta: {
     type: ThemeType;
     number: number;

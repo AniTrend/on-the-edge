@@ -1,4 +1,9 @@
-import { AnimeResource, MangaResource } from './remote/types.ts';
+import type {
+  AnimeResource,
+  AnimeType,
+  MangaResource,
+  MangaType,
+} from './jikan.types.ts';
 
 /**
  * Fetch behavior options for Jikan integration. Defaults are intentionally conservative to avoid
@@ -21,15 +26,13 @@ export interface JikanFetchOptions {
 /**
  * Jikan anime model enriched with optional moreinfo text aggregated from the `/anime/{id}/moreinfo` endpoint.
  */
-export interface JikanAnime extends AnimeResource {
-  moreinfo?: string | null;
-}
+export type JikanAnime = AnimeResource;
 
 /**
  * Jikan manga model enriched with optional moreinfo text aggregated from the `/manga/{id}/moreinfo` endpoint.
  */
-export interface JikanManga extends MangaResource {
-  moreinfo?: string | null;
-}
+export type JikanManga = MangaResource;
 
 export type Jikan = JikanAnime | JikanManga;
+
+export type JikanType = AnimeType | MangaType;

@@ -1,0 +1,343 @@
+import {
+  BulkWriteOptions,
+  Document,
+  Filter,
+  FindOneAndReplaceOptions,
+  FindOptions,
+  InsertManyResult,
+  InsertOneResult,
+  ObjectId,
+  OptionalUnlessRequiredId,
+  Sort,
+  UpdateFilter,
+  UpdateOptions,
+  UpdateResult,
+  WithId,
+} from 'mongodb';
+import type { Collection } from '../collection/mongo.collection.interface.ts';
+
+/**
+ * In-memory collection adapter for testing MongoDB operations.
+ *
+ * Implements the Collection<T> interface with in-memory storage,
+ * providing a fast, isolated testing environment that mimics MongoDB behavior
+ * without requiring a real database connection.
+ *
+ * This implementation supports all operations defined in the Collection interface
+ * plus additional test-friendly methods like insertMany, find, and clear.
+ *
+ * @example Basic usage:
+ * ```typescript
+ * import { InMemoryCollection } from '@scope/testing';
+ *
+ * const collection = new InMemoryCollection<EpisodeDocument>();
+ * await collection.insertMany([
+ *   { seriesKey: '123', episodes: [...], airing: false, updatedAt: now }
+ * ]);
+ * const doc = await collection.findOne({ seriesKey: '123' });
+ * ```
+ *
+ * @example With repository:
+ * ```typescript
+ * const collection = new InMemoryCollection<EpisodeDocument>();
+ * const repo = new EpisodesRepository(collection, features);
+ * const result = await repo.invoke(123, { limit: 10 });
+ * ```
+ */
+export class InMemoryCollection<T extends Document> implements Collection<T> {
+  private data: Map<ObjectId, WithId<T>> = new Map();
+  private idCounter = 1;
+
+  /**
+   * Generate a unique ID for documents
+   */
+  private generateId(): ObjectId {
+    return new ObjectId(this.idCounter++);
+  }
+
+  /**
+   * Simple filter matching - handles basic equality checks
+   */
+  private matchesFilter(doc: WithId<T>, filter: Filter<T>): boolean {
+    for (const [key, value] of Object.entries(filter)) {
+      // Handle special operators
+      if (key.startsWith('$')) {
+        // Add support for $and, $or, etc. as needed
+        continue;
+      }
+
+      // Handle nested path matching (e.g., 'seriesKey')
+      const docValue = (doc as Record<string, unknown>)[key];
+
+      if (typeof value === 'object' && value !== null) {
+        // Handle comparison operators like $lt, $gt, $gte, $lte, $exists
+        const numValue = docValue as number;
+        if ('$lt' in value && numValue >= (value.$lt as number)) return false;
+        if ('$gt' in value && numValue <= (value.$gt as number)) return false;
+        if ('$lte' in value && numValue > (value.$lte as number)) return false;
+        if ('$gte' in value && numValue < (value.$gte as number)) return false;
+        if ('$exists' in value && (docValue !== undefined) !== value.$exists) {
+          return false;
+        }
+      } else {
+        // Simple equality check
+        if (docValue !== value) return false;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Apply sorting to results
+   */
+  private applySort(
+    docs: WithId<T>[],
+    sort?: Sort,
+  ): WithId<T>[] {
+    if (!sort) return docs;
+
+    return docs.sort((a, b) => {
+      for (const [field, direction] of Object.entries(sort)) {
+        const aVal = (a as Record<string, unknown>)[field];
+        const bVal = (b as Record<string, unknown>)[field];
+
+        const ascending = direction === 1 || direction === 'asc';
+
+        // Type guard for comparable values
+        if (typeof aVal === 'number' && typeof bVal === 'number') {
+          if (aVal < bVal) return ascending ? -1 : 1;
+          if (aVal > bVal) return ascending ? 1 : -1;
+        } else if (typeof aVal === 'string' && typeof bVal === 'string') {
+          if (aVal < bVal) return ascending ? -1 : 1;
+          if (aVal > bVal) return ascending ? 1 : -1;
+        }
+      }
+      return 0;
+    });
+  }
+
+  /**
+   * Find a single document matching the filter
+   */
+  async findOne(
+    filter: Filter<T>,
+    options?: FindOptions,
+  ): Promise<WithId<T> | null> {
+    const matches = Array.from(this.data.values())
+      .filter((doc) => this.matchesFilter(doc, filter));
+
+    if (matches.length === 0) return null;
+
+    const sorted = this.applySort(
+      matches,
+      options?.sort as { [key: string]: 1 | -1 | 'asc' | 'desc' } | undefined,
+    );
+    return sorted[0];
+  }
+
+  /**
+   * Find multiple documents matching the filter
+   */
+  find(filter: Filter<T> = {}, options?: FindOptions): Promise<WithId<T>[]> {
+    const matches = Array.from(this.data.values())
+      .filter((doc) => this.matchesFilter(doc, filter));
+
+    let limitCount: number | undefined;
+    let sortSpec: Sort | undefined;
+
+    if (options) {
+      limitCount = options.limit;
+      sortSpec = options.sort;
+    }
+    const applySortFn = this.applySort.bind(this);
+
+    const result = {
+      limit(count: number) {
+        limitCount = count;
+        return result;
+      },
+      sort(spec: Sort) {
+        sortSpec = spec;
+        return result;
+      },
+      async toArray(): Promise<WithId<T>[]> {
+        let results = matches;
+
+        if (sortSpec) {
+          results = applySortFn(results, sortSpec);
+        }
+
+        if (limitCount !== undefined) {
+          results = results.slice(0, limitCount);
+        }
+
+        return results;
+      },
+    };
+
+    return result.toArray();
+  }
+
+  /**
+   * Insert multiple documents
+   */
+  async insertMany(
+    docs: ReadonlyArray<OptionalUnlessRequiredId<T>>,
+    _options?: BulkWriteOptions,
+  ): Promise<InsertManyResult> {
+    const insertedIds: { [key: number]: ObjectId } = {};
+    const insertedCount = docs.length;
+
+    docs.forEach((doc, index) => {
+      const id = this.generateId();
+      const withId = { ...doc, _id: id } as WithId<T>;
+      this.data.set(id, withId);
+      insertedIds[index] = id;
+    });
+
+    return {
+      acknowledged: true,
+      insertedCount,
+      insertedIds,
+    };
+  }
+
+  /**
+   * Insert a single document
+   */
+  async insertOne(doc: T): Promise<InsertOneResult> {
+    const id = this.generateId();
+    const withId = { ...doc, _id: id } as WithId<T>;
+    this.data.set(id, withId);
+    return {
+      acknowledged: true,
+      insertedId: id,
+    };
+  }
+
+  /**
+   * Update a single document matching the filter
+   */
+  async updateOne(
+    filter: Filter<T>,
+    update: UpdateFilter<T>,
+    options?: UpdateOptions,
+  ): Promise<UpdateResult> {
+    const doc = await this.findOne(filter);
+
+    if (!doc && options?.upsert) {
+      // Upsert: create new document
+      const newDoc = { ...(filter as T), ...(update.$set || {}) } as T;
+      await this.insertOne(newDoc);
+      return {
+        acknowledged: true,
+        matchedCount: 0,
+        modifiedCount: 0,
+        upsertedCount: 1,
+        upsertedId: this.generateId(),
+      };
+    }
+
+    if (!doc) {
+      return {
+        acknowledged: true,
+        matchedCount: 0,
+        modifiedCount: 0,
+        upsertedCount: 0,
+        upsertedId: null,
+      } as UpdateResult;
+    }
+
+    // Apply $set operator
+    if (update.$set) {
+      Object.assign(doc, update.$set);
+    }
+
+    return {
+      acknowledged: true,
+      matchedCount: 1,
+      modifiedCount: 1,
+      upsertedCount: 0,
+      upsertedId: null,
+    } as UpdateResult;
+  }
+
+  /**
+   * Update multiple documents matching the filter
+   */
+  async updateMany(
+    filter: Filter<T>,
+    update: UpdateFilter<T>,
+    _options?: UpdateOptions,
+  ): Promise<UpdateResult> {
+    const docs = await this.find(filter);
+
+    if (docs.length === 0) {
+      return {
+        acknowledged: true,
+        matchedCount: 0,
+        modifiedCount: 0,
+        upsertedCount: 0,
+        upsertedId: null,
+      } as UpdateResult;
+    }
+
+    // Apply $set operator to all matched documents
+    if (update.$set) {
+      docs.forEach((doc) => {
+        Object.assign(doc, update.$set);
+      });
+    }
+
+    return {
+      acknowledged: true,
+      matchedCount: docs.length,
+      modifiedCount: docs.length,
+      upsertedCount: 0,
+      upsertedId: null,
+    } as UpdateResult;
+  }
+
+  /**
+   * Replace a document or insert if it doesn't exist
+   */
+  async findOneAndReplace(
+    filter: Filter<T>,
+    replacement: T,
+    options: FindOneAndReplaceOptions,
+  ): Promise<WithId<T> | null> {
+    const existing = await this.findOne(filter);
+
+    if (!existing && options?.upsert) {
+      const id = this.generateId();
+      const withId = { ...replacement, _id: id } as WithId<T>;
+      this.data.set(id, withId);
+      return withId;
+    }
+
+    if (existing) {
+      const updated = { ...replacement, _id: existing._id } as WithId<T>;
+      this.data.set(existing._id, updated);
+      return updated;
+    }
+
+    return null;
+  }
+
+  /**
+   * Clear all data from the collection
+   */
+  clear(): void {
+    this.data.clear();
+    this.idCounter = 1;
+  }
+
+  /**
+   * Get count of documents matching filter
+   */
+  async countDocuments(filter: Filter<T> = {}): Promise<number> {
+    return Array.from(this.data.values())
+      .filter((doc) => this.matchesFilter(doc, filter))
+      .length;
+  }
+}

@@ -8,10 +8,10 @@ on:
   workflow_dispatch:
     inputs:
       branch:
-        description: 'Git ref to build (branch or tag)'
+        description: "Git ref to build (branch or tag)"
         required: true
       image-tag:
-        description: 'Override the Docker tag (defaults to sanitized branch)'
+        description: "Override the Docker tag (defaults to sanitized branch)"
         required: false
 
 jobs:
@@ -72,7 +72,7 @@ jobs:
           context: .
           push: true
           platforms: linux/amd64,linux/arm64
-          cache-from: type=registry,ref=${{ env.CACHE_REF }},mode=max
+          cache-from: type=registry,ref=${{ env.CACHE_REF }}
           cache-to: type=registry,ref=${{ env.CACHE_REF }},mode=max
           tags: ${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.tag }}
       - name: Summarize snapshot

@@ -1,0 +1,11 @@
+# Suggested Commands
+- `deno task dev` – start the Danet edge service locally (enables OTEL/cron/temporal unstable flags).
+- `deno task dev:watch` – same as dev but with hot reload.
+- `deno task fmt` / `deno task fmt:check` – apply/check formatting.
+- `deno task lint` – run lint with custom import rule.
+- `deno task test` – execute full test suite with coverage output under `coverage/`.
+- `deno task cache` – pre-cache dependencies for CI or cold starts.
+- `deno task check` – type-check `bootstrap.ts` with Deno.
+- `deno task build` – compile executable for edge deployment.
+- `deno task deps:stable:show` / `deps:latest:show` – inspect outdated dependencies.
+- macOS shell basics: `ls`, `cd`, `pwd`, `cat`, `grep`, `find`, `git status`, `git diff` for repo navigation.

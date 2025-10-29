@@ -1,35 +1,127 @@
-import { logger } from '@scope/common/core';
-import { transform } from './transformer/arm.transformer.ts';
-import { getByAnilist, getByTvdb } from './remote/index.ts';
-import { SeriesRelationId } from './types.ts';
+import { Injectable } from '@danet/core';
+import { LoggerService } from '@scope/logger';
+import { SeriesRelationId } from './arm.types.ts';
+import { SecretService } from '@scope/secret';
+import { createClient, type RequestClient } from '@anitrend/request-client';
+import { DEFAULT_HEADERS } from '../constants.ts';
+import { ArmSchema, ArmSchemas } from './arm.schema.ts';
+import {
+  requestInterceptor,
+  responseInterceptor,
+} from '../interceptor/client.interceptor.ts';
 
-export const getAniListRelationId = async (
-  anilist?: number,
-): Promise<SeriesRelationId | undefined> => {
-  if (!anilist) {
-    logger.warn('The parameter `anilist` is undefined');
-    return undefined;
-  }
-  return await getByAnilist(anilist)
-    .then(transform)
-    .catch((e) => {
-      logger.warn('Unable to get ids anilist from remote', e);
-      return undefined;
+@Injectable()
+export class ArmService {
+  private readonly client: RequestClient;
+
+  constructor(
+    private readonly secret: SecretService,
+    private readonly logger: LoggerService,
+  ) {
+    this.client = createClient({
+      baseURL: this.secret.get('YUNA'),
+      headers: DEFAULT_HEADERS,
+      timeout: this.secret.requestTimeout(),
     });
-};
-
-export const getRelationsByTvdb = async (
-  tvdb?: number,
-): Promise<SeriesRelationId[]> => {
-  if (!tvdb) {
-    logger.warn('The parameter `tvdb` is undefined');
-    return [];
+    this.client.interceptors.request.use(requestInterceptor(this.logger));
+    this.client.interceptors.response.use(responseInterceptor(this.logger));
   }
 
-  return await getByTvdb(tvdb)
-    .then((data) => data.map(transform))
-    .catch((e) => {
-      logger.warn('Unable to get ids anilist from remote', e);
-      return [];
-    });
-};
+  getAniListRelationId = async (
+    anilist: number,
+  ): Promise<SeriesRelationId | undefined> => {
+    const { data, status } = await this.client
+      .get('/api/v2/ids', {
+        params: {
+          source: 'anilist',
+          id: anilist,
+        },
+      });
+    if (status !== 200) {
+      this.logger.instance.error(
+        `Unable to get ids for anilist from remote, status code: ${status}`,
+        this.client,
+      );
+    }
+
+    return ArmSchema.parse(data);
+  };
+
+  getRelationsById = async (
+    source: 'anilist' | 'mal',
+    id: number,
+  ): Promise<SeriesRelationId> => {
+    const { data, status } = await this.client
+      .get('/api/v2/ids', {
+        params: {
+          source,
+          id,
+        },
+      });
+    if (status !== 200) {
+      this.logger.instance.error(
+        `Unable to get ids ${source} from remote, status code: ${status}`,
+        this.client,
+      );
+    }
+
+    return ArmSchema.parse(data);
+  };
+
+  getRelationsByTvdb = async (
+    tvdb: number,
+  ): Promise<SeriesRelationId[]> => {
+    const { data, status } = await this.client
+      .get('/api/v2/thetvdb', {
+        params: {
+          id: tvdb,
+        },
+      });
+    if (status !== 200) {
+      this.logger.instance.error(
+        `Unable to get ids tvdb from remote, status code: ${status}`,
+        this.client,
+      );
+    }
+
+    return ArmSchemas.parse(data);
+  };
+
+  getRelationsByTmdb = async (
+    tmdb: number,
+  ): Promise<SeriesRelationId[]> => {
+    const { data, status } = await this.client
+      .get('/api/v2/themoviedb', {
+        params: {
+          id: tmdb,
+        },
+      });
+    if (status !== 200) {
+      this.logger.instance.error(
+        `Unable to get ids tmdb from remote, status code: ${status}`,
+        this.client,
+      );
+    }
+
+    return ArmSchemas.parse(data);
+  };
+
+  getRelationsByImdb = async (
+    imdb: number,
+  ): Promise<SeriesRelationId[]> => {
+    const { data, status } = await this.client
+      .get('/api/v2/imdb', {
+        params: {
+          id: imdb,
+        },
+      });
+    if (status !== 200) {
+      this.logger.instance.error(
+        `Unable to get ids imdb from remote, status code: ${status}`,
+        this.client,
+      );
+    }
+
+    return ArmSchemas.parse(data);
+  };
+}

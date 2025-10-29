@@ -3,6 +3,19 @@
   "deno.enablePaths": [
     "./"
   ],
+  "deno.lint": true,
+  "chat.agent.thinkingStyle": "expanded",
+  "editor.indentSize": "tabSize",
+  "editor.tabSize": 2,
+  "editor.detectIndentation": false,
+  "editor.formatOnSave": true,
+  "deno.codeLens.testArgs": [
+    "--allow-all",
+    "--no-check",
+    "--unstable-experimentalDecorators",
+    "--unstable-emitDecoratorMetadata",
+    "--unstable-temporal"
+  ],
   "chat.tools.terminal.autoApprove": {
     "cd": true,
     "echo": true,
@@ -26,10 +39,14 @@
     "du": true,
     "df": true,
     "sleep": true,
+    "grep": true,
     "git status": true,
     "git log": true,
     "git show": true,
     "git diff": true,
+    "git grep": true,
+    "git branch": true,
+    "/^git branch\\b.*-(d|D|m|M|-delete|-force)\\b/": false,
     "Get-ChildItem": true,
     "Get-Content": true,
     "Get-Date": true,
@@ -52,21 +69,19 @@
     "/^date\\b.*(-s|--set)\\b/": false,
     "find": true,
     "/^find\\b.*-(delete|exec|execdir|fprint|fprintf|fls|ok|okdir)\\b/": false,
-    "grep": true,
-    "/^grep\\b.*-(f|P)\\b/": false,
     "sort": true,
     "/^sort\\b.*-(o|S)\\b/": false,
     "tree": true,
     "/^tree\\b.*-o\\b/": false,
-    "/\\(.+\\)/": {
+    "/\\(.+\\)/s": {
       "approve": false,
       "matchCommandLine": true
     },
-    "/\\{.+\\}/": {
+    "/\\{.+\\}/s": {
       "approve": false,
       "matchCommandLine": true
     },
-    "/`.+`/": {
+    "/`.+`/s": {
       "approve": false,
       "matchCommandLine": true
     },
@@ -103,8 +118,4 @@
     "iex": false,
     "/.*deno.*/": true
   },
-  "chat.agent.thinkingStyle": "expanded",
-  "chat.edits2.enabled": true,
-  "python-envs.defaultEnvManager": "ms-python.python:pyenv",
-  "python-envs.pythonProjects": [],
 }

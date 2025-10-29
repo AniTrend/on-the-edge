@@ -1,15 +1,14 @@
 {
   "extends": "../../deno.json",
   "name": "@scope/common",
-  "version": "0.1.0",
   "exports": {
+    ".": "./index.ts",
     "./core": "./core/index.ts",
-    "./experiment": "./experiment/index.ts",
-    "./helpers": "./helpers/index.ts",
-    "./logger": "./logger/index.ts",
-    "./mongo": "./mongo/index.ts",
+    "./date": "./date/index.ts",
+    "./inject": "./inject/index.ts",
     "./testing": "./testing/index.ts",
     "./transformer": "./transformer/index.ts",
+    "./utils": "./utils/index.ts",
     "./types": "./types/index.ts"
   }
 }

@@ -1,12 +1,11 @@
 import { assertEquals } from '@std/assert';
 import { describe, it } from '@std/testing/bdd';
-import { ThemeModel } from '../remote/types.ts';
-import { transform } from './index.ts';
-import { Theme } from './types.ts';
-import { env } from '@scope/common/core';
+import type { ThemeModel } from '../theme.types.ts';
+import { transformThemes } from './index.ts';
+import type { Theme } from './types.ts';
 
 describe('theme transformer test', () => {
-  const baseUrl: string = env('THEMES');
+  const baseUrl = 'https://themes.test';
   it('given theme models return theme collection', () => {
     const given: ThemeModel[] = [
       {
@@ -106,7 +105,7 @@ describe('theme transformer test', () => {
       },
     ];
 
-    const actual = transform(given);
+    const actual = transformThemes(given, baseUrl);
 
     assertEquals(actual, expected);
   });
