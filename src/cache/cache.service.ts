@@ -6,7 +6,7 @@ import { computeRank } from './cache.util.ts';
 /**
  * Lightweight in-memory cache for local development and tests.
  * Lacks persistence and memory limits; replace with Redis in production.
-*/
+ */
 @Injectable({ scope: SCOPE.GLOBAL })
 export class CacheService implements OnAppClose {
   // TODO: Replace with actual cache client initialization in this instance `@db/redis`
