@@ -5,7 +5,7 @@ import { computeRank } from './cache.util.ts';
 
 @Injectable({ scope: SCOPE.GLOBAL })
 export class CacheService implements OnAppClose {
-  // TODO: Replace with actual cache client initialization (e.g., Redis)
+  // TODO: Replace with actual cache client initialization in this instance `@db/redis`
   private readonly client: Map<CacheKey, CacheValue>;
   private readonly logger = new Logger(CacheService.name);
 
