@@ -6,16 +6,19 @@
   "configurations": [
     {
       "request": "launch",
-      "name": "server",
+      "name": "Deno: Dev",
       "type": "node",
-      "program": "${workspaceFolder}/src/mod.ts",
+      "program": "${workspaceFolder}/bootstrap.ts",
       "cwd": "${workspaceFolder}",
       "runtimeExecutable": "deno",
       "runtimeArgs": [
         "run",
-        "--inspect-wait",
-        "--allow-all"
+        "-P",
+        "--unstable",
+        "--allow-scripts=npm:protobufjs",
+        "--inspect-wait"
       ],
+      "killBehavior": "polite",
       "attachSimplePort": 9229
     }
   ]

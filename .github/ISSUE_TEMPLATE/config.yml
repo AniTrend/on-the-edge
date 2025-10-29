@@ -1,7 +1,7 @@
 blank_issues_enabled: false
 contact_links:
   - name: 🗣 Ask a Question, Discuss
-    url: https://github.com/anitrend/anitrend-on-the-edge/discussions
+    url: https://github.com/anitrend/on-the-edge/discussions
     about: General discussion, suggest ideas, share concepts or resources or ask questions, like "How does this work 🤔?"
   - name: 🤗 Support the Project
     url: https://patreon.com/wax911

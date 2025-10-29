@@ -1,36 +1,126 @@
-import { logger } from '@scope/common/core';
-import { transform } from './transformer/index.ts';
-import { getSeasonBy, getShowById } from './remote/index.ts';
-import { TmdbSeason, TmdbShow } from './types.ts';
+import { Injectable, SCOPE } from '@danet/core';
+import { SecretService } from '@scope/secret';
+import { LoggerService } from '@scope/logger';
+import { createClient, type RequestClient } from '@anitrend/request-client';
+import { DEFAULT_HEADERS } from '../constants.ts';
+import {
+  ConfigurationSchema,
+  MovieSchema,
+  SeasonSchema,
+  ShowSchema,
+} from './tmdb.schema.ts';
+import {
+  movieTransformer,
+  seasonTransformer,
+  showTransformer,
+} from './tmdb.configuration.ts';
+import type { TmdbMovie, TmdbSeason, TmdbShow } from './tmdb.types.ts';
+import { ImageProvider } from './utils/index.ts';
+import { OnAppBootstrap } from '@danet/core/hook';
+import {
+  requestInterceptor,
+  responseInterceptor,
+} from '../interceptor/client.interceptor.ts';
 
-export const getTmdbShow = async (
-  tmdb?: number | null,
-): Promise<TmdbShow | undefined> => {
-  if (!tmdb) {
-    logger.warn('The parameter `tmdb` is undefined');
-    return undefined;
+@Injectable({ scope: SCOPE.GLOBAL })
+export class TmdbService implements OnAppBootstrap {
+  private readonly client: RequestClient;
+  private imageProvider?: ImageProvider;
+
+  constructor(
+    private readonly secret: SecretService,
+    private readonly logger: LoggerService,
+  ) {
+    this.client = createClient({
+      baseURL: this.secret.get('TMDB'),
+      headers: DEFAULT_HEADERS,
+      timeout: this.secret.requestTimeout(),
+    });
+    const apiKey = this.secret.get<string>('TMDB_KEY');
+    this.client.interceptors.request.use(requestInterceptor(this.logger));
+    this.client.interceptors.response.use(responseInterceptor(this.logger));
+    this.client.interceptors.request.use((config) => {
+      config.params = { 'api_key': apiKey, ...config.params };
+      return config;
+    });
   }
 
-  return await getShowById(tmdb)
-    .then(transform)
-    .catch((e) => {
-      logger.warn('Unable to get show from remote', e);
-      return undefined;
-    });
-};
-
-export const getTmdbSeason = async (
-  season: number,
-  tmdb?: number | null,
-): Promise<TmdbSeason | undefined> => {
-  if (!tmdb) {
-    logger.warn('The parameter `tmdb` is undefined');
-    return undefined;
+  async onAppBootstrap(): Promise<void> {
+    try {
+      // Would be ideal to call this on demand. Potentially we should setup a database cache
+      // and refresh periodically.
+      // However this configuration is unlikely to change often so doing it once at startup
+      // should be fine for now.
+      const { data } = await this.client.get('/3/configuration');
+      const configuration = ConfigurationSchema.parse(data);
+      this.imageProvider = new ImageProvider(configuration);
+    } catch (error) {
+      this.logger.instance.warn(
+        'Unable to fetch TMDB configuration, will use fallback',
+        error,
+      );
+    }
   }
 
-  return await getSeasonBy(tmdb, season)
-    .catch((e) => {
-      logger.warn('Unable to get show from remote', e);
+  async getShow(tmdb: number): Promise<TmdbShow | undefined> {
+    try {
+      const show = await this.fetchShow(tmdb);
+      return showTransformer(show, this.imageProvider) as TmdbShow;
+    } catch (error) {
+      this.logger.instance.warn('Unable to get show from remote', error);
       return undefined;
+    }
+  }
+
+  async getMovie(tmdb: number): Promise<TmdbMovie | undefined> {
+    try {
+      const movie = await this.fetchMovie(tmdb);
+      return movieTransformer(movie, this.imageProvider) as TmdbMovie;
+    } catch (error) {
+      this.logger.instance.warn('Unable to get movie from remote', error);
+      return undefined;
+    }
+  }
+
+  async getSeason(
+    seasonNumber: number,
+    tmdb: number,
+  ): Promise<TmdbSeason | undefined> {
+    if (!tmdb) {
+      this.logger.instance.warn('The parameter `tmdb` is undefined');
+      return undefined;
+    }
+
+    try {
+      const season = await this.fetchSeason(tmdb, seasonNumber);
+      return seasonTransformer(season, this.imageProvider) as TmdbSeason;
+    } catch (error) {
+      this.logger.instance.warn('Unable to get season from remote', error);
+      return undefined;
+    }
+  }
+
+  private async fetchShow(id: number): Promise<TmdbShow> {
+    const { data } = await this.client.get(`/3/tv/${id}`, {
+      params: { append_to_response: 'images' },
     });
-};
+    return ShowSchema.parse(data);
+  }
+
+  private async fetchMovie(id: number): Promise<TmdbMovie> {
+    const { data } = await this.client.get(`/3/movie/${id}`, {
+      params: { append_to_response: 'images' },
+    });
+    return MovieSchema.parse(data);
+  }
+
+  private async fetchSeason(
+    showId: number,
+    season: number,
+  ): Promise<TmdbSeason> {
+    const { data } = await this.client.get(`/3/tv/${showId}/season/${season}`, {
+      params: { append_to_response: 'images' },
+    });
+    return SeasonSchema.parse(data);
+  }
+}

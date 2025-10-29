@@ -3,9 +3,10 @@
   "name": "@scope/service",
   "version": "0.1.0",
   "exports": {
+    ".": "./index.ts",
     "./arm": "./arm/index.ts",
     "./jikan": "./jikan/index.ts",
-    "./news": "./news/index.ts",
+    "./otakumode": "./otakumode/index.ts",
     "./notify": "./notify/index.ts",
     "./skyhook": "./skyhook/index.ts",
     "./theme": "./theme/index.ts",

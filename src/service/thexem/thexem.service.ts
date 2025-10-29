@@ -1,91 +1,121 @@
-import { getTheXemByTvdb } from './remote/thexem.remote.ts';
+import { Injectable } from '@danet/core';
+import { SecretService } from '@scope/secret';
+import { LoggerService } from '@scope/logger';
+import { CacheService } from '@scope/cache';
+import { createClient, type RequestClient } from '@anitrend/request-client';
+import { DEFAULT_HEADERS } from '../constants.ts';
+import {
+  type TheXemRemoteEntry,
+  TheXemResponseSchema,
+} from './thexem.schema.ts';
 import { TheXem, TheXemScene } from './types.ts';
-import { TheXemDataModel, TheXemModel } from './remote/types.ts';
-import { env } from '@scope/common/core';
+import {
+  requestInterceptor,
+  responseInterceptor,
+} from '../interceptor/client.interceptor.ts';
 
-const mapScene = (
-  s: { season: number; episode: number; absolute: number },
-): TheXemScene => ({
-  season: Number(s.season),
-  episode: Number(s.episode),
-  absolute: Number(s.absolute),
-});
+@Injectable()
+export class TheXemService {
+  private readonly client: RequestClient;
+  private readonly cacheTtlMs: number = 24 * 60 * 60 * 1000;
 
-const mapModel = (m: TheXemModel): TheXem => ({
-  scene: mapScene(m.scene),
-  tvdb: mapScene(m.tvdb),
-  anidb: mapScene(m.anidb),
-});
-
-// Simple in-memory cache for TheXEM rows keyed by TVDB id
-const xemCache = new Map<number, { at: number; data: TheXem[] }>();
-
-export const getTheXemMappingsByTvdb = async (
-  tvdbId: number,
-): Promise<TheXem[]> => {
-  try {
-    const ttlHoursRaw = env<string>('THEXEM_TTL_HOURS');
-    const ttlMs = Math.max(1, Number(ttlHoursRaw) || 24) * 60 * 60 * 1000;
-    const now = Date.now();
-    const cached = xemCache.get(tvdbId);
-    if (cached && now - cached.at < ttlMs) return cached.data;
-  } catch (_) {
-    // ignore env read; proceed without cache TTL
+  constructor(
+    private readonly secret: SecretService,
+    private readonly logger: LoggerService,
+    private readonly cache: CacheService,
+  ) {
+    this.client = createClient({
+      baseURL: this.secret.get('THEXEM'),
+      headers: DEFAULT_HEADERS,
+      timeout: this.secret.requestTimeout(),
+    });
+    this.client.interceptors.request.use(requestInterceptor(this.logger));
+    this.client.interceptors.response.use(responseInterceptor(this.logger));
   }
-  const data: TheXemDataModel = await getTheXemByTvdb(tvdbId);
-  const rows = !data || !Array.isArray(data.data)
-    ? []
-    : data.data.map(mapModel);
-  // store regardless (empty result caches negative lookups for TTL)
-  xemCache.set(tvdbId, { at: Date.now(), data: rows });
-  return rows;
-};
 
-// Build a TVDB->absolute map for quick number normalization. Returns Map<tvdbEpisodeAbs, absolute>
-export const buildTvdbAbsoluteMap = (rows: TheXem[]): Map<number, number> => {
-  const map = new Map<number, number>();
-  for (const r of rows) {
-    const tvdbAbs = Number(r.tvdb.absolute);
-    const absolute = Number(
-      r.scene.absolute || r.anidb.absolute || r.tvdb.absolute,
-    );
-    if (
-      Number.isFinite(tvdbAbs) && Number.isFinite(absolute) && tvdbAbs > 0 &&
-      absolute > 0
-    ) {
-      if (!map.has(tvdbAbs)) map.set(tvdbAbs, absolute); // first-wins for stability
+  async getMappingsByTvdb(tvdbId?: number): Promise<TheXem[]> {
+    if (!tvdbId) {
+      this.logger.instance.warn('The parameter `tvdbId` is undefined');
+      return [];
     }
-  }
-  return map;
-};
 
-// Clear the in-memory TheXEM cache (useful for tests or operational resets)
-export const clearTheXemCache = (): void => {
-  try {
-    xemCache.clear();
-  } catch (_) {
-    // no-op if map is unavailable
-  }
-};
-
-// Build a TVDB season+episode -> absolute map. Key format: `${season}-${episode}`
-export const buildTvdbSeasonEpisodeToAbsoluteMap = (
-  rows: TheXem[],
-): Map<string, number> => {
-  const map = new Map<string, number>();
-  for (const r of rows) {
-    const s = Number(r.tvdb.season);
-    const e = Number(r.tvdb.episode);
-    const absolute = Number(
-      r.scene.absolute || r.anidb.absolute || r.tvdb.absolute,
-    );
-    if (
-      Number.isFinite(s) && Number.isFinite(e) && Number.isFinite(absolute) &&
-      s >= 0 && e > 0 && absolute > 0
-    ) {
-      const key = `${s}-${e}`;
-      if (!map.has(key)) map.set(key, absolute); // first-wins
+    const cached = await this.cache.get<TheXem[]>(tvdbId);
+    if (cached) {
+      return cached;
     }
+
+    const mappings = await this.client
+      .get('/map/all', { params: { origin: 'tvdb', id: tvdbId } })
+      .then(({ data }) => TheXemResponseSchema.parse(data))
+      .then((payload) => payload.data.map((entry) => this.mapEntry(entry)))
+      .catch((error) => {
+        this.logger.instance.warn(
+          'Unable to get TheXem mappings from remote',
+          error,
+        );
+        return [] as TheXem[];
+      });
+
+    this.cache.set<TheXem[]>(tvdbId, mappings, { ttl: this.cacheTtlMs });
+    return mappings;
   }
-  return map;
-};
+
+  buildTvdbAbsoluteMap(rows: TheXem[]): Map<number, number> {
+    const map = new Map<number, number>();
+    for (const row of rows) {
+      const tvdbAbs = Number(row.tvdb.absolute);
+      const absolute = Number(
+        row.scene.absolute || row.anidb.absolute || row.tvdb.absolute,
+      );
+      if (
+        Number.isFinite(tvdbAbs) && Number.isFinite(absolute) && tvdbAbs > 0 &&
+        absolute > 0
+      ) {
+        if (!map.has(tvdbAbs)) {
+          map.set(tvdbAbs, absolute);
+        }
+      }
+    }
+    return map;
+  }
+
+  buildTvdbSeasonEpisodeToAbsoluteMap(rows: TheXem[]): Map<string, number> {
+    const map = new Map<string, number>();
+    for (const row of rows) {
+      const season = Number(row.tvdb.season);
+      const episode = Number(row.tvdb.episode);
+      const absolute = Number(
+        row.scene.absolute || row.anidb.absolute || row.tvdb.absolute,
+      );
+      if (
+        Number.isFinite(season) && Number.isFinite(episode) &&
+        Number.isFinite(absolute) && season >= 0 && episode > 0 &&
+        absolute > 0
+      ) {
+        const key = `${season}-${episode}`;
+        if (!map.has(key)) {
+          map.set(key, absolute);
+        }
+      }
+    }
+    return map;
+  }
+
+  private mapEntry(entry: TheXemRemoteEntry): TheXem {
+    return {
+      scene: this.mapScene(entry.scene),
+      tvdb: this.mapScene(entry.tvdb),
+      anidb: this.mapScene(entry.anidb),
+    };
+  }
+
+  private mapScene(
+    scene: { season: number; episode: number; absolute: number },
+  ): TheXemScene {
+    return {
+      season: Number(scene.season),
+      episode: Number(scene.episode),
+      absolute: Number(scene.absolute),
+    };
+  }
+}

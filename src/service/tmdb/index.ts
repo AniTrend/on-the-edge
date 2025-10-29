@@ -1,6 +1,5 @@
+export * from './tmdb.module.ts';
+export * from './tmdb.schema.ts';
 export * from './tmdb.service.ts';
 export * from './utils/index.ts';
-export * from './types.ts';
-export * from './enums.ts';
-export * from './transformer/index.ts';
-export type * from './remote/types.ts';
+export * from './tmdb.types.ts';

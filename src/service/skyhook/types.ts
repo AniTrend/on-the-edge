@@ -1,8 +1,10 @@
-import { EpisodeModel, SkyhookModel } from './remote/types.ts';
-import { Show } from './transformer/types.ts';
+import type {
+  SkyhookRemoteEpisode,
+  SkyhookRemoteShow,
+} from './skyhook.schema.ts';
 
-export type SkyhookEpisode = EpisodeModel;
+export type SkyhookEpisode = SkyhookRemoteEpisode;
 
-export type SkyhookShow =
-  & Omit<SkyhookModel, 'firstAired' | 'lastUpdated'>
-  & Show;
+export type SkyhookSeason = Pick<SkyhookRemoteShow, 'seasons'>;
+
+export type SkyhookShow = Omit<SkyhookRemoteShow, 'images'>;

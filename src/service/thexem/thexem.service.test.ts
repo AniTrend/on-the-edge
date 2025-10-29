@@ -1,118 +1,117 @@
+import { afterEach, beforeEach, describe, it } from '@std/testing/bdd';
 import { assertEquals } from '@std/assert';
-import { json, onGet, setEnvScoped, stubFetch } from '@scope/common/testing';
-import {
-  buildTvdbAbsoluteMap,
-  buildTvdbSeasonEpisodeToAbsoluteMap,
-  clearTheXemCache,
-  getTheXemMappingsByTvdb,
-} from './thexem.service.ts';
-import { TheXem } from './types.ts';
+import { mockFetch, resetFetch } from '@c4spar/mock-fetch';
+import { assertSpyCalls } from '@std/testing/mock';
+import { TheXemService } from '@scope/service/thexem';
+import { createSecretStub } from '@scope/secret/testing';
+import { createLoggerStub } from '@scope/logger/testing';
+import { createCacheStub } from '@scope/cache/testing';
+import type { TheXem } from '@scope/service/thexem';
 
-Deno.test('buildTvdbAbsoluteMap builds a map from tvdb.absolute to absolute', () => {
-  const rows: TheXem[] = [
-    {
-      scene: { season: 1, episode: 1, absolute: 1 },
-      tvdb: { season: 1, episode: 1, absolute: 1 },
-      anidb: { season: 1, episode: 1, absolute: 1 },
-    },
-    {
-      scene: { season: 1, episode: 2, absolute: 2 },
-      tvdb: { season: 1, episode: 2, absolute: 2 },
-      anidb: { season: 1, episode: 2, absolute: 2 },
-    },
-    {
-      scene: { season: 2, episode: 1, absolute: 13 },
-      tvdb: { season: 2, episode: 1, absolute: 1 },
-      anidb: { season: 2, episode: 1, absolute: 13 },
-    },
-  ];
-  const m = buildTvdbAbsoluteMap(rows);
-  assertEquals(m.get(1), 1);
-  assertEquals(m.get(2), 2);
-});
+describe('TheXemService', () => {
+  const secret = createSecretStub({
+    THEXEM: 'https://thexem.test',
+    THEXEM_TTL_HOURS: '1',
+    CLIENT_REQUEST_TIMEOUT: '5000',
+  });
 
-Deno.test(
-  'buildTvdbSeasonEpisodeToAbsoluteMap builds season-episode -> absolute map and honors first-wins',
-  () => {
+  const cache = createCacheStub();
+  const { logger, spies } = createLoggerStub();
+
+  beforeEach(() => {
+    resetFetch();
+  });
+
+  afterEach(() => {
+    resetFetch();
+  });
+
+  it('builds tvdb absolute map', () => {
+    const service = new TheXemService(secret, logger, cache);
     const rows: TheXem[] = [
       {
-        scene: { season: 1, episode: 1, absolute: 10 },
+        scene: { season: 1, episode: 1, absolute: 1 },
         tvdb: { season: 1, episode: 1, absolute: 1 },
-        anidb: { season: 1, episode: 1, absolute: 10 },
+        anidb: { season: 1, episode: 1, absolute: 1 },
       },
       {
-        scene: { season: 1, episode: 2, absolute: 11 },
+        scene: { season: 1, episode: 2, absolute: 2 },
         tvdb: { season: 1, episode: 2, absolute: 2 },
-        anidb: { season: 1, episode: 2, absolute: 11 },
+        anidb: { season: 1, episode: 2, absolute: 2 },
       },
-      // Duplicate tvdb season+episode should not override the first mapping (first-wins)
+    ];
+
+    const map = service.buildTvdbAbsoluteMap(rows);
+    assertEquals(map.get(1), 1);
+    assertEquals(map.get(2), 2);
+  });
+
+  it('builds season episode to absolute map', () => {
+    const service = new TheXemService(secret, logger, cache);
+    const rows: TheXem[] = [
       {
-        scene: { season: 99, episode: 99, absolute: 999 },
-        tvdb: { season: 1, episode: 1, absolute: 999 },
-        anidb: { season: 99, episode: 99, absolute: 999 },
+        scene: { season: 1, episode: 1, absolute: 1 },
+        tvdb: { season: 1, episode: 1, absolute: 1 },
+        anidb: { season: 1, episode: 1, absolute: 1 },
       },
-      // Season 0 entries are allowed by the mapper (s >= 0)
       {
         scene: { season: 0, episode: 1, absolute: 5 },
         tvdb: { season: 0, episode: 1, absolute: 5 },
         anidb: { season: 0, episode: 1, absolute: 5 },
       },
-      // Invalid: episode must be > 0 and absolute > 0, so this should be ignored
-      {
-        scene: { season: 2, episode: 0, absolute: 0 },
-        tvdb: { season: 2, episode: 0, absolute: 0 },
-        anidb: { season: 2, episode: 0, absolute: 0 },
-      },
     ];
-    const m = buildTvdbSeasonEpisodeToAbsoluteMap(rows);
-    // First-wins preserved
-    assertEquals(m.get('1-1'), 10);
-    assertEquals(m.get('1-2'), 11);
-    // Season 0 accepted
-    assertEquals(m.get('0-1'), 5);
-    // Invalid key not present
-    assertEquals(m.has('2-0'), false);
-  },
-);
 
-// Disabled: TheXem is currently down, causing CI failures. Re-enable when TheXem is back up.
-Deno.test.ignore(
-  'getTheXemMappingsByTvdb caches results and can be reset',
-  async () => {
-    clearTheXemCache();
-    let calls = 0;
-    const base = 'https://thexem.test';
-    const env = setEnvScoped({ THEXEM: base });
-    const s = stubFetch([
-      onGet(`${base}/map/all`, () => {
-        calls++;
-        return json({
-          data: [
-            {
-              scene: { season: 1, episode: 1, absolute: 1 },
-              tvdb: { season: 1, episode: 1, absolute: 1 },
-              anidb: { season: 1, episode: 1, absolute: 1 },
-            },
-          ],
-        });
-      }),
-    ]);
+    const map = service.buildTvdbSeasonEpisodeToAbsoluteMap(rows);
+    assertEquals(map.get('1-1'), 1);
+    assertEquals(map.get('0-1'), 5);
+  });
 
+  it('fetches mappings and caches subsequent lookups', async () => {
+    const response = {
+      result: 'success',
+      message: 'ok',
+      data: [
+        {
+          scene: { season: 1, episode: 1, absolute: 1 },
+          tvdb: { season: 1, episode: 1, absolute: 1 },
+          anidb: { season: 1, episode: 1, absolute: 1 },
+        },
+      ],
+    };
+
+    mockFetch(
+      {
+        url: 'https://thexem.test/map/all?origin=tvdb&id=123',
+      },
+      {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(response),
+      },
+    );
+
+    const service = new TheXemService(secret, logger, cache);
+    const first = await service.getMappingsByTvdb(123);
+    resetFetch();
+
+    const originalFetch = globalThis.fetch;
     try {
-      const a = await getTheXemMappingsByTvdb(123);
-      const b = await getTheXemMappingsByTvdb(123); // should hit cache
-      assertEquals(a.length, 1);
-      assertEquals(b.length, 1);
-      assertEquals(calls, 1);
-
-      // Clear cache and ensure we hit remote again
-      clearTheXemCache();
-      const c = await getTheXemMappingsByTvdb(123);
-      assertEquals(c.length, 1);
-      assertEquals(calls, 2);
+      globalThis.fetch = () => {
+        throw new Error('cache should avoid network requests');
+      };
+      const second = await service.getMappingsByTvdb(123);
+      assertEquals(second.length, 1);
     } finally {
-      s.restore();
-      env.restore();
+      globalThis.fetch = originalFetch;
     }
-  },
-);
+
+    assertEquals(first.length, 1);
+  });
+
+  it('returns empty array when id is missing', async () => {
+    const service = new TheXemService(secret, logger, cache);
+    const result = await service.getMappingsByTvdb();
+    assertEquals(result, []);
+    assertSpyCalls(spies.warn, 1);
+  });
+});

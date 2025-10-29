@@ -1,17 +1,18 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema",
-  "importMap": "./src/import_map.json",
+  "$id": "https://raw.githubusercontent.com/denoland/deno/main/cli/schemas/config-file.v1.json",
+  "version": "0.1.0",
   "lint": {
-    "include": ["src"],
+    "include": ["src", "bootstrap.ts"],
     "exclude": [".github", "README.md"],
-    "plugins": ["./lint/plugins/no_cross_package_relative_imports.ts"],
+    "plugins": ["./lint/plugins/only-scoped-imports/plugin.ts"],
     "rules": {
-      "include": ["anitrend/no-cross-package-relative-imports"],
+      "include": ["anitrend/only-scoped-imports"],
+      "exclude": ["require-await"],
       "tags": ["recommended"]
     }
   },
   "fmt": {
-    "include": ["src"],
+    "include": ["src", "bootstrap.ts"],
     "exclude": [".github", "README.md"],
     "useTabs": false,
     "lineWidth": 80,
@@ -19,15 +20,65 @@
     "singleQuote": true,
     "proseWrap": "preserve"
   },
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  },
+  "imports": {
+    "@anitrend/request-client": "jsr:@anitrend/request-client@^0.1.3",
+    "@danet/zod": "jsr:@danet/zod@^0.0.9",
+    "@anatine/zod-openapi": "npm:@anatine/zod-openapi@^2.2.8",
+    "@c4spar/mock-fetch": "jsr:@c4spar/mock-fetch@^1.0.0",
+    "@db/redis": "jsr:@db/redis@^0.40.0",
+    "@rebeccastevens/deepmerge": "jsr:@rebeccastevens/deepmerge@^7.1.5",
+    "@std/http": "jsr:@std/http@^1.0.20",
+    "@std/dotenv": "jsr:@std/dotenv@^0.225.5",
+    "@std/collections": "jsr:@std/collections@^1.1.3",
+    "@std/testing": "jsr:@std/testing@^1.0.15",
+    "@std/assert": "jsr:@std/assert@^1.0.14",
+    "@std/crypto": "jsr:@std/crypto@^1.0.5",
+    "@std/path": "jsr:@std/path@^1.1.2",
+    "@onjara/optic": "jsr:@onjara/optic@^2.0.3",
+    "@onjara/optic/logger": "jsr:@onjara/optic@^2.0.3/logger",
+    "@onjara/optic/formatters": "jsr:@onjara/optic@^2.0.3/formatters",
+    "@onjara/optic/consoleStream": "jsr:@onjara/optic@^2.0.3/consoleStream",
+    "@growthbook/growthbook": "jsr:@growthbook/growthbook@^1.2.2",
+    "@libs/xml": "jsr:@libs/xml@^7.0.2",
+    "@danet/core": "jsr:@danet/core@^2.9.5",
+    "@danet/swagger": "jsr:@danet/swagger@^2.3.2",
+    "@opentelemetry/api": "npm:@opentelemetry/api@^1.9.0",
+    "@opentelemetry/sdk-node": "npm:@opentelemetry/sdk-node@^0.205.0",
+    "@opentelemetry/auto-instrumentations-node": "npm:@opentelemetry/auto-instrumentations-node@^0.64.6",
+    "@opentelemetry/exporter-trace-otlp-http": "npm:@opentelemetry/exporter-trace-otlp-http@^0.205.0",
+    "@opentelemetry/exporter-metrics-otlp-http": "npm:@opentelemetry/exporter-metrics-otlp-http@^0.205.0",
+    "@opentelemetry/exporter-logs-otlp-http": "npm:@opentelemetry/exporter-logs-otlp-http@^0.205.0",
+    "@opentelemetry/sdk-logs": "npm:@opentelemetry/sdk-logs@^0.205.0",
+    "@opentelemetry/api-logs": "npm:@opentelemetry/api-logs@^0.205.0",
+    "@opentelemetry/resources": "npm:@opentelemetry/resources@^2.1.0",
+    "@opentelemetry/semantic-conventions": "npm:@opentelemetry/semantic-conventions@^1.37.0",
+    "@opentelemetry/sdk-metrics": "npm:@opentelemetry/sdk-metrics@^2.1.0",
+    "mongodb": "npm:mongodb@^6.20.0",
+    "zod": "npm:zod@3.23.8"
+  },
   "tasks": {
-    "check": "deno check src/mod.ts",
-    "start": "deno run -P --unstable-otel --allow-scripts=npm:protobufjs ./src/mod.ts",
-    "test": "deno test -P --coverage=coverage --allow-sys=osRelease",
-    "build": "deno compile -P --unstable-otel --allow-scripts=npm:protobufjs --output=./build/on-the-edge src/mod.ts"
+    "cache": "deno cache --allow-scripts bootstrap.ts",
+    "check": "deno check bootstrap.ts",
+    "fmt:check": "deno fmt --check",
+    "fmt": "deno fmt",
+    "lint": "deno lint",
+    "deps:stable:show": "deno outdated --compatible",
+    "deps:latest:show": "deno outdated --latest",
+    "deps:stable:update": "deno outdated --compatible --update !npm:zod",
+    "deps:latest:update": "deno outdated --latest --update !npm:zod",
+    "dev": "deno -P --unstable-otel --unstable-cron --unstable-temporal --allow-scripts=npm:protobufjs bootstrap.ts",
+    "dev:watch": "deno -P --unstable-otel --unstable-cron --unstable-temporal --allow-scripts=npm:protobufjs --watch-hmr bootstrap.ts",
+    "test": "deno test -P --coverage=coverage --allow-sys=osRelease -- --unstable-experimentalDecorators --unstable-emitDecoratorMetadata",
+    "build": "deno compile -P --unstable-otel --unstable-cron --unstable-temporal --allow-scripts=npm:protobufjs --output=./build/edge bootstrap.ts"
   },
   "permissions": {
     "default": {
       "read": [".env", "/.dockerenv"],
+      "write": [".github/swagger-spec.json"],
       "env": true,
       "net": true,
       "sys": ["osRelease", "uid", "gid", "hostname", "userInfo"],
@@ -38,7 +89,8 @@
     "permissions": {
       "read": [".env"],
       "env": true
-    }
+    },
+    "include": ["**/*.test.ts", "**/*.spec.ts", "**/testing"]
   },
   "compile": {
     "permissions": {
@@ -47,7 +99,9 @@
       "net": true,
       "sys": ["osRelease", "uid", "gid", "hostname", "userInfo"],
       "run": ["/bin/sh"]
-    }
+    },
+    "include": ["src/**/*.ts"],
+    "exclude": ["**/*.test.ts", "**/*.spec.ts", "**/testing"]
   },
   "nodeModulesDir": "auto",
   "workspace": ["src/*"]

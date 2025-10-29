@@ -1,1 +1,1 @@
-export * from './image-provider.ts';
+export * from './tmdb.image-provider.ts';

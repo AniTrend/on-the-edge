@@ -1,4 +1,4 @@
-import { AnimeResource, MangaResource } from '../remote/types.ts';
+import type { AnimeResource, MangaResource } from '../jikan.types.ts';
 import { JikanAnime, JikanManga } from '../types.ts';
 import { Transform } from '@scope/common/transformer';
 
