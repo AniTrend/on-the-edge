@@ -99,9 +99,7 @@
       "net": true,
       "sys": ["osRelease", "uid", "gid", "hostname", "userInfo"],
       "run": ["/bin/sh"]
-    },
-    "include": ["src/**/*.ts"],
-    "exclude": ["**/*.test.ts", "**/*.spec.ts", "**/testing"]
+    }
   },
   "nodeModulesDir": "auto",
   "workspace": ["src/*"]

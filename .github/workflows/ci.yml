@@ -20,6 +20,7 @@ jobs:
         uses: denoland/setup-deno@v2
         with:
           cache: true
+          deno-version: 2.5.4
       - name: Config properties file
         run: bash .github/scripts/config-env.sh
       - name: Run lint checks
@@ -35,6 +36,7 @@ jobs:
         uses: denoland/setup-deno@v2
         with:
           cache: true
+          deno-version: 2.5.4
       - name: Config properties file
         run: bash .github/scripts/config-env.sh
       - name: Check code format
@@ -50,6 +52,7 @@ jobs:
         uses: denoland/setup-deno@v2
         with:
           cache: true
+          deno-version: 2.5.4
       - name: Config properties file
         run: bash .github/scripts/config-env.sh
       - name: Run checks
@@ -66,6 +69,7 @@ jobs:
         uses: denoland/setup-deno@v2
         with:
           cache: true
+          deno-version: 2.5.4
       - name: Config properties file
         run: bash .github/scripts/config-env.sh
       - name: Run tests
@@ -87,6 +91,7 @@ jobs:
         uses: denoland/setup-deno@v2
         with:
           cache: true
+          deno-version: 2.5.4
       - name: Config properties file
         run: bash .github/scripts/config-env.sh
       - name: Compile Application
