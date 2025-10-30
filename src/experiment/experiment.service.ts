@@ -50,18 +50,18 @@ export class ExperimentService implements OnAppClose {
   }
 
   isDisabled(
-    feature: keyof Pick<
+    feature: keyof Omit<
       AppFeatures,
-      'news-refactor-api' | 'enable-analytics' | 'episode-align-title-sim'
+      'episode-align-title-sim'
     >,
   ): boolean {
     return this.invoke(() => this.growthBook.isOff(feature));
   }
 
   getFeatureValue<T>(
-    feature: keyof Omit<
+    feature: keyof Pick<
       AppFeatures,
-      'news-refactor-api' | 'enable-analytics'
+      'episode-align-title-sim' | 'platform-source'
     >,
     defaultValue: T,
   ): WidenPrimitives<T> {
