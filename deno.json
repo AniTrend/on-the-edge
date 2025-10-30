@@ -70,10 +70,10 @@
     "deps:latest:show": "deno outdated --latest",
     "deps:stable:update": "deno outdated --compatible --update !npm:zod",
     "deps:latest:update": "deno outdated --latest --update !npm:zod",
-    "dev": "deno -P --unstable-otel --unstable-cron --unstable-temporal --allow-scripts=npm:protobufjs bootstrap.ts",
-    "dev:watch": "deno -P --unstable-otel --unstable-cron --unstable-temporal --allow-scripts=npm:protobufjs --watch-hmr bootstrap.ts",
+    "dev": "deno -P --unstable-otel --unstable-cron --unstable-temporal bootstrap.ts",
+    "dev:watch": "deno -P --unstable-otel --unstable-cron --unstable-temporal --watch-hmr bootstrap.ts",
     "test": "deno test -P --coverage=coverage --allow-sys=osRelease -- --unstable-experimentalDecorators --unstable-emitDecoratorMetadata",
-    "build": "deno compile -P --unstable-otel --unstable-cron --unstable-temporal --allow-scripts=npm:protobufjs --output=./build/edge bootstrap.ts"
+    "build": "deno compile -P --unstable-otel --unstable-cron --unstable-temporal --output=./build/edge bootstrap.ts"
   },
   "permissions": {
     "default": {
