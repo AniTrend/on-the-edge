@@ -1,48 +1,62 @@
-import { assertEquals } from '@std/assert';
+import { assertEquals, assertRejects } from '@std/assert';
 import { describe, it } from '@std/testing/bdd';
-import { FakeTime } from '@std/testing/time';
-import { CacheService } from './cache.service.ts';
+import { SecretService } from '@scope/secret';
+import type { LoggerService } from '@scope/logger';
+import { RedisService } from './redis.service.ts';
 
-describe('CacheService', () => {
-  it('returns cached value while ttl has not elapsed', async () => {
-    const time = new FakeTime();
-    try {
-      const service = new CacheService();
-      await service.set('demo-key', { hello: 'world' }, { ttl: 2 });
+describe('RedisService', () => {
+  it('bails on bootstrap when Redis config is missing or connect fails', async () => {
+    // SecretService.get throws to simulate missing env configuration
+    const secretStub = {
+      get: (_k: string) => {
+        throw new Error('missing env');
+      },
+    } as unknown as SecretService;
+    const loggerStub = {
+      instance: { mark: () => { }, measure: () => { }, error: () => { } },
+    } as unknown as LoggerService;
+    const service = new RedisService(secretStub, loggerStub);
 
-      assertEquals(await service.get('demo-key'), { hello: 'world' });
-
-      time.tick(1000);
-      assertEquals(await service.get('demo-key'), { hello: 'world' });
-    } finally {
-      time.restore();
-    }
+    await assertRejects(() => service.onAppBootstrap());
   });
 
-  it('purges expired entries on access', async () => {
-    const time = new FakeTime();
-    try {
-      const service = new CacheService();
-      await service.set('expiring-key', 'value', { ttl: 1 });
+  it('delegates operations to redis client and applies px for ttl', async () => {
+    // Minimal fake redis client used to verify interactions
+    const store = new Map<string, string>();
+    let lastPx: number | undefined;
+    const fakeRedis = {
+      async get(key: string): Promise<string | null> {
+        return store.has(key) ? store.get(key)! : null;
+      },
+      async set(
+        key: string,
+        value: string,
+        opts?: { px?: number },
+      ): Promise<void> {
+        if (opts && typeof opts.px === 'number') lastPx = opts.px;
+        store.set(key, value);
+      },
+      async del(key: string): Promise<void> {
+        store.delete(key);
+      },
+    } as unknown as Record<string, unknown>;
 
-      time.tick(1000);
+    const secretStub = {
+      get: (_k: string) => 'unused',
+    } as unknown as SecretService;
+    const loggerStub = {
+      instance: { mark: () => { }, measure: () => { } },
+    } as unknown as LoggerService;
+    const service = new RedisService(secretStub, loggerStub);
 
-      assertEquals(await service.get('expiring-key'), null);
-      assertEquals(await service.get('expiring-key'), null);
-    } finally {
-      time.restore();
-    }
-  });
+    // Inject fake client
+    (service as unknown as { client: unknown }).client = fakeRedis;
 
-  it('treats zero-length ttl as immediately expired', async () => {
-    const time = new FakeTime();
-    try {
-      const service = new CacheService();
-      await service.set('zero-ttl-key', 'value', { ttl: 0 });
+    await service.set('demo-key', { hello: 'world' }, { ttl: 2 });
+    assertEquals(lastPx, 2000);
+    assertEquals(await service.get('demo-key'), { hello: 'world' });
 
-      assertEquals(await service.get('zero-ttl-key'), null);
-    } finally {
-      time.restore();
-    }
+    await service.del('demo-key');
+    assertEquals(await service.get('demo-key'), null);
   });
 });
