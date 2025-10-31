@@ -49,8 +49,8 @@ describe('RedisService', () => {
     } as unknown as LoggerService;
     const service = new RedisService(secretStub, loggerStub);
 
-    // Inject fake client
-    (service as unknown as { client: unknown }).client = fakeRedis;
+    // Inject fake client into the actual private field
+    (service as unknown as { redis: unknown }).redis = fakeRedis;
 
     await service.set('demo-key', { hello: 'world' }, { ttl: 2 });
     assertEquals(lastPx, 2000);

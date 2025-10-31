@@ -27,7 +27,7 @@ describe('TheXemService', () => {
   });
 
   it('builds tvdb absolute map', () => {
-    const service = new TheXemService(secret, logger, cache);
+    const service = new TheXemService(cache, secret, logger);
     const rows: TheXem[] = [
       {
         scene: { season: 1, episode: 1, absolute: 1 },
@@ -47,7 +47,7 @@ describe('TheXemService', () => {
   });
 
   it('builds season episode to absolute map', () => {
-    const service = new TheXemService(secret, logger, cache);
+    const service = new TheXemService(cache, secret, logger);
     const rows: TheXem[] = [
       {
         scene: { season: 1, episode: 1, absolute: 1 },
@@ -90,7 +90,7 @@ describe('TheXemService', () => {
       },
     );
 
-    const service = new TheXemService(secret, logger, cache);
+    const service = new TheXemService(cache, secret, logger);
     const first = await service.getMappingsByTvdb(123);
     resetFetch();
 
@@ -109,7 +109,7 @@ describe('TheXemService', () => {
   });
 
   it('returns empty array when id is missing', async () => {
-    const service = new TheXemService(secret, logger, cache);
+    const service = new TheXemService(cache, secret, logger);
     const result = await service.getMappingsByTvdb();
     assertEquals(result, []);
     assertSpyCalls(spies.warn, 1);
