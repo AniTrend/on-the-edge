@@ -13,7 +13,7 @@ describe('RedisService', () => {
       },
     } as unknown as SecretService;
     const loggerStub = {
-      instance: { mark: () => { }, measure: () => { }, error: () => { } },
+      instance: { mark: () => {}, measure: () => {}, error: () => {} },
     } as unknown as LoggerService;
     const service = new RedisService(secretStub, loggerStub);
 
@@ -45,7 +45,7 @@ describe('RedisService', () => {
       get: (_k: string) => 'unused',
     } as unknown as SecretService;
     const loggerStub = {
-      instance: { mark: () => { }, measure: () => { } },
+      instance: { mark: () => {}, measure: () => {} },
     } as unknown as LoggerService;
     const service = new RedisService(secretStub, loggerStub);
 

@@ -11,4 +11,4 @@ import { TOKEN_CACHE_SERVICE } from './constants.ts';
     useClass: RedisService,
   }],
 })
-export class CacheModule { }
+export class CacheModule {}

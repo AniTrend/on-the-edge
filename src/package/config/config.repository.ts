@@ -2,18 +2,17 @@ import { Inject, Injectable } from '@danet/core';
 import { MongoService } from '@scope/database';
 import { ConfigDocument } from './config.document.ts';
 import { Collection } from 'mongodb';
-import { TOKEN_CACHE_SERVICE, type CacheService } from '@scope/cache';
+import { type CacheService, TOKEN_CACHE_SERVICE } from '@scope/cache';
 import { LoggerService } from '@scope/logger';
 
 @Injectable()
 export class ConfigRepository {
   private readonly COLLECTION_NAME = 'config';
   constructor(
-    @Inject(TOKEN_CACHE_SERVICE)
-    private readonly cache: CacheService,
+    @Inject(TOKEN_CACHE_SERVICE) private readonly cache: CacheService,
     private readonly mongo: MongoService,
     private readonly logger: LoggerService,
-  ) { }
+  ) {}
 
   get collection(): Collection<ConfigDocument> {
     return this.mongo.collection<ConfigDocument>(this.COLLECTION_NAME);

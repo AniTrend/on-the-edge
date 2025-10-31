@@ -60,7 +60,9 @@ export class RedisService implements CacheService, OnAppBootstrap, OnAppClose {
       );
       throw err;
     } finally {
-      this.loggerService.instance.measure(between('redis-connect-start', 'redis-connect-end'));
+      this.loggerService.instance.measure(
+        between('redis-connect-start', 'redis-connect-end'),
+      );
     }
   }
 }
