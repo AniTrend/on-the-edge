@@ -139,7 +139,7 @@ Import conventions and module boundaries
 
 ## 8. Developer Communication
 
-- Update `README.md` or add docs `./doc` for public API changes.
+- **Always** update `README.md` or add docs `./doc` for public API changes.
 - For refactors, open a draft PR with motivation and risk analysis.
 
 ---

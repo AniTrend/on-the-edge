@@ -1,7 +1,7 @@
-import { Injectable } from '@danet/core';
+import { Inject, Injectable } from '@danet/core';
 import { SecretService } from '@scope/secret';
 import { LoggerService } from '@scope/logger';
-import { CacheService } from '@scope/cache';
+import { type CacheService, TOKEN_CACHE_SERVICE } from '@scope/cache';
 import { createClient, type RequestClient } from '@anitrend/request-client';
 import { DEFAULT_HEADERS } from '../constants.ts';
 import {
@@ -20,9 +20,9 @@ export class TheXemService {
   private readonly cacheTtlSeconds: number = 24 * 60 * 60;
 
   constructor(
+    @Inject(TOKEN_CACHE_SERVICE) private readonly cache: CacheService,
     private readonly secret: SecretService,
     private readonly logger: LoggerService,
-    private readonly cache: CacheService,
   ) {
     this.client = createClient({
       baseURL: this.secret.get('THEXEM'),
