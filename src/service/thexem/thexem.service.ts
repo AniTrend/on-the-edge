@@ -39,7 +39,9 @@ export class TheXemService {
       return [];
     }
 
-    const cached = await this.cache.get<TheXem[]>(tvdbId);
+    const cached = await this.cache.get<TheXem[]>(
+      `edge:thexem:mappings:${tvdbId}`,
+    );
     if (cached) {
       return cached;
     }
@@ -56,7 +58,9 @@ export class TheXemService {
         return [] as TheXem[];
       });
 
-    this.cache.set<TheXem[]>(tvdbId, mappings, { ttl: this.cacheTtlSeconds });
+    this.cache.set<TheXem[]>(`edge:thexem:mappings:${tvdbId}`, mappings, {
+      ttl: this.cacheTtlSeconds,
+    });
     return mappings;
   }
 

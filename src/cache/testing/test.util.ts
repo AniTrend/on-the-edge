@@ -19,5 +19,8 @@ export const createCacheStub = (): CacheService => {
       map.delete(key);
       return Promise.resolve();
     },
+    has: function (key: CacheKey): Promise<boolean> {
+      return Promise.resolve(map.has(key));
+    },
   } as CacheService;
 };
