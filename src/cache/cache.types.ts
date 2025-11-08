@@ -1,12 +1,32 @@
-export type CacheKey = string | number | symbol;
+export type CacheKey =
+  | `edge:${string}`
+  | `edge:${string}:${string}`
+  | `edge:${string}:${string}:${string}`
+  | `edge:${string}:${string}:${string}:${string}`
+  | `edge:${string}:${string}:${string}:${string}:${string}`;
 
+/**
+ * Value stored in the cache
+ *
+ * @property data The cached data as a string
+ * @property expiresAt Optional expiration timestamp in milliseconds
+ * @property rank Priority rank for eviction
+ * @property hit Access count for the cache entry
+ */
 export type CacheValue = {
   data: string;
-  expiresAt?: number; // Timestamp in milliseconds when the cache entry expires
-  rank: number; // Priority rank for eviction (lower means higher priority to keep)
-  hit: number; // Number of times the cache entry has been accessed
+  expiresAt?: number;
+  rank: number;
+  hit: number;
 };
 
+/**
+ * Options for cache operations
+ *
+ * @property ttl Time to live in seconds
+ * @property overwrite Whether to overwrite existing cache entries
+ */
 export interface CacheOptions {
-  ttl?: number; // Time to live in seconds
+  ttl?: number;
+  overwrite?: boolean;
 }

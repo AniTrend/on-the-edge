@@ -97,8 +97,8 @@ describe('Mock Helpers', () => {
     it('should store and retrieve values', async () => {
       const { service } = createMockCache();
 
-      await service.set('key1', { data: 'value' });
-      const value = await service.get('key1');
+      await service.set('edge:mock:key1', { data: 'value' });
+      const value = await service.get('edge:mock:key1');
 
       assertEquals(value, { data: 'value' });
     });
@@ -106,38 +106,38 @@ describe('Mock Helpers', () => {
     it('should return null for missing keys', async () => {
       const { service } = createMockCache();
 
-      const value = await service.get('nonexistent');
+      const value = await service.get('edge:mock:missing');
       assertEquals(value, null);
     });
 
     it('should respect TTL expiration', async () => {
       const { service } = createMockCache();
 
-      await service.set('key1', 'value', { ttl: 0.001 }); // 1ms TTL
+      await service.set('edge:mock:key1', 'value', { ttl: 0.001 }); // 1ms TTL
 
       // Wait for expiration
       await new Promise((resolve) => setTimeout(resolve, 10));
 
-      const value = await service.get('key1');
+      const value = await service.get('edge:mock:key1');
       assertEquals(value, null);
     });
 
     it('should delete keys', async () => {
       const { service } = createMockCache();
 
-      await service.set('key1', 'value');
-      await service.del('key1');
+      await service.set('edge:mock:key1', 'value');
+      await service.del('edge:mock:key1');
 
-      const value = await service.get('key1');
+      const value = await service.get('edge:mock:key1');
       assertEquals(value, null);
     });
 
     it('should track spy calls', async () => {
       const { service, spies } = createMockCache();
 
-      await service.set('key1', 'value');
-      await service.get('key1');
-      await service.del('key1');
+      await service.set('edge:mock:key1', 'value');
+      await service.get('edge:mock:key1');
+      await service.del('edge:mock:key1');
 
       assertSpyCalls(spies.set, 1);
       assertSpyCalls(spies.get, 1);
@@ -147,10 +147,10 @@ describe('Mock Helpers', () => {
     it('should expose internal cache for inspection', async () => {
       const { service, cache } = createMockCache();
 
-      await service.set('key1', 'value');
+      await service.set('edge:mock:key1', 'value');
 
-      assert(cache.has('key1'));
-      const entry = cache.get('key1');
+      assert(cache.has('edge:mock:key1'));
+      const entry = cache.get('edge:mock:key1');
       assert(entry);
       assertEquals(entry.value, 'value');
       assert(entry.expiresAt > Date.now());
@@ -159,19 +159,19 @@ describe('Mock Helpers', () => {
     it('should handle multiple keys independently', async () => {
       const { service } = createMockCache();
 
-      await service.set('key1', 'value1');
-      await service.set('key2', 'value2');
-      await service.set('key3', 'value3');
+      await service.set('edge:mock:key1', 'value1');
+      await service.set('edge:mock:key2', 'value2');
+      await service.set('edge:mock:key3', 'value3');
 
-      assertEquals(await service.get('key1'), 'value1');
-      assertEquals(await service.get('key2'), 'value2');
-      assertEquals(await service.get('key3'), 'value3');
+      assertEquals(await service.get('edge:mock:key1'), 'value1');
+      assertEquals(await service.get('edge:mock:key2'), 'value2');
+      assertEquals(await service.get('edge:mock:key3'), 'value3');
 
-      await service.del('key2');
+      await service.del('edge:mock:key2');
 
-      assertEquals(await service.get('key1'), 'value1');
-      assertEquals(await service.get('key2'), null);
-      assertEquals(await service.get('key3'), 'value3');
+      assertEquals(await service.get('edge:mock:key1'), 'value1');
+      assertEquals(await service.get('edge:mock:key2'), null);
+      assertEquals(await service.get('edge:mock:key3'), 'value3');
     });
   });
 });

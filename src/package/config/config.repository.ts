@@ -19,12 +19,12 @@ export class ConfigRepository {
   }
 
   async getConfig(): Promise<ConfigDocument | null> {
-    const cached = await this.cache.get<ConfigDocument>(this.COLLECTION_NAME);
+    const cached = await this.cache.get<ConfigDocument>('edge:config');
     if (cached) return cached;
     const config = await this.collection.findOne()
       .then((doc) => {
         if (doc) {
-          this.cache.set(this.COLLECTION_NAME, doc, { ttl: 60 * 60 * 4 });
+          this.cache.set('edge:config', doc, { ttl: 60 * 60 * 4 });
         }
         return doc;
       })
