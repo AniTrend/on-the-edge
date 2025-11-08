@@ -169,7 +169,7 @@ export class JikanService {
     let page = 1;
     const limit = opts?.limit;
 
-    while (page < 100) {
+    while (true) {
       try {
         const { data } = await this.client
           .get(`/v4/anime/${id}/episodes`, { params: { page } });
@@ -196,10 +196,13 @@ export class JikanService {
           return episodes.slice(0, limit);
         }
 
-        const hasNext = parsed.pagination?.has_next_page ??
-          (pageEpisodes.length >= 25);
-        if (!hasNext) break;
-      } catch (_error) {
+        const hasNext = parsed.pagination?.has_next_page;
+        if (hasNext === false) break;
+      } catch (error) {
+        this.logger.instance.warn(
+          `Failed to fetch episodes page ${page} for anime id=${id}`,
+          { cause: error },
+        );
         break;
       }
 

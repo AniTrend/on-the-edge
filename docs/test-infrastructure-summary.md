@@ -65,15 +65,15 @@ import {
   loadJikanAnime,
   mockJsonResponse,
   resetFetch,
+  createMockSecret,
 } from '@scope/common/testing';
-import { createSecretStub } from '@scope/secret/testing';
 import { afterEach } from '@std/testing/bdd';
 
 afterEach(() => resetFetch());
 
 it('should fetch anime data', async () => {
   // Services get base URLs from SecretService
-  const secrets = createSecretStub({ MAL: 'https://mal.test' });
+  const secrets = createMockSecret({ MAL: 'https://mal.test' }).service;
   const malBase = secrets.get('MAL');
 
   // Load fixture with complete API response structure
@@ -210,12 +210,12 @@ import {
   loadJikanEpisodes,
   mockJsonResponse,
   resetFetch,
+  createMockSecret,
 } from '@scope/common/testing';
-import { createSecretStub } from '@scope/secret/testing';
 
 describe('EpisodeService Integration', () => {
   let collection: InMemoryCollection<Episode>;
-  let logger: ReturnType<typeof createMockLogger>;
+  let logger: ReturnType<typeof createMockLogger>['logger'];
 
   beforeEach(() => {
     collection = new InMemoryCollection();
@@ -228,7 +228,7 @@ describe('EpisodeService Integration', () => {
 
   it('should fetch and store episodes', async () => {
     // Setup: SecretService provides base URL (matches real service behavior)
-    const secrets = createSecretStub({ MAL: 'https://mal.test' });
+    const secrets = createMockSecret({ MAL: 'https://mal.test' }).service;
     const malBase = secrets.get('MAL');
 
     // Load realistic fixture with complete API response
@@ -324,7 +324,7 @@ The mock fetch helpers were refactored to follow the actual service testing patt
 3. Fixture data is realistic and represents actual API responses (full field sets)
 4. Mock helpers accept full URLs to match real service behavior
 5. All async operations use `await` for proper error propagation
-6. Use `createSecretStub()` to provide base URLs in tests (matches production pattern)
+6. Use `createMockSecret().service` to provide base URLs in tests (matches production pattern)
 
 ---
 

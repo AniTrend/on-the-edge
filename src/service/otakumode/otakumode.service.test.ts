@@ -3,20 +3,19 @@ import { assertEquals } from '@std/assert';
 import { mockFetch, resetFetch } from '@c4spar/mock-fetch';
 import { assertSpyCalls } from '@std/testing/mock';
 import { OtakumodeService } from '@scope/service/otakumode';
-import { createSecretStub } from '@scope/secret/testing';
-import { createLoggerStub } from '@scope/logger/testing';
+import { createMockLogger, createMockSecret } from '@scope/common/testing';
 
 describe('OtakumodeService', () => {
-  let config: ReturnType<typeof createSecretStub>;
-  let logger: ReturnType<typeof createLoggerStub>['logger'];
-  let spies: ReturnType<typeof createLoggerStub>['spies'];
+  let config: ReturnType<typeof createMockSecret>['service'];
+  let logger: ReturnType<typeof createMockLogger>['logger'];
+  let spies: ReturnType<typeof createMockLogger>['spies'];
 
   beforeEach(() => {
-    config = createSecretStub({
+    config = createMockSecret({
       FEED: 'https://feed.test',
       CLIENT_REQUEST_TIMEOUT: '5000',
-    });
-    const loggerStub = createLoggerStub();
+    }).service;
+    const loggerStub = createMockLogger();
     logger = loggerStub.logger;
     spies = loggerStub.spies;
     resetFetch();

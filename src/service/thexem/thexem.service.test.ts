@@ -3,20 +3,22 @@ import { assertEquals } from '@std/assert';
 import { mockFetch, resetFetch } from '@c4spar/mock-fetch';
 import { assertSpyCalls } from '@std/testing/mock';
 import { TheXemService } from '@scope/service/thexem';
-import { createSecretStub } from '@scope/secret/testing';
-import { createLoggerStub } from '@scope/logger/testing';
-import { createCacheStub } from '@scope/cache/testing';
+import {
+  createMockCache,
+  createMockLogger,
+  createMockSecret,
+} from '@scope/common/testing';
 import type { TheXem } from '@scope/service/thexem';
 
 describe('TheXemService', () => {
-  const secret = createSecretStub({
+  const secret = createMockSecret({
     THEXEM: 'https://thexem.test',
     THEXEM_TTL_HOURS: '1',
     CLIENT_REQUEST_TIMEOUT: '5000',
-  });
+  }).service;
 
-  const cache = createCacheStub();
-  const { logger, spies } = createLoggerStub();
+  const { service: cache } = createMockCache();
+  const { logger, spies } = createMockLogger();
 
   beforeEach(() => {
     resetFetch();

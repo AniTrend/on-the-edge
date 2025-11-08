@@ -2,7 +2,26 @@ import { afterEach, beforeEach, describe, it } from '@std/testing/bdd';
 import { assertEquals, assertRejects } from '@std/assert';
 import { mockFetch, resetFetch } from '@c4spar/mock-fetch';
 import { RequestClient } from './request.client.ts';
-import { bytes, json, text } from './testing/test.util.ts';
+
+// Test response builders
+const json = (body: unknown, opts?: { status?: number }) => ({
+  body: JSON.stringify(body),
+  headers: { 'content-type': 'application/json' },
+  ...opts,
+});
+const text = (
+  body: string,
+  opts?: { status?: number; statusText?: string },
+) => ({
+  body,
+  headers: { 'content-type': 'text/plain' },
+  ...opts,
+});
+const bytes = (body: Uint8Array, opts?: { status?: number }) => ({
+  body: body as unknown as string,
+  headers: { 'content-type': 'application/octet-stream' },
+  ...opts,
+});
 
 describe('RequestClient', () => {
   beforeEach(() => resetFetch());

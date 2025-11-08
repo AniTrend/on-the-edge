@@ -141,7 +141,7 @@ export const MalEntityRefSchema = z.object({
 
 export const AnimeEpisodeSchema = z.object({
   mal_id: z.number(),
-  url: z.string(),
+  url: z.string().nullish(),
   title: z.string(),
   title_japanese: z.string().nullish(),
   title_romanji: z.string().nullish(),

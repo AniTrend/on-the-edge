@@ -578,7 +578,7 @@ src/packages/series/
 ### Unit Tests (Per Module)
 
 - ✅ Use `InMemoryCollection` adapter
-- ✅ Use `createSecretStub()` for base URLs
+- ✅ Use `createMockSecret().service` for base URLs
 - ✅ Use `mockJsonResponse()` for HTTP stubs
 - ✅ Use fixture files for realistic responses
 - ✅ Use `EpisodeBuilder` for test data
@@ -594,7 +594,7 @@ src/packages/series/
 ### Example Test Pattern
 
 ```typescript
-import { createSecretStub } from '@scope/testing';
+import { createMockSecret } from '@scope/testing';
 import { mockJsonResponse, resetFetch } from '@scope/testing';
 import { InMemoryCollection } from '@scope/collection';
 import { loadFixture } from '@scope/testing';
@@ -605,10 +605,10 @@ describe('EpisodesRepository', () => {
 
   beforeEach(() => {
     collection = new InMemoryCollection();
-    secrets = createSecretStub({
+    secrets = createMockSecret({
       MAL: 'https://mal.test',
       SKYHOOK: 'https://skyhook.test',
-    });
+    }).service;
   });
 
   afterEach(() => {

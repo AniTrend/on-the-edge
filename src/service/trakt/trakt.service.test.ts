@@ -2,16 +2,15 @@ import { afterEach, beforeEach, describe, it } from '@std/testing/bdd';
 import { assertEquals } from '@std/assert';
 import { mockFetch, resetFetch } from '@c4spar/mock-fetch';
 import { TraktService } from '@scope/service/trakt';
-import { createSecretStub } from '@scope/secret/testing';
-import { createLoggerStub } from '@scope/logger/testing';
+import { createMockLogger, createMockSecret } from '@scope/common/testing';
 
 describe('TraktService', () => {
-  const config = createSecretStub({
+  const config = createMockSecret({
     TRAKT: 'https://trakt.test',
     TRAKT_ID: 'trakt-key',
     CLIENT_REQUEST_TIMEOUT: '5000',
-  });
-  const { logger } = createLoggerStub();
+  }).service;
+  const { logger } = createMockLogger();
 
   beforeEach(() => {
     resetFetch();

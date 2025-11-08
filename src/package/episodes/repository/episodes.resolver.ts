@@ -13,7 +13,6 @@ import { ExperimentService } from '@scope/experiment';
 import { toCanonicalEpisode } from '../transformer/canonical.ts';
 import {
   type EpisodeSourceSlice,
-  type MergeContext,
   mergeEpisodes,
   type MergeResult,
 } from '../aggregator/merge.ts';
@@ -55,7 +54,7 @@ export class EpisodesResolver {
     private readonly logger: LoggerService,
     private readonly experiment: ExperimentService,
     private readonly arm: ArmService,
-  ) {}
+  ) { }
 
   /**
    * Resolve and merge episodes from all available sources.
@@ -76,22 +75,21 @@ export class EpisodesResolver {
     });
 
     try {
-      // Phase 4: Fetch from Jikan (primary source)
       const jikanSlice = await this.fetchJikanSlice(malId, seriesKey);
-      const slices: (typeof jikanSlice)[] = [];
+      const slices: EpisodeSourceSlice[] = [];
       if (jikanSlice) slices.push(jikanSlice);
 
       // Prepare cross-source ID relations once (avoid repeated ARM calls)
       const needRelations = Boolean(
         this.experiment?.isEnabled('enable-skyhook-source') ||
-          this.experiment?.isEnabled('enable-tmdb-source') ||
-          this.experiment?.isEnabled('enable-trakt-source') ||
-          this.experiment?.isEnabled('enable-notify-source'),
+        this.experiment?.isEnabled('enable-tmdb-source') ||
+        this.experiment?.isEnabled('enable-trakt-source') ||
+        this.experiment?.isEnabled('enable-notify-source'),
       );
       let relations: SeriesRelationId | undefined;
-      if (needRelations && this.arm) {
+      if (needRelations) {
         try {
-          relations = await this.arm.getRelationsById('mal', malId);
+          relations = await this.arm.getRelationsById('myanimelist', malId);
         } catch (e) {
           this.logger.instance.warn('ARM mapping lookup failed', {
             seriesKey,
@@ -102,9 +100,9 @@ export class EpisodesResolver {
 
       // Conditionally attempt other sources behind feature flags
       if (this.experiment?.isEnabled('enable-skyhook-source')) {
-        const sky = await this.fetchSkyhookSlice(seriesKey, relations);
-        if (sky) {
-          slices.push(sky);
+        const skyhookSlice = await this.fetchSkyhookSlice(seriesKey, relations);
+        if (skyhookSlice) {
+          slices.push(skyhookSlice);
         } else {
           this.logger.instance.debug(
             'Skyhook feature enabled, slice unavailable',
@@ -112,58 +110,46 @@ export class EpisodesResolver {
         }
       }
       if (this.experiment?.isEnabled('enable-tmdb-source')) {
-        const tm = await this.fetchTmdbSlice(seriesKey, relations);
-        if (tm) slices.push(tm);
-        else {this.logger.instance.debug(
+        const tmdbSlice = await this.fetchTmdbSlice(seriesKey, relations);
+        if (tmdbSlice) slices.push(tmdbSlice);
+        else {
+          this.logger.instance.debug(
             'TMDB feature enabled, slice unavailable',
-          );}
+          );
+        }
       }
       if (this.experiment?.isEnabled('enable-trakt-source')) {
-        const tr = await this.fetchTraktSlice(seriesKey, relations);
-        if (tr) slices.push(tr);
-        else {this.logger.instance.debug(
+        const traktSlice = await this.fetchTraktSlice(seriesKey, relations);
+        if (traktSlice) slices.push(traktSlice);
+        else {
+          this.logger.instance.debug(
             'Trakt feature enabled, slice unavailable',
-          );}
+          );
+        }
       }
       if (this.experiment?.isEnabled('enable-notify-source')) {
-        const no = await this.fetchNotifySlice(seriesKey, relations);
-        if (no) slices.push(no);
-        else {this.logger.instance.debug(
+        const notifySlice = await this.fetchNotifySlice(seriesKey, relations);
+        if (notifySlice) slices.push(notifySlice);
+        else {
+          this.logger.instance.debug(
             'Notify feature enabled, slice unavailable',
-          );}
-      }
-      if (this.experiment?.isEnabled('enable-themes-source')) {
-        const th = await this.fetchThemesSlice(seriesKey);
-        if (th) slices.push(th);
-        else {this.logger.instance.debug(
-            'Themes feature enabled, slice unavailable',
-          );}
+          );
+        }
       }
 
-      // TODO Phase 5: Add secondary sources behind feature flags
-      // if (this.features.isEnabled('enable-skyhook-source')) {
-      //   const skyhookSlice = await this.fetchSkyhookSlice(...);
-      //   if (skyhookSlice) slices.push(skyhookSlice);
-      // }
-      // Similar for TMDB, Trakt, Notify, Themes
-
-      // Determine fuzzy title similarity threshold from features (disabled by default)
       const rawThreshold = this.experiment?.getFeatureValue(
         'episode-align-title-sim',
         0,
-      ) ?? 0;
+      ) ?? 0.8;
       const titleSimThreshold = rawThreshold > 0 && rawThreshold <= 1
         ? rawThreshold
         : null;
 
-      // Merge slices using Dice coefficient algorithm
-      const ctx: MergeContext = {
-        preferRuntime: 'JIKAN',
-        titleSimThreshold,
-      };
-
       const result = mergeEpisodes(
-        ctx,
+        {
+          preferRuntime: 'JIKAN',
+          titleSimThreshold,
+        },
         slices.filter((s): s is EpisodeSourceSlice => s !== null),
       );
 
@@ -256,7 +242,7 @@ export class EpisodesResolver {
    * Placeholder: Feature-gated fetchers for Phase 5. Return null while disabled/unimplemented
    * to keep current behavior identical to Jikan-only baseline.
    */
-  // deno-lint-ignore require-await
+
   private async fetchSkyhookSlice(
     _seriesKey: string,
     relations?: SeriesRelationId,
@@ -309,8 +295,7 @@ export class EpisodesResolver {
             ? toInstant(ep.airDateUtc)
             : (ep.airDate ? toInstant(ep.airDate) : null),
           score: null,
-          // treat tvdb episodes as main unless specified otherwise
-          kind: 'main',
+          kind: ep.seasonNumber === 0 ? 'special' : 'main',
           duration: ep.runtime ?? null,
           url: null,
           tvdbShowId: ep.tvdbShowId ?? show.tvdbId ?? null,
@@ -347,7 +332,6 @@ export class EpisodesResolver {
     }
   }
 
-  // deno-lint-ignore require-await
   private async fetchTmdbSlice(
     _seriesKey: string,
     relations?: SeriesRelationId,
@@ -386,7 +370,7 @@ export class EpisodesResolver {
               synopsis: ep.overview ?? null,
               aired: air,
               score: ep.vote_average ?? null,
-              kind: 'main',
+              kind: ep.season_number === 0 ? 'special' : 'main',
               duration: ep.runtime ?? null,
               url: null,
               tvdbShowId: null,
@@ -426,28 +410,19 @@ export class EpisodesResolver {
     }
   }
 
-  // deno-lint-ignore require-await
   private async fetchTraktSlice(
     _seriesKey: string,
     relations?: SeriesRelationId,
   ): Promise<EpisodeSourceSlice | null> {
     try {
-      // We don't have a direct trakt id in ARM. If we had tmdb id, trakt supports TMDB as lookup via slug in some endpoints, but our wrapper expects slug/id.
-      // Try show metadata first to identify slug from tmdb if possible; else skip.
-      const tmdbId = relations?.themoviedb ?? null;
-      let traktKey: number | string | null = null;
-      if (tmdbId != null) {
-        // No direct lookup helper; attempt to use TMDB numeric id as key (Trakt allows /shows/tmdb-{id}), but our wrapper does not handle that.
-        // Fall back to skipping when slug cannot be determined.
-        traktKey = `tmdb-${tmdbId}`;
-      }
+      const imdbId = relations?.imdb ?? null;
 
-      if (!traktKey) {
+      if (!imdbId) {
         this.logger.instance.debug('Trakt fetch skipped: no usable key');
         return null;
       }
 
-      const seasons = await this.trakt.getSeasons(traktKey, {
+      const seasons = await this.trakt.getSeasons(imdbId, {
         extended: 'episodes',
       });
       if (!seasons || seasons.length === 0) return null;
@@ -465,10 +440,10 @@ export class EpisodesResolver {
             synopsis: ep.overview ?? null,
             aired: ep.first_aired ?? null,
             score: ep.rating ?? null,
-            kind: 'main',
+            kind: seasonNumber === 0 ? 'special' : 'main',
             duration: ep.runtime ?? null,
             url: null,
-            tvdbShowId: null,
+            tvdbShowId: relations?.thetvdb ?? null,
             tvdbId: ep.ids.tvdb ?? null,
             tmdbId: ep.ids.tmdb ?? null,
             seasonNumber,
@@ -501,7 +476,6 @@ export class EpisodesResolver {
     }
   }
 
-  // deno-lint-ignore require-await
   private async fetchNotifySlice(
     _seriesKey: string,
     relations?: SeriesRelationId,
@@ -537,7 +511,7 @@ export class EpisodesResolver {
         synopsis: null,
         aired: ep.startAirDate ?? null,
         score: null,
-        kind: 'main',
+        kind: null,
         duration: null,
         url: null,
         tvdbShowId: null,
@@ -569,27 +543,5 @@ export class EpisodesResolver {
       });
       return null;
     }
-  }
-
-  // deno-lint-ignore require-await
-  private async fetchThemesSlice(
-    _seriesKey: string,
-  ): Promise<EpisodeSourceSlice | null> {
-    // Themes are enriched post-merge using MAL id; this fetcher validates availability only.
-    try {
-      const malId = Number.parseInt(_seriesKey, 10);
-      if (Number.isNaN(malId)) return null;
-      const themes = await this.theme.getThemesForAnime(malId);
-      this.logger.instance.debug('Themes availability check', {
-        seriesKey: _seriesKey,
-        count: themes?.length ?? 0,
-      });
-    } catch (e) {
-      this.logger.instance.warn('Themes availability check failed', {
-        error: (e as Error).message,
-      });
-    }
-    // Enrichment is handled separately; no slice to merge.
-    return null;
   }
 }

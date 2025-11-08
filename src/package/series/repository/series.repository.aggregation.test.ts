@@ -13,7 +13,7 @@ import type { SeriesRelationId } from '@scope/service/arm';
 import type { NotifyAnime } from '@scope/service/notify';
 import type { JikanAnime } from '@scope/service/jikan';
 import type { TheXem } from '@scope/service/thexem';
-import { createLoggerStub } from '@scope/logger/testing';
+import { createMockLogger } from '@scope/common/testing';
 import {
   createArmAnilistSpy,
   createArmTvdbSpy,
@@ -223,14 +223,14 @@ describe.skip('SeriesRepository aggregation', () => {
   let collection: Collection<SeriesDocument>;
   let mocks: ReturnType<typeof createServiceSpies>;
   let mockData: ReturnType<typeof createMockData>;
-  let logger: ReturnType<typeof createLoggerStub>['logger'];
-  let loggerSpies: ReturnType<typeof createLoggerStub>['spies'];
+  let logger: ReturnType<typeof createMockLogger>['logger'];
+  let loggerSpies: ReturnType<typeof createMockLogger>['spies'];
 
   beforeEach(() => {
     collection = new InMemoryCollection();
     mocks = createServiceSpies();
     mockData = createMockData();
-    const stub = createLoggerStub();
+    const stub = createMockLogger();
     logger = stub.logger;
     loggerSpies = stub.spies;
   });
