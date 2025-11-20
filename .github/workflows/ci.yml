@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Setup repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Setup Deno
         uses: denoland/setup-deno@v2
         with:
@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Setup repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Setup Deno
         uses: denoland/setup-deno@v2
         with:
@@ -47,7 +47,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Setup repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Setup Deno
         uses: denoland/setup-deno@v2
         with:
@@ -64,7 +64,7 @@ jobs:
     needs: [lint-check, format-check, type-check]
     steps:
       - name: Setup repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Setup Deno
         uses: denoland/setup-deno@v2
         with:
@@ -86,7 +86,7 @@ jobs:
       fail-fast: true
     steps:
       - name: Setup repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Setup Deno
         uses: denoland/setup-deno@v2
         with:
@@ -103,7 +103,7 @@ jobs:
     needs: [unit-test, build-matrix]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Set deployment status
         run: |
