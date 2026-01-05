@@ -70,8 +70,10 @@ export async function persist(
     conflicts: number;
     orphans: number;
     remapped: number;
-    perSourceCounts?: Record<string, number>;
+    perSourceCounts?: Partial<Record<string, number>>;
     remapSources?: string[];
+    unmatchedBySource?: Partial<Record<string, number>>;
+    seasonMismatches?: number;
   },
   titleSimThreshold?: number | null,
 ): Promise<EpisodeDocument> {
@@ -106,6 +108,7 @@ export async function fetchCanonical(
   resolver: EpisodesResolver,
   seriesKey: string,
   malId: number,
+  includeOrphans = false,
 ): Promise<{
   airing: boolean;
   episodes: MergedEpisode[];
@@ -115,10 +118,14 @@ export async function fetchCanonical(
     conflicts: number;
     orphans: number;
     remapped: number;
+    perSourceCounts?: Partial<Record<string, number>>;
+    remapSources?: string[];
+    unmatchedBySource?: Partial<Record<string, number>>;
+    seasonMismatches?: number;
   };
   titleSimThreshold: number | null;
 }> {
-  const result = await resolver.resolve(malId, seriesKey);
+  const result = await resolver.resolve(malId, seriesKey, includeOrphans);
 
   if (!result.episodes || result.episodes.length === 0) {
     throw new Error(

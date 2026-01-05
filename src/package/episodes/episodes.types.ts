@@ -62,6 +62,9 @@ export interface EpisodeFilters {
 
   /** Filter episodes up to this number */
   end?: number;
+
+  /** Include orphaned episodes from secondary sources */
+  includeOrphans?: boolean;
 }
 
 /**
@@ -82,10 +85,16 @@ export interface EpisodesDataResponse extends EpisodesContainer {
       titleSimThreshold?: number | null;
 
       /** Episodes contribution per source */
-      perSourceCounts?: Record<string, number>;
+      perSourceCounts?: Partial<Record<string, number>>;
 
       /** Which sources contributed to remaps */
       remapSources?: string[];
+
+      /** Unmatched episodes by source (orphans) */
+      unmatchedBySource?: Partial<Record<string, number>>;
+
+      /** Season boundary violations (high title sim but wrong season) */
+      seasonMismatches?: number;
     };
 
     /** Cache status */

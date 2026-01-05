@@ -31,8 +31,10 @@ export type EpisodeDocument = Document & {
     conflicts: number;
     orphans: number;
     remapped: number;
-    perSourceCounts?: Record<string, number>;
+    perSourceCounts?: Partial<Record<string, number>>;
     remapSources?: string[];
+    unmatchedBySource?: Partial<Record<string, number>>;
+    seasonMismatches?: number;
   };
 
   /** Title similarity threshold used during merge (if any) */

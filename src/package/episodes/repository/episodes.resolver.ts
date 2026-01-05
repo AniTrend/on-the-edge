@@ -54,7 +54,7 @@ export class EpisodesResolver {
     private readonly logger: LoggerService,
     private readonly experiment: ExperimentService,
     private readonly arm: ArmService,
-  ) { }
+  ) {}
 
   /**
    * Resolve and merge episodes from all available sources.
@@ -62,11 +62,13 @@ export class EpisodesResolver {
    *
    * @param malId MyAnimeList series ID
    * @param seriesKey Series identifier for logging
+   * @param includeOrphans Include unmatched secondary episodes (default: false)
    * @returns Merge result with episodes and statistics
    */
   async resolve(
     malId: number,
     seriesKey: string,
+    includeOrphans = false,
   ): Promise<MergeResult & { titleSimThreshold: number | null }> {
     this.logger.instance.info('Resolving episodes for series', {
       seriesKey,
@@ -76,15 +78,28 @@ export class EpisodesResolver {
 
     try {
       const jikanSlice = await this.fetchJikanSlice(malId, seriesKey);
+      // Primary source (JIKAN) is mandatory: bail out early if unavailable
+      if (!jikanSlice) {
+        this.logger.instance.error(
+          'Primary Jikan source unavailable, aborting merge',
+          {
+            seriesKey,
+            malId,
+          },
+        );
+        throw new Error(
+          `Primary source (JIKAN) unavailable for seriesKey=${seriesKey}, malId=${malId}`,
+        );
+      }
       const slices: EpisodeSourceSlice[] = [];
-      if (jikanSlice) slices.push(jikanSlice);
+      slices.push(jikanSlice);
 
       // Prepare cross-source ID relations once (avoid repeated ARM calls)
       const needRelations = Boolean(
         this.experiment?.isEnabled('enable-skyhook-source') ||
-        this.experiment?.isEnabled('enable-tmdb-source') ||
-        this.experiment?.isEnabled('enable-trakt-source') ||
-        this.experiment?.isEnabled('enable-notify-source'),
+          this.experiment?.isEnabled('enable-tmdb-source') ||
+          this.experiment?.isEnabled('enable-trakt-source') ||
+          this.experiment?.isEnabled('enable-notify-source'),
       );
       let relations: SeriesRelationId | undefined;
       if (needRelations) {
@@ -149,6 +164,7 @@ export class EpisodesResolver {
         {
           preferRuntime: 'JIKAN',
           titleSimThreshold,
+          includeOrphans,
         },
         slices.filter((s): s is EpisodeSourceSlice => s !== null),
       );
