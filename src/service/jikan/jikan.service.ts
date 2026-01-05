@@ -1,7 +1,7 @@
 import { Injectable } from '@danet/core';
 import { SecretService } from '@scope/secret';
 import { LoggerService } from '@scope/logger';
-import { DEFAULT_HEADERS } from '@scope/client';
+import { DEFAULT_HEADERS } from '@scope/common/core';
 import { createClient, RequestClient } from '@anitrend/request-client';
 import {
   AnimeEpisodePageSchema,

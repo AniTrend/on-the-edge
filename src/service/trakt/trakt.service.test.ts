@@ -67,4 +67,59 @@ describe('TraktService', () => {
     assertEquals(result?.runtime, 24);
     assertEquals(result?.status, 'returning series');
   });
+
+  it('parses seasons when episodes provide null numeric fields', async () => {
+    const seasons = [
+      {
+        number: 1,
+        ids: {
+          trakt: 10,
+          slug: 'sample-show-1',
+          tvdb: null,
+          imdb: null,
+          tmdb: null,
+          tvrage: null,
+        },
+        first_aired: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-02T00:00:00Z',
+        episodes: [
+          {
+            season: 1,
+            number: 1,
+            title: 'Pilot',
+            ids: {
+              trakt: 101,
+              slug: 'sample-show-1-1',
+              tvdb: null,
+              imdb: null,
+              tmdb: null,
+              tvrage: null,
+            },
+            overview: null,
+            first_aired: '2024-01-01T00:00:00Z',
+            number_abs: null,
+            runtime: null,
+            updated_at: '2024-01-02T00:00:00Z',
+          },
+        ],
+      },
+    ];
+
+    mockFetch(
+      'https://trakt.test/shows/sample-show/seasons?extended=episodes',
+      {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(seasons),
+      },
+    );
+
+    const service = new TraktService(config, logger);
+    const result = await service.getSeasons('sample-show', {
+      extended: 'episodes',
+    });
+
+    assertEquals(result?.[0].episodes?.[0].number_abs, 0);
+    assertEquals(result?.[0].episodes?.[0].runtime, 0);
+  });
 });
