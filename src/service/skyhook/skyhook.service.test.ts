@@ -2,15 +2,14 @@ import { afterEach, beforeEach, describe, it } from '@std/testing/bdd';
 import { assertEquals, assertExists } from '@std/assert';
 import { mockFetch, resetFetch } from '@c4spar/mock-fetch';
 import { SkyhookService } from '@scope/service/skyhook';
-import { createSecretStub } from '@scope/secret/testing';
-import { createLoggerStub } from '@scope/logger/testing';
+import { createMockLogger, createMockSecret } from '@scope/common/testing';
 
 describe('SkyhookService', () => {
-  const config = createSecretStub({
+  const config = createMockSecret({
     SKYHOOK: 'https://skyhook.test',
     CLIENT_REQUEST_TIMEOUT: '5000',
-  });
-  const { logger } = createLoggerStub();
+  }).service;
+  const { logger } = createMockLogger();
 
   beforeEach(() => {
     resetFetch();

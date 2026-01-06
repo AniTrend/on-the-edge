@@ -92,6 +92,7 @@ export const MergedEpisodeSchema = EpisodeCanonicalSchema.extend({
     num: z.number(),
     day: z.number().optional(),
     kind: EpisodeKindSchema.optional(),
+    season: z.number().optional(),
   }).optional(),
 });
 
@@ -107,6 +108,7 @@ export const EpisodeQuerySchema = z.object({
   specialsOnly: z.coerce.boolean().optional(),
   start: z.coerce.number().int().positive().optional(),
   end: z.coerce.number().int().positive().optional(),
+  includeOrphans: z.coerce.boolean().optional(),
 });
 
 /**

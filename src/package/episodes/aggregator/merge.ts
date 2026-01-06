@@ -13,6 +13,8 @@ export interface MergeContext {
   preferRuntime: SourceType;
   /** Title similarity threshold (0.0-1.0), null to disable fuzzy matching */
   titleSimThreshold: number | null;
+  /** Include orphaned episodes from secondary sources (default: false) */
+  includeOrphans?: boolean;
 }
 
 /**
@@ -37,6 +39,8 @@ export interface MergeResult {
     remapped: number;
     perSourceCounts?: Partial<Record<SourceType, number>>;
     remapSources?: SourceType[];
+    unmatchedBySource?: Partial<Record<SourceType, number>>;
+    seasonMismatches?: number;
   };
 }
 
@@ -102,6 +106,42 @@ function epNum(ep: EpisodeCanonical): number {
 }
 
 /**
+ * Check if two episodes can be matched based on season compatibility.
+ * Prevents cross-season pollution (e.g., Season 3 matching Season 0 specials).
+ *
+ * @param primarySeason Season number from primary source (may be undefined if JIKAN)
+ * @param secondarySeason Season number from secondary source
+ * @param primaryKind Episode kind from primary source
+ * @param secondaryKind Episode kind from secondary source
+ * @returns true if episodes can be matched, false otherwise
+ */
+function canMatchSeasons(
+  primarySeason: number | null | undefined,
+  secondarySeason: number | null | undefined,
+  primaryKind: string | null | undefined,
+  secondaryKind: string | null | undefined,
+): boolean {
+  // If secondary has no season info, allow match (graceful degradation)
+  if (secondarySeason == null) return true;
+
+  // Special episodes (season 0) should only match other specials
+  const secIsSpecial = secondarySeason === 0 || secondaryKind === 'special';
+  const primIsSpecial = primarySeason === 0 || primaryKind === 'special';
+
+  if (secIsSpecial !== primIsSpecial) {
+    return false; // Don't match specials with regular episodes
+  }
+
+  // If both have season info, they must match exactly
+  if (primarySeason != null && secondarySeason != null) {
+    return primarySeason === secondarySeason;
+  }
+
+  // If primary lacks season (JIKAN), allow match but rely on other signals
+  return true;
+}
+
+/**
  * Detect conflicts between two episodes
  */
 function detectConflicts(
@@ -136,21 +176,24 @@ function detectConflicts(
 }
 
 /**
- * Merge episode data from multiple sources.
+ * Merge episode data from multiple sources with JIKAN as source of truth.
  *
  * Algorithm:
  * 1. Select primary source (prefer ctx.preferRuntime, fallback to first slice)
  * 2. Index primary episodes by number
- * 3. For each secondary slice:
- *    a. Try direct number match
- *    b. Try air date proximity (±2 days)
- *    c. Try fuzzy title match (if threshold enabled)
+ * 3. For each secondary slice episode:
+ *    a. PRIORITY 1: Try fuzzy title match (Dice coefficient with threshold)
+ *    b. FALLBACK 1: Try air date proximity (±2 days) with season guard
+ *    c. FALLBACK 2: Try direct number match with season guard
  *    d. Mark as orphan if no match
- * 4. Track conflicts (title, duration, air date)
- * 5. Enrich fields per source priority
- * 6. Sort by alignment number
+ * 4. Season-aware matching prevents cross-season pollution:
+ *    - Specials (season 0) only match other specials
+ *    - Regular episodes only match within same season (when season data available)
+ * 5. Track conflicts (title, duration, air date)
+ * 6. Enrich fields per source priority (synopsis, duration, images, provider IDs)
+ * 7. Sort by alignment number
  *
- * @param ctx Merge configuration
+ * @param ctx Merge configuration with title similarity threshold
  * @param slices Episode data from multiple sources
  * @returns Merged episodes with source tracking and conflict detection
  */
@@ -182,66 +225,30 @@ export function mergeEpisodes(
         num,
         day: toDay(ep.aired) ?? undefined,
         kind: ep.kind ?? undefined,
+        season: ep.seasonNumber ?? undefined,
       },
     });
   }
 
   let orphans = 0;
+  let seasonMismatches = 0;
+  const unmatchedBySource = new Map<SourceType, number>();
 
   // 3. Process secondary slices
   for (const slice of secondarySlices) {
     for (const secondary of slice.episodes) {
       const secNum = epNum(secondary);
       let matched = false;
+      let matchedEpisode: MergedEpisode | null = null;
 
-      // 3a. Try direct number match
-      if (merged.has(secNum)) {
-        const existing = merged.get(secNum)!;
-        existing.sources.push(slice.source);
-        const conflicts = detectConflicts(existing, secondary);
-        if (conflicts.length > 0) {
-          existing.conflictReasons = [
-            ...(existing.conflictReasons || []),
-            ...conflicts,
-          ];
-        }
-        // Enrich fields (prefer non-null from secondary)
-        if (secondary.synopsis && !existing.synopsis) {
-          existing.synopsis = secondary.synopsis;
-        }
-        if (secondary.duration && !existing.duration) {
-          existing.duration = secondary.duration;
-        }
-        if (secondary.image && !existing.image) {
-          existing.image = secondary.image;
-        }
-        if (secondary.poster && !existing.poster) {
-          existing.poster = secondary.poster;
-        }
-        matched = true;
-      }
-
-      // 3b. Try air date proximity (±2 days)
-      if (!matched) {
-        const secDay = toDay(secondary.aired);
-        if (secDay != null) {
-          for (const [_num, existing] of merged) {
-            const primDay = existing.alignmentKey?.day;
-            if (primDay != null && Math.abs(secDay - primDay) <= 2) {
-              existing.sources.push(slice.source);
-              existing.conflictReasons?.push('AIR_DATE');
-              matched = true;
-              break;
-            }
-          }
-        }
-      }
-
-      // 3c. Try fuzzy title match (if threshold enabled)
+      // 3a. PRIORITY 1: Try fuzzy title match (if threshold enabled)
+      // Title matching is most reliable for cross-source alignment
       if (!matched && ctx.titleSimThreshold != null) {
         const secTitle = normTitle(secondary);
         if (secTitle) {
-          let bestMatch: { num: number; score: number } | null = null;
+          let bestMatch:
+            | { num: number; score: number; episode: MergedEpisode }
+            | null = null;
           for (const [num, existing] of merged) {
             const primTitle = normTitle(existing);
             if (primTitle) {
@@ -250,32 +257,148 @@ export function mergeEpisodes(
                 score >= ctx.titleSimThreshold &&
                 (!bestMatch || score > bestMatch.score)
               ) {
-                bestMatch = { num, score };
+                // Check season compatibility before accepting match
+                if (
+                  canMatchSeasons(
+                    existing.seasonNumber,
+                    secondary.seasonNumber,
+                    existing.kind,
+                    secondary.kind,
+                  )
+                ) {
+                  bestMatch = { num, score, episode: existing };
+                } else {
+                  // High title similarity but season boundary violation
+                  seasonMismatches++;
+                }
               }
             }
           }
           if (bestMatch) {
-            const existing = merged.get(bestMatch.num)!;
-            existing.sources.push(slice.source);
-            existing.conflictReasons?.push('TITLE');
+            matchedEpisode = bestMatch.episode;
             matched = true;
           }
+        }
+      }
+
+      // 3b. FALLBACK 1: Try air date proximity (±2 days)
+      if (!matched) {
+        const secDay = toDay(secondary.aired);
+        if (secDay != null) {
+          for (const [_num, existing] of merged) {
+            const primDay = existing.alignmentKey?.day;
+            if (primDay != null && Math.abs(secDay - primDay) <= 2) {
+              // Check season compatibility
+              if (
+                canMatchSeasons(
+                  existing.seasonNumber,
+                  secondary.seasonNumber,
+                  existing.kind,
+                  secondary.kind,
+                )
+              ) {
+                matchedEpisode = existing;
+                existing.conflictReasons?.push('AIR_DATE');
+                matched = true;
+                break;
+              }
+            }
+          }
+        }
+      }
+
+      // 3c. FALLBACK 2: Try direct number match (with season guard)
+      if (!matched && merged.has(secNum)) {
+        const existing = merged.get(secNum)!;
+        // Check season compatibility before matching by number
+        if (
+          canMatchSeasons(
+            existing.seasonNumber,
+            secondary.seasonNumber,
+            existing.kind,
+            secondary.kind,
+          )
+        ) {
+          matchedEpisode = existing;
+          matched = true;
+        }
+      }
+
+      // If matched, enrich the existing episode with secondary data
+      if (matched && matchedEpisode) {
+        matchedEpisode.sources.push(slice.source);
+        const conflicts = detectConflicts(matchedEpisode, secondary);
+        if (conflicts.length > 0) {
+          matchedEpisode.conflictReasons = [
+            ...(matchedEpisode.conflictReasons || []),
+            ...conflicts,
+          ];
+        }
+        // Enrich fields (prefer non-null from secondary)
+        if (secondary.synopsis && !matchedEpisode.synopsis) {
+          matchedEpisode.synopsis = secondary.synopsis;
+        }
+        if (secondary.duration && !matchedEpisode.duration) {
+          matchedEpisode.duration = secondary.duration;
+        }
+        if (secondary.image && !matchedEpisode.image) {
+          matchedEpisode.image = secondary.image;
+        }
+        if (secondary.poster && !matchedEpisode.poster) {
+          matchedEpisode.poster = secondary.poster;
+        }
+        // Enrich provider IDs from secondary sources
+        if (secondary.tvdbShowId && !matchedEpisode.tvdbShowId) {
+          matchedEpisode.tvdbShowId = secondary.tvdbShowId;
+        }
+        if (secondary.tvdbId && !matchedEpisode.tvdbId) {
+          matchedEpisode.tvdbId = secondary.tvdbId;
+        }
+        if (secondary.tmdbId && !matchedEpisode.tmdbId) {
+          matchedEpisode.tmdbId = secondary.tmdbId;
+        }
+        // Enrich season/episode numbers if primary lacks them
+        if (
+          secondary.seasonNumber != null && matchedEpisode.seasonNumber == null
+        ) {
+          matchedEpisode.seasonNumber = secondary.seasonNumber;
+        }
+        if (
+          secondary.episodeNumber != null &&
+          matchedEpisode.episodeNumber == null
+        ) {
+          matchedEpisode.episodeNumber = secondary.episodeNumber;
+        }
+        if (
+          secondary.absoluteEpisodeNumber != null &&
+          matchedEpisode.absoluteEpisodeNumber == null
+        ) {
+          matchedEpisode.absoluteEpisodeNumber =
+            secondary.absoluteEpisodeNumber;
         }
       }
 
       // 3d. Mark as orphan if no match
       if (!matched) {
         orphans++;
-        merged.set(secNum, {
-          ...secondary,
-          sources: [slice.source],
-          conflictReasons: ['ORPHAN'],
-          alignmentKey: {
-            num: secNum,
-            day: toDay(secondary.aired) ?? undefined,
-            kind: secondary.kind ?? undefined,
-          },
-        });
+        unmatchedBySource.set(
+          slice.source,
+          (unmatchedBySource.get(slice.source) ?? 0) + 1,
+        );
+        // Only add orphaned secondary episodes if explicitly requested
+        if (ctx.includeOrphans === true) {
+          merged.set(secNum, {
+            ...secondary,
+            sources: [slice.source],
+            conflictReasons: ['ORPHAN'],
+            alignmentKey: {
+              num: secNum,
+              day: toDay(secondary.aired) ?? undefined,
+              kind: secondary.kind ?? undefined,
+              season: secondary.seasonNumber ?? undefined,
+            },
+          });
+        }
       }
     }
   }
@@ -313,6 +436,10 @@ export function mergeEpisodes(
       remapped: slices.reduce((acc, s) => acc + (s.remapped ?? 0), 0),
       perSourceCounts: Object.fromEntries(perSourceCounts.entries()),
       remapSources,
+      unmatchedBySource: unmatchedBySource.size > 0
+        ? Object.fromEntries(unmatchedBySource.entries())
+        : undefined,
+      seasonMismatches: seasonMismatches > 0 ? seasonMismatches : undefined,
     },
   };
 }

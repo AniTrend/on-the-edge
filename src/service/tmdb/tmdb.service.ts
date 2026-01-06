@@ -1,4 +1,4 @@
-import { Injectable, SCOPE } from '@danet/core';
+import { Inject, Injectable, SCOPE } from '@danet/core';
 import { SecretService } from '@scope/secret';
 import { LoggerService } from '@scope/logger';
 import { createClient, type RequestClient } from '@anitrend/request-client';
@@ -14,13 +14,19 @@ import {
   seasonTransformer,
   showTransformer,
 } from './tmdb.configuration.ts';
-import type { TmdbMovie, TmdbSeason, TmdbShow } from './tmdb.types.ts';
+import type {
+  TmdbConfiguration,
+  TmdbMovie,
+  TmdbSeason,
+  TmdbShow,
+} from './tmdb.types.ts';
 import { ImageProvider } from './utils/index.ts';
 import { OnAppBootstrap } from '@danet/core/hook';
 import {
   requestInterceptor,
   responseInterceptor,
 } from '../interceptor/client.interceptor.ts';
+import { type CacheService, TOKEN_CACHE_SERVICE } from '@scope/cache';
 
 @Injectable({ scope: SCOPE.GLOBAL })
 export class TmdbService implements OnAppBootstrap {
@@ -30,6 +36,7 @@ export class TmdbService implements OnAppBootstrap {
   constructor(
     private readonly secret: SecretService,
     private readonly logger: LoggerService,
+    @Inject(TOKEN_CACHE_SERVICE) private readonly cache: CacheService,
   ) {
     this.client = createClient({
       baseURL: this.secret.get('TMDB'),
@@ -47,12 +54,20 @@ export class TmdbService implements OnAppBootstrap {
 
   async onAppBootstrap(): Promise<void> {
     try {
-      // Would be ideal to call this on demand. Potentially we should setup a database cache
-      // and refresh periodically.
-      // However this configuration is unlikely to change often so doing it once at startup
-      // should be fine for now.
-      const { data } = await this.client.get('/3/configuration');
-      const configuration = ConfigurationSchema.parse(data);
+      this.logger.instance.debug('Fetching TMDB configuration...');
+      let configuration = await this.cache.get<TmdbConfiguration>(
+        'edge:tmdb:configuration',
+      );
+      if (!configuration) {
+        this.logger.instance.debug(
+          'TMDB configuration not found in cache, fetching from remote...',
+        );
+        const { data } = await this.client.get('/3/configuration');
+        configuration = ConfigurationSchema.parse(data);
+        this.logger.instance.debug('Caching TMDB configuration...');
+        await this.cache.set('edge:tmdb:configuration', configuration);
+      }
+      this.logger.instance.debug('TMDB configuration loaded successfully');
       this.imageProvider = new ImageProvider(configuration);
     } catch (error) {
       this.logger.instance.warn(

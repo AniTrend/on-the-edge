@@ -1,8 +1,0 @@
-{
-  "extends": "../../deno.json",
-  "name": "@scope/client",
-  "exports": {
-    ".": "./index.ts",
-    "./testing": "./test/index.ts"
-  }
-}

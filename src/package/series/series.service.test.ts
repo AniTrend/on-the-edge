@@ -5,12 +5,12 @@ import { BadRequestException, InternalServerErrorException } from '@danet/core';
 import { ObjectId } from 'mongodb';
 import { SeriesService } from './series.service.ts';
 import { SeriesRepository } from './repository/index.ts';
-import { createLoggerStub } from '@scope/logger/testing';
+import { createMockLogger } from '@scope/common/testing';
 import { toInstant } from '@scope/common/utils';
 
 describe('SeriesService', () => {
   it('throws BadRequestException when query is empty', async () => {
-    const { logger } = createLoggerStub();
+    const { logger } = createMockLogger();
     const repository = {} as SeriesRepository;
     const service = new SeriesService(repository, logger);
 
@@ -21,7 +21,7 @@ describe('SeriesService', () => {
   });
 
   it('throws BadRequestException when anilist ID is missing', async () => {
-    const { logger } = createLoggerStub();
+    const { logger } = createMockLogger();
     const repository = {} as SeriesRepository;
     const service = new SeriesService(repository, logger);
 
@@ -32,7 +32,7 @@ describe('SeriesService', () => {
   });
 
   it('delegates to repository.invoke() with anilist ID', async () => {
-    const { logger } = createLoggerStub();
+    const { logger } = createMockLogger();
 
     const mockDocument = {
       _id: new ObjectId(),
@@ -107,7 +107,7 @@ describe('SeriesService', () => {
   });
 
   it('throws NotFoundException when repository throws "No data available"', async () => {
-    const { logger, spies } = createLoggerStub();
+    const { logger, spies } = createMockLogger();
 
     const expectedError = new Error(
       'No data available from any upstream service',
@@ -134,7 +134,7 @@ describe('SeriesService', () => {
   });
 
   it('propagates other errors from repository', async () => {
-    const { logger, spies } = createLoggerStub();
+    const { logger, spies } = createMockLogger();
 
     const customError = new Error('Database connection failed');
     const invokeSpy = spy(async () => {

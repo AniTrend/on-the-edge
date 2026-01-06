@@ -515,7 +515,7 @@ return rssData.rss.channel.item;  // OtakumodeFeed type
 ### Service Test Structure
 
 ```typescript
-import { createSecretStub } from '@scope/testing';
+import { createMockSecret } from '@scope/testing';
 import { mockJsonResponse, resetFetch } from '@scope/testing';
 import { loadFixture } from '@scope/testing';
 
@@ -525,10 +525,10 @@ describe('ServiceName', () => {
   let logger: LoggerService;
 
   beforeEach(() => {
-    secrets = createSecretStub({
+    secrets = createMockSecret({
       SERVICE_KEY: 'https://service.test',
-    });
-    logger = createLoggerStub();
+    }).service;
+    logger = createMockLogger().logger;
     service = new ServiceName(secrets, logger);
   });
 

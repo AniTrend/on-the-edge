@@ -125,7 +125,7 @@ export class SeriesResolver {
       if (anilist) {
         return await this.arm.getRelationsById('anilist', anilist);
       } else if (mal) {
-        return await this.arm.getRelationsById('mal', mal);
+        return await this.arm.getRelationsById('myanimelist', mal);
       }
       throw new Error('No valid identifier provided for ARM lookup');
     } catch (error) {

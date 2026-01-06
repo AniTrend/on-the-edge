@@ -10,7 +10,7 @@ import type { TraktService } from '@scope/service/trakt';
 import type { NotifyService } from '@scope/service/notify';
 import type { ThemeService } from '@scope/service/theme';
 import type { TheXemService } from '@scope/service/thexem';
-import { createLoggerStub } from '@scope/logger/testing';
+import { createMockLogger } from '@scope/common/testing';
 import type { ExperimentService } from '@scope/experiment';
 
 function createTestEpisode(mal_id: number): AnimeEpisode {
@@ -32,12 +32,11 @@ function createTestEpisode(mal_id: number): AnimeEpisode {
 
 describe('EpisodesResolver themes enrichment', () => {
   it('enriches episodes with openings/endings when flag is enabled', async () => {
-    const { logger } = createLoggerStub();
+    const { logger } = createMockLogger();
 
     const episodes = [toCanonicalEpisode(createTestEpisode(1))];
 
     const mockJikan: Partial<JikanService> = {
-      // deno-lint-ignore require-await
       async getAnime(_malId: number) {
         const payload = {
           mal_id: 1,
@@ -62,7 +61,6 @@ describe('EpisodesResolver themes enrichment', () => {
     };
 
     const mockTheme: Partial<ThemeService> = {
-      // deno-lint-ignore require-await
       async getThemesForAnime(_mal: number) {
         return [
           {

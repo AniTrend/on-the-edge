@@ -4,7 +4,7 @@ import { NotFoundException } from '@danet/core';
 import { NewsService } from './news.service.ts';
 import type { ExperimentService } from '@scope/experiment';
 import type { NewsRepository } from './news.repository.ts';
-import { createLoggerStub } from '@scope/logger/testing';
+import { createMockLogger } from '@scope/common/testing';
 
 class ExperimentStub implements Pick<ExperimentService, 'isEnabled'> {
   isEnabled(): boolean {
@@ -18,7 +18,7 @@ describe('NewsService', () => {
       feed: async () => [{ id: 'test', title: 'Test News' }],
     } as unknown as NewsRepository;
     const experiment = new ExperimentStub();
-    const { logger } = createLoggerStub();
+    const { logger } = createMockLogger();
     const service = new NewsService(
       logger,
       repository,
@@ -35,7 +35,7 @@ describe('NewsService', () => {
       feed: async () => undefined,
     } as unknown as NewsRepository;
     const experiment = new ExperimentStub();
-    const { logger } = createLoggerStub();
+    const { logger } = createMockLogger();
     const service = new NewsService(
       logger,
       repository,

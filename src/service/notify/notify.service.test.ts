@@ -2,15 +2,14 @@ import { afterEach, describe, it } from '@std/testing/bdd';
 import { assertEquals } from '@std/assert';
 import { mockFetch, resetFetch } from '@c4spar/mock-fetch';
 import { NotifyService } from '@scope/service/notify';
-import { createSecretStub } from '@scope/secret/testing';
-import { createLoggerStub } from '@scope/logger/testing';
+import { createMockLogger, createMockSecret } from '@scope/common/testing';
 
 describe('NotifyService', () => {
-  const config = createSecretStub({
+  const config = createMockSecret({
     NOTIFY: 'https://notify.test',
     CLIENT_REQUEST_TIMEOUT: '5000',
-  });
-  const { logger } = createLoggerStub();
+  }).service;
+  const { logger } = createMockLogger();
 
   afterEach(() => {
     resetFetch();

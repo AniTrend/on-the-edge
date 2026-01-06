@@ -2,19 +2,22 @@ import { afterEach, beforeEach, describe, it } from '@std/testing/bdd';
 import { assertEquals } from '@std/assert';
 import { mockFetch, resetFetch } from '@c4spar/mock-fetch';
 import { TmdbService } from '@scope/service/tmdb';
-import { createSecretStub } from '@scope/secret/testing';
-import { createLoggerStub } from '@scope/logger/testing';
+import { createMockLogger, createMockSecret } from '@scope/common/testing';
+import { createMockCache } from '@scope/common/testing';
 
 describe('TmdbService', () => {
-  const config = createSecretStub({
+  const config = createMockSecret({
     TMDB: 'https://tmdb.test',
     TMDB_KEY: 'key-123',
     CLIENT_REQUEST_TIMEOUT: '5000',
-  });
-  const { logger } = createLoggerStub();
+  }).service;
+  const { logger } = createMockLogger();
+  const mockCache = createMockCache();
+  const cache = mockCache.service;
 
   beforeEach(() => {
     resetFetch();
+    mockCache.cache.clear();
   });
 
   afterEach(() => {
@@ -162,7 +165,7 @@ describe('TmdbService', () => {
       },
     );
 
-    const service = new TmdbService(config, logger);
+    const service = new TmdbService(config, logger, cache);
     await service.onAppBootstrap();
     const result = await service.getShow(100);
 
@@ -282,7 +285,7 @@ describe('TmdbService', () => {
       },
     );
 
-    const service = new TmdbService(config, logger);
+    const service = new TmdbService(config, logger, cache);
     await service.onAppBootstrap();
     await service.getShow(100); // load configuration
     const result = await service.getSeason(1, 100);

@@ -1,6 +1,6 @@
 import { Injectable } from '@danet/core';
 import { LoggerService } from '@scope/logger';
-import { SeriesRelationId } from './arm.types.ts';
+import { SeriesRelationId, SeriesRelationSource } from './arm.types.ts';
 import { SecretService } from '@scope/secret';
 import { createClient, type RequestClient } from '@anitrend/request-client';
 import { DEFAULT_HEADERS } from '../constants.ts';
@@ -48,7 +48,7 @@ export class ArmService {
   };
 
   getRelationsById = async (
-    source: 'anilist' | 'mal',
+    source: SeriesRelationSource,
     id: number,
   ): Promise<SeriesRelationId> => {
     const { data, status } = await this.client

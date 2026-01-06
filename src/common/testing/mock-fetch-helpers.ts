@@ -11,11 +11,10 @@
  *
  * @example
  * ```typescript
- * import { mockJsonResponse, resetFetch } from './mock-fetch-helpers.ts';
- * import { createSecretStub } from '@scope/secret/testing';
+ * import { mockJsonResponse, resetFetch, createMockSecret } from '@scope/common/testing';
  *
  * // In test setup
- * const secrets = createSecretStub({ MAL: 'https://mal.test' });
+ * const secrets = createMockSecret({ MAL: 'https://mal.test' }).service;
  * const malBase = secrets.get('MAL');
  *
  * mockJsonResponse(`${malBase}/anime/100/full`, {

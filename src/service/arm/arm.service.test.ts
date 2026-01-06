@@ -2,15 +2,14 @@ import { afterEach, beforeEach, describe, it } from '@std/testing/bdd';
 import { assertEquals } from '@std/assert';
 import { mockFetch, resetFetch } from '@c4spar/mock-fetch';
 import { ArmService } from '@scope/service/arm';
-import { createSecretStub } from '@scope/secret/testing';
-import { createLoggerStub } from '@scope/logger/testing';
+import { createMockLogger, createMockSecret } from '@scope/common/testing';
 
 describe('ArmService', () => {
-  const config = createSecretStub({
+  const config = createMockSecret({
     YUNA: 'https://arm.test',
     CLIENT_REQUEST_TIMEOUT: '5000',
-  });
-  const { logger } = createLoggerStub();
+  }).service;
+  const { logger } = createMockLogger();
 
   beforeEach(() => {
     resetFetch();

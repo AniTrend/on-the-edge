@@ -94,6 +94,7 @@ export class EpisodesRepository {
         this.resolver,
         seriesKey,
         malId,
+        opts.filters?.includeOrphans ?? false,
       );
 
       // Persist to cache
@@ -163,6 +164,8 @@ export class EpisodesRepository {
             null,
           perSourceCounts: document.stats?.perSourceCounts,
           remapSources: document.stats?.remapSources,
+          unmatchedBySource: document.stats?.unmatchedBySource,
+          seasonMismatches: document.stats?.seasonMismatches,
         },
         cached: true,
         updatedAt: document.updatedAt,

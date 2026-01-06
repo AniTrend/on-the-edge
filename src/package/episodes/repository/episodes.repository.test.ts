@@ -3,7 +3,7 @@ import { assertEquals, assertExists } from '@std/assert';
 import { EpisodesRepository } from './episodes.repository.ts';
 import { EpisodesResolver } from './episodes.resolver.ts';
 import { InMemoryCollection } from '@scope/database/testing';
-import { createLoggerStub } from '@scope/logger/testing';
+import { createMockLogger } from '@scope/common/testing';
 import type { EpisodeDocument } from '../episodes.document.ts';
 import { toCanonicalEpisode } from '../transformer/canonical.ts';
 import {
@@ -105,7 +105,7 @@ describe('EpisodesRepository', () => {
   let mockMongo: MockMongoService;
   let resolver: EpisodesResolver;
   let repository: EpisodesRepository;
-  const { logger } = createLoggerStub();
+  const { logger } = createMockLogger();
 
   beforeEach(() => {
     collection = new InMemoryCollection<EpisodeDocument>();

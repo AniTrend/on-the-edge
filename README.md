@@ -96,7 +96,8 @@ Each folder exposes its public surface via `deno.json`/`index.ts`, enabling impo
 ## Testing utilities
 
 - Review `docs/testing-utilities.md` for helper APIs (mock fetch, environment scoping, dependency spies).
-- Module-specific test helpers live under `src/**/testing/` (e.g., `createCacheStub`, in-memory database collection).
+- Centralized test helpers (mocks, stubs, spies) live in `src/common/testing/` and are exported via `@scope/common/testing`.
+- Domain-specific helpers (e.g., in-memory database collections) may live under `src/**/testing/` as needed.
 
 ## Contributing checklist
 
