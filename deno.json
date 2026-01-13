@@ -73,11 +73,11 @@
     "dev": "deno -P --unstable-otel --unstable-cron --unstable-temporal bootstrap.ts",
     "dev:watch": "deno -P --unstable-otel --unstable-cron --unstable-temporal --watch-hmr bootstrap.ts",
     "test": "deno test -P --coverage=coverage --allow-sys=osRelease -- --unstable-experimentalDecorators --unstable-emitDecoratorMetadata",
-    "build": "deno compile -P --unstable-otel --unstable-cron --unstable-temporal --output=./build/edge bootstrap.ts"
+    "build": "deno compile -P --ignore-read --unstable-otel --unstable-cron --unstable-temporal --output=./build/edge bootstrap.ts"
   },
   "permissions": {
     "default": {
-      "read": [".env", "/.dockerenv"],
+      "read": [".env"],
       "write": [".github/swagger-spec.json"],
       "env": true,
       "net": true,
@@ -94,7 +94,6 @@
   },
   "compile": {
     "permissions": {
-      "read": [".env", "/.dockerenv"],
       "env": true,
       "net": true,
       "sys": ["osRelease", "uid", "gid", "hostname", "userInfo"],
