@@ -6,11 +6,11 @@ import { Config } from './config.types.ts';
 
 @Controller('v1/config')
 export class ConfigController {
-  constructor(private readonly configService: ConfigService) {}
+  constructor(private readonly configService: ConfigService) { }
 
   @Get()
   @ReturnedSchema(ConfigSchemaSwagger)
-  async get(): Promise<Config> {
+  async config(): Promise<Config> {
     return this.configService.getConfig();
   }
 }

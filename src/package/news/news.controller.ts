@@ -16,17 +16,17 @@ export class NewsController {
   constructor(
     private readonly service: NewsService,
     private readonly logger: LoggerService,
-  ) {}
+  ) { }
 
   @Get('news/feed')
   @ReturnedSchema(NewsSwagger, true)
-  async feed(@Query(NewsQuerySchema) query: NewsQuery): Promise<News[]> {
+  async newsFeed(@Query(NewsQuerySchema) query: NewsQuery): Promise<News[]> {
     return this.service.feed(query);
   }
 
   @Get('news')
   @ReturnedSchema(NewsPagingSwagger)
-  async all(
+  async news(
     @Query(NewsPagingQuerySchema) query: NewsPagingQuery,
   ): Promise<NewsPaging> {
     return this.service.paging(query);

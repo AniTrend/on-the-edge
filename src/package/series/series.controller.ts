@@ -12,11 +12,11 @@ export class SeriesController {
   constructor(
     private readonly service: SeriesService,
     private readonly logger: LoggerService,
-  ) {}
+  ) { }
 
   @Get('series')
   @ReturnedSchema(SeriesSwagger)
-  async aggregate(
+  async series(
     @Query(SeriesQuerySchema) query: SeriesQuery,
   ): Promise<MediaUnion> {
     return await this.service.aggregate(query);
