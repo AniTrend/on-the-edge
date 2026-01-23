@@ -77,7 +77,7 @@
   },
   "permissions": {
     "default": {
-      "read": [".env"],
+      "read": [".env", ".dockerenv"],
       "write": [".github/swagger-spec.json"],
       "env": true,
       "net": true,
