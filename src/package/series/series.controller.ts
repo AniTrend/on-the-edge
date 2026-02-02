@@ -12,7 +12,7 @@ export class SeriesController {
   constructor(
     private readonly service: SeriesService,
     private readonly logger: LoggerService,
-  ) { }
+  ) {}
 
   @Get('series')
   @ReturnedSchema(SeriesSwagger)

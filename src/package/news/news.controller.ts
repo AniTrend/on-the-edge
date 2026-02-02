@@ -16,7 +16,7 @@ export class NewsController {
   constructor(
     private readonly service: NewsService,
     private readonly logger: LoggerService,
-  ) { }
+  ) {}
 
   @Get('news/feed')
   @ReturnedSchema(NewsSwagger, true)

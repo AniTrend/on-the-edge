@@ -72,12 +72,13 @@
     "deps:latest:update": "deno outdated --latest --update !npm:zod",
     "dev": "deno -P --unstable-otel --unstable-cron --unstable-temporal bootstrap.ts",
     "dev:watch": "deno -P --unstable-otel --unstable-cron --unstable-temporal --watch-hmr bootstrap.ts",
+    "swagger:generate": "deno -P --unstable-otel --unstable-cron --unstable-temporal src/swagger.ts",
     "test": "deno test -P --coverage=coverage --allow-sys=osRelease -- --unstable-experimentalDecorators --unstable-emitDecoratorMetadata",
     "build": "deno compile -P --ignore-read --unstable-otel --unstable-cron --unstable-temporal --output=./build/edge bootstrap.ts"
   },
   "permissions": {
     "default": {
-      "read": [".env", ".dockerenv"],
+      "read": [".env", "/.dockerenv"],
       "write": [".github/swagger-spec.json"],
       "env": true,
       "net": true,
