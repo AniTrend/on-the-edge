@@ -1,0 +1,61 @@
+name: Swagger Release Sync
+
+env:
+  EDGE_GRAPHQL_REPO: AniTrend/edge-graphql
+  EDGE_GRAPHQL_REF: main
+  EDGE_GRAPHQL_WORKFLOW: publish-snapshot.yml
+
+on:
+  push:
+    tags:
+      - "*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to build swagger from"
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  generate-and-dispatch:
+    name: Generate swagger and dispatch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve tag
+        id: tag
+        run: |
+          if [[ -n "${{ github.event.inputs.tag }}" ]]; then
+            tag="${{ github.event.inputs.tag }}"
+          elif [[ "${{ github.ref }}" =~ ^refs/tags/ ]]; then
+            tag="${GITHUB_REF#refs/tags/}"
+          else
+            tag="${{ github.ref_name }}"
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ steps.tag.outputs.tag }}
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          cache: true
+          deno-version: 2.6.7
+      - name: Config properties file
+        run: bash .github/scripts/config-env.sh
+      - name: Generate swagger spec
+        run: deno task swagger:generate
+      - name: Upload swagger spec artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: swagger-spec
+          path: .github/swagger-spec.json
+          if-no-files-found: error
+      - name: Dispatch edge-graphql workflow
+        uses: peter-evans/repository-dispatch@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ env.EDGE_GRAPHQL_REPO }}
+          event-type: trigger-action

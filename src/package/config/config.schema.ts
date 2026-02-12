@@ -31,7 +31,7 @@ const GenreSchema = z.object({
 });
 
 export const ConfigSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string(),
   settings: SettingsSchema,
   image: ImageSchema,
   navigation: z.array(NavigationItemSchema).default([]),

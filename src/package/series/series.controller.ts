@@ -16,7 +16,7 @@ export class SeriesController {
 
   @Get('series')
   @ReturnedSchema(SeriesSwagger)
-  async aggregate(
+  async series(
     @Query(SeriesQuerySchema) query: SeriesQuery,
   ): Promise<MediaUnion> {
     return await this.service.aggregate(query);

@@ -10,7 +10,7 @@ export class ConfigController {
 
   @Get()
   @ReturnedSchema(ConfigSchemaSwagger)
-  async get(): Promise<Config> {
+  async config(): Promise<Config> {
     return this.configService.getConfig();
   }
 }
