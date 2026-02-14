@@ -6,6 +6,7 @@ env:
   EDGE_GRAPHQL_WORKFLOW: publish-snapshot.yml
 
 on:
+  pull_request:
   push:
     tags:
       - "*"
@@ -28,6 +29,8 @@ jobs:
         run: |
           if [[ -n "${{ github.event.inputs.tag }}" ]]; then
             tag="${{ github.event.inputs.tag }}"
+          elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            tag="${{ github.head_ref }}"
           elif [[ "${{ github.ref }}" =~ ^refs/tags/ ]]; then
             tag="${GITHUB_REF#refs/tags/}"
           else
