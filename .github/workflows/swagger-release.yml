@@ -23,6 +23,28 @@ jobs:
   generate-and-dispatch:
     name: Generate swagger and dispatch
     runs-on: ubuntu-latest
+    env:
+      MONGO_URL: mongodb://localhost:27017/on-the-edge
+      REDIS_URL: redis://localhost:6379
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.adminCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - name: Resolve tag
         id: tag
@@ -48,6 +70,10 @@ jobs:
           deno-version: 2.6.8
       - name: Config properties file
         run: bash .github/scripts/config-env.sh
+      - name: Validate CI env defaults
+        run: |
+          grep '^MONGO_URL=' .env | tail -n 1
+          grep '^REDIS_URL=' .env | tail -n 1
       - name: Generate swagger spec
         run: deno task swagger:generate
       - name: Upload swagger spec artifact
