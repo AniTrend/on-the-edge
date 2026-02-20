@@ -1,12 +1,6 @@
 name: Swagger Release Sync
 
-env:
-  EDGE_GRAPHQL_REPO: AniTrend/edge-graphql
-  EDGE_GRAPHQL_REF: main
-  EDGE_GRAPHQL_WORKFLOW: publish-snapshot.yml
-
 on:
-  pull_request:
   push:
     tags:
       - "*"
@@ -46,6 +40,13 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
+      - uses: actions/create-github-app-token@v2
+        id: app-token
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: AniTrend
+          repositories: edge-graphql
       - name: Resolve tag
         id: tag
         run: |
@@ -70,10 +71,6 @@ jobs:
           deno-version: 2.6.8
       - name: Config properties file
         run: bash .github/scripts/config-env.sh
-      - name: Validate CI env defaults
-        run: |
-          grep '^MONGO_URL=' .env | tail -n 1
-          grep '^REDIS_URL=' .env | tail -n 1
       - name: Generate swagger spec
         continue-on-error: true
         run: deno task swagger:generate
@@ -86,6 +83,13 @@ jobs:
       - name: Dispatch edge-graphql workflow
         uses: peter-evans/repository-dispatch@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          repository: ${{ env.EDGE_GRAPHQL_REPO }}
-          event-type: trigger-action
+          token: ${{ steps.app-token.outputs.token }}
+          repository: AniTrend/edge-graphql
+          event-type: trigger-workflow
+          client-payload: >-
+            {
+              "base_branch": "main",
+              "release_repo": "AniTrend/on-the-edge",
+              "release_tag": "${{ startsWith(github.ref, 'refs/tags/') && steps.tag.outputs.tag || 'latest' }}",
+              "release_asset": "swagger-spec.json"
+            }
