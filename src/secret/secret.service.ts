@@ -7,6 +7,7 @@ export interface ISecretService {
   requestTimeout(): number;
   environment(): Environment;
   isDevelopment(): boolean;
+  isCI(): boolean;
 }
 
 @Injectable()
@@ -31,4 +32,14 @@ export class SecretService implements ISecretService {
   environment = (): Environment => this.get('DENO_ENV');
 
   isDevelopment = (): boolean => this.environment() === 'development';
+
+  isCI = (): boolean => {
+    const value = Deno.env.get('CI');
+    if (!value) {
+      return false;
+    }
+
+    const normalized = value.trim().toLowerCase();
+    return normalized === 'true' || normalized === '1';
+  };
 }
