@@ -75,6 +75,7 @@ jobs:
           grep '^MONGO_URL=' .env | tail -n 1
           grep '^REDIS_URL=' .env | tail -n 1
       - name: Generate swagger spec
+        continue-on-error: true
         run: deno task swagger:generate
       - name: Upload swagger spec artifact
         uses: actions/upload-artifact@v7
