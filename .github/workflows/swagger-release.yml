@@ -48,7 +48,7 @@ jobs:
       - name: Generate swagger spec
         run: deno task swagger:generate
       - name: Upload swagger spec artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: swagger-spec
           path: .github/swagger-spec.json
