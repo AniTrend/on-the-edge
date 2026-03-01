@@ -74,8 +74,6 @@ jobs:
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
       - name: Checkout code
         uses: actions/checkout@v6
-        with:
-          ref: ${{ steps.tag.outputs.tag }}
       - name: Setup Deno
         uses: denoland/setup-deno@v2
         with:
