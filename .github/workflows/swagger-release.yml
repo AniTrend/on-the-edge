@@ -98,23 +98,13 @@ jobs:
           asset_path=".github/swagger-spec.json"
           asset_name="swagger-spec.json"
 
-          if ! gh api "repos/AniTrend/on-the-edge/releases/tags/$tag" --jq '.id' >/dev/null 2>&1; then
-            echo "No existing release found for tag $tag. Refusing to create a new release/tag."
-            exit 1
-          fi
-
-          is_draft="$(gh api "repos/AniTrend/on-the-edge/releases/tags/$tag" --jq '.draft')"
-          if [[ "$is_draft" != "true" ]]; then
-            echo "Release $tag is not a draft. This job only updates existing draft releases."
-            exit 1
-          fi
-
-          gh release upload "$tag" "$asset_path#$asset_name" --clobber --repo "AniTrend/on-the-edge"
+          gh release upload "$tag" --clobber "$asset_path#$asset_name"
 
   dispatch-edge-graphql:
     name: Dispatch edge-graphql on release publish
     if: ${{ github.event_name == 'release' && github.event.action == 'published' }}
     runs-on: ubuntu-latest
+    needs: prepare-swagger-asset
     steps:
       - uses: actions/create-github-app-token@v2
         id: app-token
