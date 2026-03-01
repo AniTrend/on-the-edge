@@ -21,12 +21,19 @@ export class RedisService implements CacheService, OnAppBootstrap, OnAppClose {
   private createRedisClient(secret: SecretService): Redis {
     const url = secret.get<string>('REDIS_URL');
     const { hostname, port, username, password } = new URL(url);
-    return createLazyClient({
+    const options: Parameters<typeof createLazyClient>[0] = {
       hostname,
-      port: parseInt(port),
-      username: username,
-      password: password,
-    });
+      port: Number.parseInt(port, 10),
+    };
+
+    if (username.length > 0) {
+      options.username = username;
+    }
+    if (password.length > 0) {
+      options.password = password;
+    }
+
+    return createLazyClient(options);
   }
 
   async has<T>(key: CacheKey): Promise<boolean> {
@@ -95,13 +102,13 @@ export class RedisService implements CacheService, OnAppBootstrap, OnAppClose {
       await this.redis.connect();
       const pong = await this.redis.ping();
       this.logger.instance.debug(`Redis connection validated: ${pong}`);
-      this.logger.instance.mark('redis-connect-end');
     } catch (err) {
       this.logger.instance.error('Redis connection failed during bootstrap', {
         cause: err,
       });
       throw err;
     } finally {
+      this.logger.instance.mark('redis-connect-end');
       this.logger.instance.measure(
         between('redis-connect-start', 'redis-connect-end'),
       );

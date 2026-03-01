@@ -174,17 +174,23 @@ export function createMockSecret(overrides: Record<string, string> = {}) {
     const env = overrides.DENO_ENV ?? 'test';
     return env === 'development';
   };
+  const _isCI = () => {
+    const env = overrides.DENO_ENV ?? 'false';
+    return env === 'true';
+  };
 
   const getSpy = spy(_get);
   const requestTimeoutSpy = spy(_requestTimeout);
   const environmentSpy = spy(_environment);
   const isDevelopmentSpy = spy(_isDevelopment);
+  const isCiSpy = spy(_isCI);
 
   const service: SecretService = {
     get: getSpy as typeof _get,
     requestTimeout: requestTimeoutSpy,
     environment: environmentSpy,
     isDevelopment: isDevelopmentSpy,
+    isCI: isCiSpy,
   } as SecretService;
 
   return {

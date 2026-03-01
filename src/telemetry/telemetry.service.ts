@@ -12,9 +12,15 @@ import { TelemetryFactory } from './telemetry.factory.ts';
 @Injectable({ scope: SCOPE.GLOBAL })
 export class TelemetryService implements OnAppBootstrap, OnAppClose {
   private readonly logger: Logger = new Logger(TelemetryService.name);
-  private readonly sdk: NodeSDK;
+  private readonly sdk?: NodeSDK;
+  private readonly enabled: boolean;
 
   constructor(factory: TelemetryFactory, secret: SecretService) {
+    this.enabled = !secret.isCI();
+    if (!this.enabled) {
+      this.logger.log('OpenTelemetry disabled in CI mode');
+      return;
+    }
     this.sdk = this.initializeSDK(factory, secret);
   }
 
@@ -52,11 +58,17 @@ export class TelemetryService implements OnAppBootstrap, OnAppClose {
   }
 
   onAppBootstrap(): void | Promise<void> {
+    if (!this.enabled || !this.sdk) {
+      return;
+    }
     this.logger.log('Starting OpenTelemetry');
     return this.sdk.start();
   }
 
   async onAppClose(): Promise<void> {
+    if (!this.enabled || !this.sdk) {
+      return;
+    }
     this.logger.log('Shutting down OpenTelemetry');
     return this.sdk.shutdown();
   }

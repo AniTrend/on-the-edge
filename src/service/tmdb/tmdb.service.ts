@@ -53,6 +53,11 @@ export class TmdbService implements OnAppBootstrap {
   }
 
   async onAppBootstrap(): Promise<void> {
+    if (this.secret.isCI()) {
+      this.logger.instance.debug('Skipping TMDB warmup in CI mode');
+      return;
+    }
+
     try {
       this.logger.instance.debug('Fetching TMDB configuration...');
       let configuration = await this.cache.get<TmdbConfiguration>(
