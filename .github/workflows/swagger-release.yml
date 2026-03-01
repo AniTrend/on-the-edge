@@ -22,7 +22,7 @@ jobs:
       REDIS_URL: redis://localhost:6379
     services:
       mongo:
-        image: mongo:7
+        image: mongo:8
         ports:
           - 27017:27017
         options: >-
