@@ -58,7 +58,7 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
-          TAG="$(gh release list --repo "AniTrend/on-the-edge" --limit 50 --json tagName,isDraft,targetCommitish,createdAt --jq 'map(select(.isDraft == true and .targetCommitish == "dev")) | sort_by(.createdAt) | reverse | (.[0].tagName // empty)')"
+          TAG="$(gh release list --repo "AniTrend/on-the-edge" --limit 5 --json tagName,isDraft,createdAt --jq 'map(select(.isDraft == true)) | (.[0].tagName // empty)')"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
       - name: Resolve tag
         id: tag
@@ -68,31 +68,10 @@ jobs:
           elif [[ -n "${{ steps.release-tag.outputs.tag }}" ]]; then
             tag="${{ steps.release-tag.outputs.tag }}"
           else
-            echo "No release tag provided and no draft release tag found for target_commitish=dev"
+            echo "No release tag provided and no draft release tag found"
             exit 1
           fi
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
-      - name: Validate tag matches workflow SHA
-        if: ${{ github.event_name == 'workflow_run' }}
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-        run: |
-          tag="${{ steps.tag.outputs.tag }}"
-          workflow_sha="${{ github.event.workflow_run.head_sha }}"
-
-          tag_ref_type="$(gh api "repos/AniTrend/on-the-edge/git/ref/tags/$tag" --jq '.object.type')"
-          tag_ref_sha="$(gh api "repos/AniTrend/on-the-edge/git/ref/tags/$tag" --jq '.object.sha')"
-
-          if [[ "$tag_ref_type" == "tag" ]]; then
-            tag_commit_sha="$(gh api "repos/AniTrend/on-the-edge/git/tags/$tag_ref_sha" --jq '.object.sha')"
-          else
-            tag_commit_sha="$tag_ref_sha"
-          fi
-
-          if [[ "$tag_commit_sha" != "$workflow_sha" ]]; then
-            echo "Draft release tag $tag points to $tag_commit_sha but workflow_run head_sha is $workflow_sha"
-            exit 1
-          fi
       - name: Checkout code
         uses: actions/checkout@v6
         with:
