@@ -104,7 +104,6 @@ jobs:
     name: Dispatch edge-graphql on release publish
     if: ${{ github.event_name == 'release' && github.event.action == 'published' }}
     runs-on: ubuntu-latest
-    needs: prepare-swagger-asset
     steps:
       - uses: actions/create-github-app-token@v2
         id: app-token
