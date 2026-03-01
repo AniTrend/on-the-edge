@@ -1,9 +1,15 @@
 name: Swagger Release Sync
 
 on:
-  push:
-    tags:
-      - "*"
+  workflow_run:
+    workflows: ["Release Drafter"]
+    types:
+      - completed
+    branches:
+      - dev
+  release:
+    types:
+      - published
   workflow_dispatch:
     inputs:
       tag:
@@ -14,8 +20,9 @@ permissions:
   contents: read
 
 jobs:
-  generate-and-dispatch:
-    name: Generate swagger and dispatch
+  prepare-swagger-asset:
+    name: Generate swagger and publish asset
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') }}
     runs-on: ubuntu-latest
     env:
       MONGO_URL: mongodb://localhost:27017/on-the-edge
@@ -45,21 +52,47 @@ jobs:
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: AniTrend
-          repositories: edge-graphql
+      - name: Get latest draft release tag
+        if: ${{ github.event_name == 'workflow_run' || (github.event_name == 'workflow_dispatch' && github.event.inputs.tag == '') }}
+        id: release-tag
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          TAG="$(gh release list --repo "AniTrend/on-the-edge" --limit 50 --json tagName,isDraft,targetCommitish,createdAt --jq 'map(select(.isDraft == true and .targetCommitish == "dev")) | sort_by(.createdAt) | reverse | (.[0].tagName // empty)')"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
       - name: Resolve tag
         id: tag
         run: |
           if [[ -n "${{ github.event.inputs.tag }}" ]]; then
             tag="${{ github.event.inputs.tag }}"
-          elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            tag="${{ github.head_ref }}"
-          elif [[ "${{ github.ref }}" =~ ^refs/tags/ ]]; then
-            tag="${GITHUB_REF#refs/tags/}"
+          elif [[ -n "${{ steps.release-tag.outputs.tag }}" ]]; then
+            tag="${{ steps.release-tag.outputs.tag }}"
           else
-            tag="${{ github.ref_name }}"
+            echo "No release tag provided and no draft release tag found for target_commitish=dev"
+            exit 1
           fi
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
+      - name: Validate tag matches workflow SHA
+        if: ${{ github.event_name == 'workflow_run' }}
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          tag="${{ steps.tag.outputs.tag }}"
+          workflow_sha="${{ github.event.workflow_run.head_sha }}"
+
+          tag_ref_type="$(gh api "repos/AniTrend/on-the-edge/git/ref/tags/$tag" --jq '.object.type')"
+          tag_ref_sha="$(gh api "repos/AniTrend/on-the-edge/git/ref/tags/$tag" --jq '.object.sha')"
+
+          if [[ "$tag_ref_type" == "tag" ]]; then
+            tag_commit_sha="$(gh api "repos/AniTrend/on-the-edge/git/tags/$tag_ref_sha" --jq '.object.sha')"
+          else
+            tag_commit_sha="$tag_ref_sha"
+          fi
+
+          if [[ "$tag_commit_sha" != "$workflow_sha" ]]; then
+            echo "Draft release tag $tag points to $tag_commit_sha but workflow_run head_sha is $workflow_sha"
+            exit 1
+          fi
       - name: Checkout code
         uses: actions/checkout@v6
         with:
@@ -80,6 +113,39 @@ jobs:
           name: swagger-spec
           path: .github/swagger-spec.json
           if-no-files-found: error
+      - name: Publish swagger spec to release asset
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          tag="${{ steps.tag.outputs.tag }}"
+          asset_path=".github/swagger-spec.json"
+          asset_name="swagger-spec.json"
+
+          if ! gh api "repos/AniTrend/on-the-edge/releases/tags/$tag" --jq '.id' >/dev/null 2>&1; then
+            echo "No existing release found for tag $tag. Refusing to create a new release/tag."
+            exit 1
+          fi
+
+          is_draft="$(gh api "repos/AniTrend/on-the-edge/releases/tags/$tag" --jq '.draft')"
+          if [[ "$is_draft" != "true" ]]; then
+            echo "Release $tag is not a draft. This job only updates existing draft releases."
+            exit 1
+          fi
+
+          gh release upload "$tag" "$asset_path#$asset_name" --clobber --repo "AniTrend/on-the-edge"
+
+  dispatch-edge-graphql:
+    name: Dispatch edge-graphql on release publish
+    if: ${{ github.event_name == 'release' && github.event.action == 'published' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/create-github-app-token@v2
+        id: app-token
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: AniTrend
+          repositories: edge-graphql
       - name: Dispatch edge-graphql workflow
         uses: peter-evans/repository-dispatch@v4
         with:
@@ -90,6 +156,6 @@ jobs:
             {
               "base_branch": "main",
               "release_repo": "AniTrend/on-the-edge",
-              "release_tag": "${{ startsWith(github.ref, 'refs/tags/') && steps.tag.outputs.tag || 'latest' }}",
+              "release_tag": "${{ github.event.release.tag_name }}",
               "release_asset": "swagger-spec.json"
             }
