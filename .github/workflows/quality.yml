@@ -19,7 +19,7 @@ jobs:
         uses: denoland/setup-deno@v2
         with:
           cache: true
-          deno-version: 2.7.4
+          deno-version: 2.7.5
       - name: Config properties file
         run: bash .github/scripts/config-env.sh
       - name: Cache dependencies
