@@ -78,7 +78,7 @@ jobs:
         uses: denoland/setup-deno@v2
         with:
           cache: true
-          deno-version: 2.7.9
+          deno-version: 2.7.10
       - name: Config properties file
         run: bash .github/scripts/config-env.sh
       - name: Generate swagger spec
