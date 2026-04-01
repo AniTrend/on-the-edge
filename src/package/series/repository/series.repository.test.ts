@@ -17,7 +17,7 @@ describe('SeriesRepository helpers', () => {
     assertEquals(result, null);
   });
 
-  // TODO: Enable this when --unstable-temporal issue is resolved
+  // TODO: Re-enable once Temporal cache TTL test behavior is fixed
   it.skip('persist and load round-trip', async () => {
     const collection = new InMemoryCollection<SeriesDocument>();
     const anilist = 12345;
@@ -78,7 +78,7 @@ describe('SeriesRepository helpers', () => {
     assertEquals(loaded?.title.english, 'Test Series');
   });
 
-  // TODO: Enable this when --unstable-temporal issue is resolved
+  // TODO: Re-enable once Temporal cache TTL test behavior is fixed
   it.skip('load returns null for stale document (48h+ old)', async () => {
     const collection = new InMemoryCollection<SeriesDocument>();
     const anilist = 54321;

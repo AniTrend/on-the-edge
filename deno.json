@@ -70,11 +70,11 @@
     "deps:latest:show": "deno outdated --latest",
     "deps:stable:update": "deno outdated --compatible --update !npm:zod",
     "deps:latest:update": "deno outdated --latest --update !npm:zod",
-    "dev": "deno -P --unstable-otel --unstable-cron bootstrap.ts",
-    "dev:watch": "deno -P --unstable-otel --unstable-cron --watch-hmr bootstrap.ts",
-    "swagger:generate": "deno -P --unstable-otel --unstable-cron src/swagger.ts",
+    "dev": "deno -P bootstrap.ts",
+    "dev:watch": "deno -P --watch-hmr bootstrap.ts",
+    "swagger:generate": "deno -P src/swagger.ts",
     "test": "deno test -P --coverage=coverage --allow-sys=osRelease",
-    "build": "deno compile -P --ignore-read --unstable-otel --unstable-cron --output=./build/edge bootstrap.ts"
+    "build": "deno compile -P --ignore-read --output=./build/edge bootstrap.ts"
   },
   "permissions": {
     "default": {

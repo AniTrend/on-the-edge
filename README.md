@@ -51,7 +51,9 @@
 	- `--unstable-temporal`
 	- `--unstable-experimentalDecorators`
 	- `--unstable-emitDecoratorMetadata`
-- Kept `--unstable-otel` and `--unstable-cron` in tasks for now pending a separate follow-up validation.
+- Removed `--unstable-otel` and `--unstable-cron` after Phase 2 validation:
+	- `deno compile` works without both flags
+	- app startup and OpenTelemetry bootstrap succeed without both flags
 
 ## Quality gates
 
