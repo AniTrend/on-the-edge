@@ -27,7 +27,8 @@ jobs:
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
       - uses: release-drafter/release-drafter@v7
         with:
-           config-name: release-drafter-config.yml
-           disable-autolabeler: false
+          config-name: release-drafter-config.yml
+          commitish: ${{ github.event.repository.default_branch }}
+          publish: false
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
