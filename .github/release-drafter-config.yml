@@ -34,36 +34,6 @@ categories:
       - ':rewind: revert'
     collapse-after: 5
   - title: '🔖 Other changes'
-autolabeler:
-  - label: ':books: docs'
-    files:
-      - '*.md'
-    branch:
-      - '/docs\/.+/'
-  - label: ':adhesive_bandage: bug fix'
-    branch:
-      - '/fix\/.+/'
-  - label: ':star2: feature'
-    branch:
-      - '/feat\/.+/'
-  - label: ':wrench: enhancement'
-    branch:
-      - '/chore\/.+/'
-  - label: ':hammer_and_wrench: refactor'
-    branch:
-      - '/refactor\/.+/'
-  - label: ':dagger: dependencies'
-    branch:
-      - '/build\/.+/'
-  - label: ':test_tube: testing'
-    branch:
-      - '/test\/.+/'
-  - label: ':construction_worker: ci'
-    branch:
-      - '/ci\/.+/'
-  - label: ':rewind: revert'
-    branch:
-      - '/revert\/.+/'
 change-template: '- $TITLE by @$AUTHOR in #$NUMBER'
 change-title-escapes: '\<*_&' # You can add # and @ to disable mentions, and add ` to disable code blocks.
 version-resolver:

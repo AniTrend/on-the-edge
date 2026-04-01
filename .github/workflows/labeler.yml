@@ -1,0 +1,63 @@
+name: Labeler
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  label:
+    name: Apply labels to pull request
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Apply labels based on branch name and changed files
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const branch = pr.head.ref;
+
+            const branchLabelMap = [
+              { pattern: /^docs\//, label: ':books: docs' },
+              { pattern: /^fix\//, label: ':adhesive_bandage: bug fix' },
+              { pattern: /^feat\//, label: ':star2: feature' },
+              { pattern: /^chore\//, label: ':wrench: enhancement' },
+              { pattern: /^refactor\//, label: ':hammer_and_wrench: refactor' },
+              { pattern: /^build\//, label: ':dagger: dependencies' },
+              { pattern: /^test\//, label: ':test_tube: testing' },
+              { pattern: /^ci\//, label: ':construction_worker: ci' },
+              { pattern: /^revert\//, label: ':rewind: revert' },
+            ];
+
+            const labelsToAdd = branchLabelMap
+              .filter(({ pattern }) => pattern.test(branch))
+              .map(({ label }) => label);
+
+            // Also check changed files for markdown docs
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number,
+            });
+
+            const hasMarkdownChanges = files.some(
+              (file) => file.filename.endsWith('.md'),
+            );
+
+            if (hasMarkdownChanges && !labelsToAdd.includes(':books: docs')) {
+              labelsToAdd.push(':books: docs');
+            }
+
+            if (labelsToAdd.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                labels: labelsToAdd,
+              });
+            }
+
