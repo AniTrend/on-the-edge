@@ -14,7 +14,6 @@
       "runtimeArgs": [
         "run",
         "-P",
-        "--unstable",
         "--allow-scripts=npm:protobufjs",
         "--inspect-wait"
       ],

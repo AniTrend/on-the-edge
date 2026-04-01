@@ -14,7 +14,7 @@
 ## Getting started
 
 1. **Install prerequisites**
-	 - [Deno **2.5.4**](https://deno.land/) or newer (matches CI `denoland/setup-deno@v2` pin).
+	 - [Deno **2.7.10**](https://deno.land/) or newer (matches CI `denoland/setup-deno@v2` pin).
 	 - Optional: Docker for local MongoDB if you want realistic persistence.
 2. **Clone & configure**
 	 ```bash
@@ -44,6 +44,16 @@
 	```
 
 `bootstrap.ts` ensures graceful shutdown on `SIGINT`/`SIGTERM` and will clean up active timers before exit.
+
+## Deno 2.7 stabilization notes
+
+- Removed deprecated unstable flags for stabilized features:
+	- `--unstable-temporal`
+	- `--unstable-experimentalDecorators`
+	- `--unstable-emitDecoratorMetadata`
+- Removed `--unstable-otel` and `--unstable-cron` after Phase 2 validation:
+	- `deno compile` works without both flags
+	- app startup and OpenTelemetry bootstrap succeed without both flags
 
 ## Quality gates
 

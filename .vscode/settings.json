@@ -11,10 +11,7 @@
   "editor.formatOnSave": true,
   "deno.codeLens.testArgs": [
     "--allow-all",
-    "--no-check",
-    "--unstable-experimentalDecorators",
-    "--unstable-emitDecoratorMetadata",
-    "--unstable-temporal"
+    "--no-check"
   ],
   "chat.tools.terminal.autoApprove": {
     "cd": true,
