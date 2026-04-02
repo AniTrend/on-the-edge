@@ -1,12 +1,16 @@
 import { describe, it } from '@std/testing/bdd';
 import { assertEquals, assertRejects } from '@std/assert';
 import { assertSpyCall, spy } from '@std/testing/mock';
-import { BadRequestException, InternalServerErrorException } from '@danet/core';
+import {
+  BadRequestException,
+  NotFoundException,
+} from '@danet/core';
 import { ObjectId } from 'mongodb';
 import { SeriesService } from './series.service.ts';
 import { SeriesRepository } from './repository/index.ts';
 import { createMockLogger } from '@scope/common/testing';
 import { toInstant } from '@scope/common/utils';
+import { SeriesNotFoundError } from './series.errors.ts';
 
 describe('SeriesService', () => {
   it('throws BadRequestException when query is empty', async () => {
@@ -106,12 +110,10 @@ describe('SeriesService', () => {
     assertEquals(response.mediaId.myanimelist, 456);
   });
 
-  it('throws NotFoundException when repository throws "No data available"', async () => {
+  it('throws NotFoundException when repository throws SeriesNotFoundError', async () => {
     const { logger, spies } = createMockLogger();
 
-    const expectedError = new Error(
-      'No data available from any upstream service',
-    );
+    const expectedError = new SeriesNotFoundError();
     const invokeSpy = spy(async () => {
       throw expectedError;
     });
@@ -121,7 +123,7 @@ describe('SeriesService', () => {
 
     await assertRejects(
       () => service.aggregate({ anilist: 789 }),
-      InternalServerErrorException,
+      NotFoundException,
     );
 
     // Assert logger.error was called with query and the exception

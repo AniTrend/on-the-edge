@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "exports": {
     ".": "./index.ts",
+    "./anilist": "./anilist/index.ts",
     "./arm": "./arm/index.ts",
     "./jikan": "./jikan/index.ts",
     "./otakumode": "./otakumode/index.ts",

@@ -4,6 +4,11 @@ import { SkyhookService, SkyhookShow } from '@scope/service/skyhook';
 import { NotifyAnime, NotifyService } from '@scope/service/notify';
 import { JikanAnime, JikanManga, JikanService } from '@scope/service/jikan';
 import { ArmService, SeriesRelationId } from '@scope/service/arm';
+import {
+  AniListMedia,
+  AniListMediaType,
+  AniListService,
+} from '@scope/service/anilist';
 import { TheXem, TheXemService } from '@scope/service/thexem';
 import { Theme, ThemeService } from '@scope/service/theme';
 import { LoggerService } from '@scope/logger';
@@ -11,6 +16,7 @@ import { Injectable } from '@danet/core';
 import { MediaUnion, SeriesQuery } from '../series.types.ts';
 import { isAnime } from './helpers/qualifier.ts';
 import { seriesTransform } from '../transformer/series.transformer.ts';
+import { SeriesNotFoundError } from '../series.errors.ts';
 
 @Injectable()
 export class SeriesResolver {
@@ -21,10 +27,11 @@ export class SeriesResolver {
     private readonly notify: NotifyService,
     private readonly jikan: JikanService,
     private readonly arm: ArmService,
+    private readonly anilist: AniListService,
     private readonly thexem: TheXemService,
     private readonly theme: ThemeService,
     private readonly logger: LoggerService,
-  ) {}
+  ) { }
 
   private resolveTrakt = async (
     id?: string | number | null,
@@ -102,15 +109,45 @@ export class SeriesResolver {
 
   private resolveJikan = async (
     malId?: number | null,
+    mediaType?: AniListMediaType,
   ): Promise<JikanAnime | JikanManga | undefined> => {
     if (!malId) {
       return undefined;
     }
+
     try {
+      if (mediaType === 'MANGA') {
+        return await this.jikan.getManga(malId);
+      }
+
       return await this.jikan.getAnime(malId);
     } catch (error) {
-      this.logger.instance.warn('Failed to fetch Jikan anime', {
+      this.logger.instance.warn('Failed to fetch Jikan media', {
         malId,
+        mediaType,
+        error: (error as Error).message,
+      });
+      return undefined;
+    }
+  };
+
+  private resolveAniList = async (
+    anilistId?: number,
+  ): Promise<AniListMedia | undefined> => {
+    if (!anilistId) {
+      return undefined;
+    }
+
+    try {
+      const [manga, anime] = await Promise.all([
+        this.anilist.getMediaById(anilistId, 'MANGA'),
+        this.anilist.getMediaById(anilistId, 'ANIME'),
+      ]);
+
+      return manga ?? anime;
+    } catch (error) {
+      this.logger.instance.warn('Failed to fetch AniList media', {
+        anilistId,
         error: (error as Error).message,
       });
       return undefined;
@@ -169,44 +206,110 @@ export class SeriesResolver {
     }
   };
 
+  private createFallbackRelation(
+    query: SeriesQuery,
+    malId: number | null,
+  ): SeriesRelationId | undefined {
+    if (!query.anilist && !malId) {
+      return undefined;
+    }
+
+    return {
+      anidb: null,
+      anilist: query.anilist ?? null,
+      animePlanet: null,
+      anisearch: null,
+      imdb: null,
+      kitsu: null,
+      livechart: null,
+      notify: null,
+      themoviedb: null,
+      thetvdb: null,
+      myanimelist: malId,
+    };
+  }
+
+  private hasAggregateData(
+    relation?: SeriesRelationId,
+    notify?: NotifyAnime,
+    mal?: JikanAnime | JikanManga,
+    themes?: Theme[],
+    skyhook?: SkyhookShow,
+    tmdb?: TmdbShow | TmdbMovie,
+    trakt?: TraktShow,
+  ): boolean {
+    const hasProviderPayload = Boolean(
+      notify || mal || skyhook || tmdb || trakt || (themes?.length ?? 0) > 0,
+    );
+
+    const hasCrossServiceIdentifiers = Boolean(
+      relation?.myanimelist || relation?.notify || relation?.thetvdb ||
+      relation?.themoviedb || relation?.animePlanet || relation?.imdb ||
+      relation?.anidb || relation?.kitsu || relation?.livechart ||
+      relation?.anisearch,
+    );
+
+    return hasProviderPayload || hasCrossServiceIdentifiers;
+  }
+
   async resolve(param: SeriesQuery): Promise<MediaUnion> {
     this.logger.instance.info('Resolving aggregate data for series', {
       ...param,
     });
 
-    const relation = await this.resolveArm(param);
+    const [relation, aniListMedia] = await Promise.all([
+      this.resolveArm(param),
+      this.resolveAniList(param.anilist),
+    ]);
 
-    if (!relation) {
-      throw new Error('Series not found');
-    }
+    const malId = relation?.myanimelist ?? param.mal ?? aniListMedia?.idMal ??
+      null;
+    const aggregateRelation = relation ??
+      this.createFallbackRelation(param, malId);
 
-    // Fetch Notify and Jikan in parallel as they are independent
     const [notify, mal] = await Promise.all([
       this.resolveNotify(relation?.notify),
-      this.resolveJikan(relation?.myanimelist),
+      this.resolveJikan(malId, aniListMedia?.type),
     ]);
 
     let themes: Theme[] | undefined,
       skyhook: SkyhookShow | undefined,
       trakt: TraktShow | undefined,
       tmdb: TmdbShow | TmdbMovie | undefined;
-    if (isAnime(mal?.type)) {
+
+    const shouldResolveAnimeSources = isAnime(mal?.type) ||
+      aniListMedia?.type === 'ANIME';
+    if (shouldResolveAnimeSources) {
       [themes, skyhook] = await Promise.all([
-        this.resolveThemes(relation?.myanimelist),
-        this.resolveSkyhook(relation?.thetvdb),
+        this.resolveThemes(aggregateRelation?.myanimelist ?? null),
+        this.resolveSkyhook(aggregateRelation?.thetvdb),
       ]);
       [trakt] = await Promise.all([
-        this.resolveTrakt(relation?.animePlanet ?? skyhook?.slug),
+        this.resolveTrakt(aggregateRelation?.animePlanet ?? skyhook?.slug),
       ]);
 
       tmdb = await this.resolveTmdb(
         mal?.type === 'Movie' ? 'movie' : 'tv',
-        relation?.themoviedb ?? trakt?.ids.tmdb,
+        aggregateRelation?.themoviedb ?? trakt?.ids.tmdb,
       );
     }
 
+    if (
+      !this.hasAggregateData(
+        aggregateRelation,
+        notify,
+        mal,
+        themes,
+        skyhook,
+        tmdb,
+        trakt,
+      )
+    ) {
+      throw new SeriesNotFoundError();
+    }
+
     return seriesTransform(
-      relation,
+      aggregateRelation,
       skyhook,
       tmdb,
       themes,

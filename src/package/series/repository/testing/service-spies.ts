@@ -9,6 +9,11 @@ import type {
   JikanFetchOptions,
   JikanService,
 } from '@scope/service/jikan';
+import type {
+  AniListMedia,
+  AniListMediaType,
+  AniListService,
+} from '@scope/service/anilist';
 import type { ArmService, SeriesRelationId } from '@scope/service/arm';
 import type { TheXem, TheXemService } from '@scope/service/thexem';
 import { AnimeTheme, ThemeService } from '@scope/service/theme';
@@ -74,6 +79,22 @@ export function createJikanSpy(
 }
 
 /**
+ * Type-safe spy for AniListService.getMediaById
+ */
+export function createAniListSpy(
+  impl?: (
+    anilistId: number,
+    mediaType: AniListMediaType,
+  ) => Promise<AniListMedia | undefined>,
+): Spy<
+  AniListService,
+  [anilistId: number, mediaType: AniListMediaType],
+  Promise<AniListMedia | undefined>
+> {
+  return spy(impl ?? (async () => undefined));
+}
+
+/**
  * Type-safe spy for ArmService.getAniListRelationId
  */
 export function createArmAnilistSpy(
@@ -122,6 +143,7 @@ export function createServiceSpies() {
   const skyhookSpy = createSkyhookSpy();
   const notifySpy = createNotifySpy();
   const jikanSpy = createJikanSpy();
+  const anilistSpy = createAniListSpy();
   const armAnilistSpy = createArmAnilistSpy();
   const armTvdbSpy = createArmTvdbSpy();
   const thexemSpy = createTheXemSpy();
@@ -144,7 +166,14 @@ export function createServiceSpies() {
       jikan: {
         getAnime: jikanSpy,
       } as unknown as JikanService,
+      anilist: {
+        getMediaById: anilistSpy,
+      } as unknown as AniListService,
       arm: {
+        getRelationsById: async (
+          _source: 'anilist' | 'myanimelist',
+          id: number,
+        ) => await armAnilistSpy(id),
         getRelationsByTvdb: armTvdbSpy,
         getAniListRelationId: armAnilistSpy,
       } as unknown as ArmService,
@@ -161,6 +190,7 @@ export function createServiceSpies() {
       skyhook: skyhookSpy,
       notify: notifySpy,
       jikan: jikanSpy,
+      anilist: anilistSpy,
       armAnilist: armAnilistSpy,
       armTvdb: armTvdbSpy,
       thexem: thexemSpy,

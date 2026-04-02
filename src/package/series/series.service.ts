@@ -1,16 +1,21 @@
-import { Injectable, InternalServerErrorException } from '@danet/core';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@danet/core';
 import { BadRequestException } from '@danet/core';
 import { LoggerService } from '@scope/logger';
 import { SeriesRepository } from './repository/index.ts';
 import type { Series } from './series.types.ts';
 import type { SeriesQuery } from './series.types.ts';
+import { SeriesNotFoundError } from './series.errors.ts';
 
 @Injectable()
 export class SeriesService {
   constructor(
     private readonly repository: SeriesRepository,
     private readonly logger: LoggerService,
-  ) {}
+  ) { }
 
   /**
    * Aggregate series metadata from multiple sources
@@ -50,6 +55,11 @@ export class SeriesService {
         query,
         cause: error,
       });
+
+      if (error instanceof SeriesNotFoundError) {
+        throw new NotFoundException();
+      }
+
       throw new InternalServerErrorException();
     }
   }

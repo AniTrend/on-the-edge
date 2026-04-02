@@ -1,4 +1,5 @@
 import { Module } from '@danet/core';
+import { AniListModule } from './anilist/anilist.module.ts';
 import { ArmModule } from './arm/arm.module.ts';
 import { JikanModule } from './jikan/jikan.module.ts';
 import { OtakumodeModule } from './otakumode/otakumode.module.ts';
@@ -11,6 +12,7 @@ import { TraktModule } from './trakt/trakt.module.ts';
 
 @Module({
   imports: [
+    AniListModule,
     ArmModule,
     JikanModule,
     OtakumodeModule,
@@ -22,4 +24,4 @@ import { TraktModule } from './trakt/trakt.module.ts';
     TraktModule,
   ],
 })
-export class ServiceModule {}
+export class ServiceModule { }

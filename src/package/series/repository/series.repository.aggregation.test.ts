@@ -247,6 +247,7 @@ describe.skip('SeriesRepository aggregation', () => {
       mocks.services.notify,
       mocks.services.jikan,
       mocks.services.arm,
+      mocks.services.anilist,
       mocks.services.thexem,
       mocks.services.theme,
       logger,
