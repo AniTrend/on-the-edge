@@ -2,6 +2,7 @@ import { z } from 'zod';
 import {
   AnimeEpisodeSchema,
   AnimeResourceSchema,
+  AnimeStaffEntrySchema,
   AnimeStatusSchema,
   AnimeTypeSchema,
   BroadcastDaySchema,
@@ -10,6 +11,8 @@ import {
   MangaStatusSchema,
   MangaTypeSchema,
   MediaSourceSchema,
+  PersonResourceSchema,
+  ProducerResourceSchema,
   SeasonSchema,
   TitleTypeSchema,
 } from './jikan.schema.ts';
@@ -17,6 +20,9 @@ import {
 export type AnimeResource = z.infer<typeof AnimeResourceSchema>;
 export type MangaResource = z.infer<typeof MangaResourceSchema>;
 export type AnimeEpisode = z.infer<typeof AnimeEpisodeSchema>;
+export type AnimeStaffEntry = z.infer<typeof AnimeStaffEntrySchema>;
+export type ProducerResource = z.infer<typeof ProducerResourceSchema>;
+export type PersonResource = z.infer<typeof PersonResourceSchema>;
 
 export type TitleType = z.infer<typeof TitleTypeSchema>;
 export type MalEntityType = z.infer<typeof MalEntityTypeSchema>;

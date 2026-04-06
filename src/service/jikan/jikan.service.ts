@@ -6,17 +6,31 @@ import { createClient, RequestClient } from '@anitrend/request-client';
 import {
   AnimeEpisodePageSchema,
   AnimeResourceResponseSchema,
+  AnimeStaffPageSchema,
   MangaResourceResponseSchema,
   MoreInfoResponseSchema,
+  PersonResourceResponseSchema,
+  PersonSearchResponseSchema,
+  ProducerResourceResponseSchema,
+  ProducerSearchResponseSchema,
 } from './jikan.schema.ts';
 import type {
   AnimeEpisode,
   AnimeResource,
+  AnimeStaffEntry,
   MangaResource,
+  PersonResource,
+  ProducerResource,
 } from './jikan.types.ts';
 import { animeTransform, mangaTransform } from './transformer/index.ts';
 import { DEFAULT_MAX_EPISODES } from './episode-utils.ts';
-import type { JikanAnime, JikanFetchOptions, JikanManga } from './types.ts';
+import type {
+  JikanAnime,
+  JikanFetchOptions,
+  JikanManga,
+  JikanPerson,
+  JikanProducer,
+} from './types.ts';
 import {
   requestInterceptor,
   responseInterceptor,
@@ -68,12 +82,27 @@ export class JikanService {
         truncated = (episodesList?.length ?? 0) >= limit;
       }
 
-      return animeTransform({
+      let staffList: AnimeStaffEntry[] | undefined;
+      if (options?.staff) {
+        staffList = await this.fetchAnimeStaff(malId).catch((error) => {
+          this.logger.instance.warn(
+            `Failed to fetch staff for anime id=${malId}`,
+            { cause: error },
+          );
+          return [];
+        });
+      }
+
+      const anime = animeTransform({
         ...resource,
         moreinfo,
         episodes_list: episodesList ?? [],
         episodes_truncated: truncated,
       });
+
+      return staffList !== undefined
+        ? { ...anime, staff_list: staffList }
+        : anime;
     } catch (error) {
       this.logger.instance.warn(
         'Unable to get jikan show from remote',
@@ -210,5 +239,97 @@ export class JikanService {
     }
 
     return episodes;
+  }
+
+  private async fetchAnimeStaff(id: number): Promise<AnimeStaffEntry[]> {
+    const { data } = await this.client.get(`/v4/anime/${id}/staff`);
+    const parsed = AnimeStaffPageSchema.parse(data ?? {});
+    return parsed.data ?? [];
+  }
+
+  private async fetchProducer(id: number): Promise<ProducerResource> {
+    const { data } = await this.client.get(`/v4/producers/${id}`);
+    const parsed = ProducerResourceResponseSchema.parse(data ?? {});
+    return parsed.data;
+  }
+
+  private async searchProducers(
+    query: string,
+    limit = 5,
+  ): Promise<ProducerResource[]> {
+    const { data } = await this.client.get('/v4/producers', {
+      params: { q: query, limit },
+    });
+    const parsed = ProducerSearchResponseSchema.parse(data ?? {});
+    return parsed.data ?? [];
+  }
+
+  private async fetchPerson(id: number): Promise<PersonResource> {
+    const { data } = await this.client.get(`/v4/people/${id}`);
+    const parsed = PersonResourceResponseSchema.parse(data ?? {});
+    return parsed.data;
+  }
+
+  private async searchPeople(
+    query: string,
+    limit = 5,
+  ): Promise<PersonResource[]> {
+    const { data } = await this.client.get('/v4/people', {
+      params: { q: query, limit },
+    });
+    const parsed = PersonSearchResponseSchema.parse(data ?? {});
+    return parsed.data ?? [];
+  }
+
+  async getProducer(malId: number): Promise<JikanProducer | undefined> {
+    try {
+      return await this.fetchProducer(malId);
+    } catch (error) {
+      this.logger.instance.warn(
+        `Unable to get jikan producer id=${malId}`,
+        { cause: error },
+      );
+      return undefined;
+    }
+  }
+
+  async getProducerByKeyword(
+    query: string,
+  ): Promise<JikanProducer | undefined> {
+    try {
+      const results = await this.searchProducers(query);
+      return results[0];
+    } catch (error) {
+      this.logger.instance.warn(
+        `Unable to search jikan producers query="${query}"`,
+        { cause: error },
+      );
+      return undefined;
+    }
+  }
+
+  async getPerson(malId: number): Promise<JikanPerson | undefined> {
+    try {
+      return await this.fetchPerson(malId);
+    } catch (error) {
+      this.logger.instance.warn(
+        `Unable to get jikan person id=${malId}`,
+        { cause: error },
+      );
+      return undefined;
+    }
+  }
+
+  async getPersonByKeyword(query: string): Promise<JikanPerson | undefined> {
+    try {
+      const results = await this.searchPeople(query);
+      return results[0];
+    } catch (error) {
+      this.logger.instance.warn(
+        `Unable to search jikan people query="${query}"`,
+        { cause: error },
+      );
+      return undefined;
+    }
   }
 }

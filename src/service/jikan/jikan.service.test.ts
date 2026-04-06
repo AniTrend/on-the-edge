@@ -226,4 +226,243 @@ describe('JikanService', () => {
     assertEquals(result?.mal_id, 200);
     assertEquals(result?.moreinfo, 'Manga details');
   });
+
+  it('getProducer fetches producer by MAL id', async () => {
+    const producer = {
+      data: {
+        mal_id: 1,
+        url: 'https://mal.test/anime/producer/1',
+        titles: [{ type: 'Default', title: 'Toei Animation' }],
+        images: { jpg: { image_url: 'https://cdn.test/p1.jpg' } },
+        favorites: 1000,
+        established: '1948-01-23T00:00:00+00:00',
+        about: 'A major anime studio.',
+        count: 300,
+      },
+    };
+
+    mockFetch('https://mal.test/v4/producers/1', {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(producer),
+    });
+
+    const service = new JikanService(config, logger);
+    const result = await service.getProducer(1);
+
+    assertEquals(result?.mal_id, 1);
+    assertEquals(result?.titles[0].title, 'Toei Animation');
+    assertEquals(result?.count, 300);
+  });
+
+  it('getProducerByKeyword returns first match from search', async () => {
+    const searchResponse = {
+      pagination: { has_next_page: false, last_visible_page: 1 },
+      data: [
+        {
+          mal_id: 2,
+          url: 'https://mal.test/anime/producer/2',
+          titles: [{ type: 'Default', title: 'Kyoto Animation' }],
+          images: { jpg: { image_url: 'https://cdn.test/p2.jpg' } },
+          favorites: 5000,
+          established: '1981-01-01T00:00:00+00:00',
+          about: 'Known for high quality animation.',
+          count: 50,
+        },
+      ],
+    };
+
+    mockFetch('https://mal.test/v4/producers?q=KyotoAnimation&limit=5', {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(searchResponse),
+    });
+
+    const service = new JikanService(config, logger);
+    const result = await service.getProducerByKeyword('KyotoAnimation');
+
+    assertEquals(result?.mal_id, 2);
+    assertEquals(result?.titles[0].title, 'Kyoto Animation');
+  });
+
+  it('getPerson fetches person by MAL id', async () => {
+    const person = {
+      data: {
+        mal_id: 10,
+        url: 'https://mal.test/people/10',
+        website_url: null,
+        images: { jpg: { image_url: 'https://cdn.test/person10.jpg' } },
+        name: 'Hayao Miyazaki',
+        given_name: 'Hayao',
+        family_name: 'Miyazaki',
+        alternate_names: [],
+        birthday: '1941-01-05T00:00:00+00:00',
+        favorites: 20000,
+        about: 'Director and co-founder of Studio Ghibli.',
+      },
+    };
+
+    mockFetch('https://mal.test/v4/people/10', {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(person),
+    });
+
+    const service = new JikanService(config, logger);
+    const result = await service.getPerson(10);
+
+    assertEquals(result?.mal_id, 10);
+    assertEquals(result?.name, 'Hayao Miyazaki');
+    assertEquals(result?.given_name, 'Hayao');
+  });
+
+  it('getPersonByKeyword returns first match from search', async () => {
+    const searchResponse = {
+      pagination: { has_next_page: false, last_visible_page: 1 },
+      data: [
+        {
+          mal_id: 11,
+          url: 'https://mal.test/people/11',
+          website_url: null,
+          images: { jpg: { image_url: null } },
+          name: 'Isao Takahata',
+          given_name: 'Isao',
+          family_name: 'Takahata',
+          alternate_names: [],
+          birthday: '1935-10-29T00:00:00+00:00',
+          favorites: 8000,
+          about: 'Director and co-founder of Studio Ghibli.',
+        },
+      ],
+    };
+
+    mockFetch('https://mal.test/v4/people?q=IsaoTakahata&limit=5', {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(searchResponse),
+    });
+
+    const service = new JikanService(config, logger);
+    const result = await service.getPersonByKeyword('IsaoTakahata');
+
+    assertEquals(result?.mal_id, 11);
+    assertEquals(result?.name, 'Isao Takahata');
+  });
+
+  it('getAnime with staff:true includes staff_list', async () => {
+    const anime = {
+      data: {
+        mal_id: 300,
+        url: 'https://mal.test/anime/300',
+        approved: true,
+        images: {
+          jpg: {
+            image_url: null,
+            small_image_url: null,
+            large_image_url: null,
+          },
+          webp: {
+            image_url: null,
+            small_image_url: null,
+            large_image_url: null,
+          },
+        },
+        titles: [{ title: 'Test Anime', type: 'Default' }],
+        title: 'Test Anime',
+        title_english: null,
+        title_japanese: null,
+        title_synonyms: [],
+        type: 'TV',
+        score: 7,
+        scored_by: 1,
+        rank: 1,
+        popularity: 1,
+        members: 1,
+        favorites: 1,
+        synopsis: null,
+        background: null,
+        rating: null,
+        moreinfo: null,
+        trailer: null,
+        source: 'Original',
+        episodes: 1,
+        status: 'Finished Airing',
+        airing: false,
+        aired: {
+          from: '2020-04-01T00:00:00Z',
+          to: '2020-06-30T00:00:00Z',
+          prop: {
+            from: { day: 1, month: 4, year: 2020 },
+            to: { day: 30, month: 6, year: 2020 },
+            string: 'Apr 1, 2020 to Jun 30, 2020',
+          },
+        },
+        duration: '24m',
+        season: 'spring',
+        year: 2020,
+        broadcast: {
+          day: 'Wednesdays',
+          time: '00:00',
+          timezone: 'JST',
+          string: 'Wednesdays at 00:00 (JST)',
+        },
+        theme: { openings: [], endings: [] },
+        producers: [],
+        licensors: [],
+        studios: [],
+        genres: [],
+        explicit_genres: [],
+        themes: [],
+        demographics: [],
+        relations: [],
+        external: [],
+        streaming: [],
+        episodes_list: [],
+        episodes_truncated: false,
+        staff_list: [],
+      },
+    };
+
+    const staffResponse = {
+      data: [
+        {
+          person: {
+            mal_id: 5,
+            url: 'https://mal.test/people/5',
+            images: { jpg: { image_url: null } },
+            name: 'Some Director',
+          },
+          positions: ['Director'],
+        },
+      ],
+    };
+
+    const moreinfo = { data: { moreinfo: null } };
+
+    mockFetch('https://mal.test/v4/anime/300/full', {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(anime),
+    });
+
+    mockFetch('https://mal.test/v4/anime/300/moreinfo', {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(moreinfo),
+    });
+
+    mockFetch('https://mal.test/v4/anime/300/staff', {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(staffResponse),
+    });
+
+    const service = new JikanService(config, logger);
+    const result = await service.getAnime(300, { staff: true });
+
+    assertEquals(result?.mal_id, 300);
+    assertEquals(result?.staff_list?.length, 1);
+    assertEquals(result?.staff_list?.[0].person.name, 'Some Director');
+    assertEquals(result?.staff_list?.[0].positions, ['Director']);
+  });
 });

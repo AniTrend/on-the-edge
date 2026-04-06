@@ -176,6 +176,21 @@ const MalBroadcastSchema = z.object({
 
 const AnyRecordSchema = z.object({});
 
+// Staff entry for GET /v4/anime/{id}/staff (defined before AnimeResourceSchema for forward-reference use)
+export const AnimeStaffPersonSchema = z.object({
+  mal_id: z.number(),
+  url: z.string(),
+  images: z.object({
+    jpg: z.object({ image_url: z.string().nullish() }),
+  }),
+  name: z.string(),
+});
+
+export const AnimeStaffEntrySchema = z.object({
+  person: AnimeStaffPersonSchema,
+  positions: z.array(z.string()).nullish().default([]),
+});
+
 export const MalResourceBaseSchema = z.object({
   mal_id: z.number(),
   url: z.string(),
@@ -261,4 +276,70 @@ export const AnimeResourceResponseSchema = z.object({
 
 export const MangaResourceResponseSchema = z.object({
   data: MangaResourceSchema,
+});
+
+// Staff page response for GET /v4/anime/{id}/staff
+export const AnimeStaffPageSchema = z.object({
+  data: z.array(AnimeStaffEntrySchema).nullish().default([]),
+});
+
+// Producer/studio resource returned by GET /v4/producers/{id} and search
+export const ProducerResourceSchema = z.object({
+  mal_id: z.number(),
+  url: z.string(),
+  titles: z.array(TitleVariantSchema),
+  images: z.object({
+    jpg: z.object({ image_url: z.string().nullish() }),
+  }),
+  favorites: z.coerce.number().default(0),
+  established: z.string().nullish().transform((v) => v ? toInstant(v) : null),
+  about: z.string().nullish(),
+  count: z.coerce.number().default(0),
+});
+
+export const ProducerResourceResponseSchema = z.object({
+  data: ProducerResourceSchema,
+});
+
+export const ProducerSearchPaginationSchema = z.object({
+  has_next_page: z.boolean(),
+  last_visible_page: z.number(),
+});
+
+export const ProducerSearchResponseSchema = z.object({
+  pagination: ProducerSearchPaginationSchema,
+  data: z.array(ProducerResourceSchema).nullish().default([]),
+});
+
+// Person/staff resource returned by GET /v4/people/{id} and search
+export const PersonImagesSchema = z.object({
+  jpg: z.object({ image_url: z.string().nullish() }),
+});
+
+export const PersonResourceSchema = z.object({
+  mal_id: z.number(),
+  url: z.string(),
+  website_url: z.string().nullish(),
+  images: PersonImagesSchema,
+  name: z.string(),
+  given_name: z.string().nullish(),
+  family_name: z.string().nullish(),
+  alternate_names: z.array(z.string()).nullish().default([]),
+  birthday: z.string().nullish().transform((v) => v ? toInstant(v) : null),
+  favorites: z.coerce.number().default(0),
+  about: z.string().nullish(),
+});
+
+export const PersonResourceResponseSchema = z.object({
+  data: PersonResourceSchema,
+});
+
+export const PersonSearchPaginationSchema = z.object({
+  has_next_page: z.boolean(),
+  last_visible_page: z.number(),
+});
+
+export const PersonSearchResponseSchema = z.object({
+  pagination: PersonSearchPaginationSchema,
+  data: z.array(PersonResourceSchema).nullish().default([]),
 });

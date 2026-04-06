@@ -1,8 +1,11 @@
 import type {
   AnimeResource,
+  AnimeStaffEntry,
   AnimeType,
   MangaResource,
   MangaType,
+  PersonResource,
+  ProducerResource,
 } from './jikan.types.ts';
 
 /**
@@ -26,7 +29,9 @@ export interface JikanFetchOptions {
 /**
  * Jikan anime model enriched with optional moreinfo text aggregated from the `/anime/{id}/moreinfo` endpoint.
  */
-export type JikanAnime = AnimeResource;
+export type JikanAnime = AnimeResource & {
+  staff_list?: AnimeStaffEntry[];
+};
 
 /**
  * Jikan manga model enriched with optional moreinfo text aggregated from the `/manga/{id}/moreinfo` endpoint.
@@ -36,3 +41,13 @@ export type JikanManga = MangaResource;
 export type Jikan = JikanAnime | JikanManga;
 
 export type JikanType = AnimeType | MangaType;
+
+/**
+ * Jikan producer/studio model returned by `/v4/producers/{id}` and search endpoints.
+ */
+export type JikanProducer = ProducerResource;
+
+/**
+ * Jikan person/staff model returned by `/v4/people/{id}` and search endpoints.
+ */
+export type JikanPerson = PersonResource;
