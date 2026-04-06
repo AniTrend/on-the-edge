@@ -4,51 +4,51 @@ import { MongoService } from '@scope/database';
 import { MongoCollectionAdapter } from '@scope/database/collection';
 import type { Collection } from '@scope/database/collection';
 import type { WithId } from 'mongodb';
-import { StudioResolver } from './studio.resolver.ts';
-import { studioTransform } from '../transformer/index.ts';
-import type { StudioDocument } from '../studio.types.ts';
+import { CharacterResolver } from './character.resolver.ts';
+import { characterTransform } from '../transformer/index.ts';
+import type { CharacterDocument } from '../character.types.ts';
 
-const COLLECTION_NAME = 'studios';
+const COLLECTION_NAME = 'characters';
 
 function nowSeconds(): number {
   return Math.floor(Date.now() / 1000);
 }
 
 @Injectable()
-export class StudioRepository {
+export class CharacterRepository {
   constructor(
     private readonly mongo: MongoService,
     private readonly logger: LoggerService,
-    private readonly resolver: StudioResolver,
+    private readonly resolver: CharacterResolver,
   ) {}
 
-  private get collection(): Collection<StudioDocument> {
+  private get collection(): Collection<CharacterDocument> {
     return new MongoCollectionAdapter(
-      this.mongo.collection<StudioDocument>(COLLECTION_NAME),
+      this.mongo.collection<CharacterDocument>(COLLECTION_NAME),
     );
   }
 
   async invoke(
     malId: number,
     nameHint?: string,
-  ): Promise<WithId<StudioDocument> | null> {
+  ): Promise<WithId<CharacterDocument> | null> {
     const now = nowSeconds();
 
     const cached = await this.collection.findOne({ malId });
 
     if (cached && cached.expiresAt > now) {
-      this.logger.instance.debug('Studio cache hit', { malId });
+      this.logger.instance.debug('Character cache hit', { malId });
       return cached;
     }
 
-    const producer = await this.resolver.resolve(malId, nameHint);
+    const character = await this.resolver.resolve(malId, nameHint);
 
-    if (!producer) {
-      this.logger.instance.debug('Studio not resolved', { malId, nameHint });
+    if (!character) {
+      this.logger.instance.debug('Character not resolved', { malId, nameHint });
       return null;
     }
 
-    const document = studioTransform(producer);
+    const document = characterTransform(character);
 
     return await this.collection.findOneAndReplace(
       { malId },

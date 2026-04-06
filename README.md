@@ -67,6 +67,14 @@
 
 Tests are fully offline: use `@c4spar/mock-fetch`, in-memory cache/database adapters, and `FakeTime` for TTL-sensitive flows.
 
+## Enrichment endpoints
+
+The service exposes Jikan-backed enrichment routes for MAL entities. Each route accepts an optional `name` query parameter that is used as a keyword-search fallback when a direct MAL lookup misses.
+
+- `GET /v1/studios/:malId` returns cached studio metadata.
+- `GET /v1/people/:malId` returns cached staff or voice actor metadata.
+- `GET /v1/characters/:malId` returns cached fictional character metadata, including anime, manga, and voice actor relations.
+
 ## Project layout
 
 ```
@@ -81,7 +89,7 @@ src/
 	guard/               # Global header guard for API requests
 	logger/              # LoggerService + stream wiring
 	middleware/          # Logger, tracing, header, and GrowthBook middleware
-	package/             # Domain packages (config, news, series, episodes)
+	package/             # Domain packages (config, news, series, episodes, studio, people, character)
 	secret/              # Environment-backed secret service
 	service/             # External service clients (Trakt, TMDB, TheXem, etc.)
 	telemetry/           # OTEL SDK bootstrap and exporters

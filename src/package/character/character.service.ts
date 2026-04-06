@@ -1,27 +1,27 @@
 import { Injectable, NotFoundException } from '@danet/core';
 import { LoggerService } from '@scope/logger';
-import { StudioRepository } from './repository/index.ts';
-import type { StudioDocument } from './studio.types.ts';
+import { CharacterRepository } from './repository/index.ts';
+import type { CharacterDocument } from './character.types.ts';
 
 @Injectable()
-export class StudioService {
+export class CharacterService {
   constructor(
-    private readonly repository: StudioRepository,
+    private readonly repository: CharacterRepository,
     private readonly logger: LoggerService,
   ) {}
 
   async aggregate(
     malId: number,
     nameHint?: string,
-  ): Promise<StudioDocument> {
+  ): Promise<CharacterDocument> {
     const result = await this.repository.invoke(malId, nameHint);
 
     if (!result) {
-      this.logger.instance.warn('Studio not found', { malId, nameHint });
+      this.logger.instance.warn('Character not found', { malId, nameHint });
       throw new NotFoundException();
     }
 
     const { _id, ...document } = result;
-    return document as StudioDocument;
+    return document as CharacterDocument;
   }
 }

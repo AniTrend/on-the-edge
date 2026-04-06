@@ -7,6 +7,8 @@ import {
   AnimeEpisodePageSchema,
   AnimeResourceResponseSchema,
   AnimeStaffPageSchema,
+  CharacterResourceResponseSchema,
+  CharacterSearchResponseSchema,
   MangaResourceResponseSchema,
   MoreInfoResponseSchema,
   PersonResourceResponseSchema,
@@ -18,14 +20,20 @@ import type {
   AnimeEpisode,
   AnimeResource,
   AnimeStaffEntry,
+  CharacterResource,
   MangaResource,
   PersonResource,
   ProducerResource,
 } from './jikan.types.ts';
-import { animeTransform, mangaTransform } from './transformer/index.ts';
+import {
+  animeTransform,
+  characterTransform,
+  mangaTransform,
+} from './transformer/index.ts';
 import { DEFAULT_MAX_EPISODES } from './episode-utils.ts';
 import type {
   JikanAnime,
+  JikanCharacter,
   JikanFetchOptions,
   JikanManga,
   JikanPerson,
@@ -270,6 +278,18 @@ export class JikanService {
     return parsed.data;
   }
 
+  private async fetchCharacter(id: number): Promise<CharacterResource> {
+    const { data } = await this.client.get(`/v4/characters/${id}`);
+    const parsed = CharacterResourceResponseSchema.parse(data ?? {});
+    return parsed.data;
+  }
+
+  private async fetchCharacterFull(id: number): Promise<CharacterResource> {
+    const { data } = await this.client.get(`/v4/characters/${id}/full`);
+    const parsed = CharacterResourceResponseSchema.parse(data ?? {});
+    return parsed.data;
+  }
+
   private async searchPeople(
     query: string,
     limit = 5,
@@ -278,6 +298,17 @@ export class JikanService {
       params: { q: query, limit },
     });
     const parsed = PersonSearchResponseSchema.parse(data ?? {});
+    return parsed.data ?? [];
+  }
+
+  private async searchCharacters(
+    query: string,
+    limit = 5,
+  ): Promise<CharacterResource[]> {
+    const { data } = await this.client.get('/v4/characters', {
+      params: { q: query, limit },
+    });
+    const parsed = CharacterSearchResponseSchema.parse(data ?? {});
     return parsed.data ?? [];
   }
 
@@ -327,6 +358,42 @@ export class JikanService {
     } catch (error) {
       this.logger.instance.warn(
         `Unable to search jikan people query="${query}"`,
+        { cause: error },
+      );
+      return undefined;
+    }
+  }
+
+  async getCharacter(malId: number): Promise<JikanCharacter | undefined> {
+    try {
+      const resource = await this.fetchCharacterFull(malId).catch((error) => {
+        this.logger.instance.warn(
+          'Falling back to base character endpoint due to failure',
+          error,
+        );
+        return this.fetchCharacter(malId);
+      });
+
+      return characterTransform(resource);
+    } catch (error) {
+      this.logger.instance.warn(
+        `Unable to get jikan character id=${malId}`,
+        { cause: error },
+      );
+      return undefined;
+    }
+  }
+
+  async getCharacterByKeyword(
+    query: string,
+  ): Promise<JikanCharacter | undefined> {
+    try {
+      const results = await this.searchCharacters(query);
+      const [character] = results;
+      return character ? characterTransform(character) : undefined;
+    } catch (error) {
+      this.logger.instance.warn(
+        `Unable to search jikan characters query="${query}"`,
         { cause: error },
       );
       return undefined;

@@ -349,6 +349,145 @@ describe('JikanService', () => {
     assertEquals(result?.name, 'Isao Takahata');
   });
 
+  it('getCharacter fetches character by MAL id with relations', async () => {
+    const character = {
+      data: {
+        mal_id: 1,
+        url: 'https://mal.test/character/1',
+        images: {
+          jpg: {
+            image_url: 'https://cdn.test/character1.jpg',
+            small_image_url: null,
+            large_image_url: null,
+          },
+          webp: {
+            image_url: 'https://cdn.test/character1.webp',
+            small_image_url: 'https://cdn.test/character1t.webp',
+            large_image_url: null,
+          },
+        },
+        name: 'Spike Spiegel',
+        name_kanji: 'スパイク・スピーゲル',
+        nicknames: ['Spike'],
+        favorites: 48836,
+        about: 'Bounty hunter aboard the Bebop.',
+        anime: [
+          {
+            role: 'Main',
+            anime: {
+              mal_id: 1,
+              url: 'https://mal.test/anime/1',
+              images: {
+                jpg: {
+                  image_url: 'https://cdn.test/anime1.jpg',
+                  small_image_url: null,
+                  large_image_url: null,
+                },
+                webp: {
+                  image_url: 'https://cdn.test/anime1.webp',
+                  small_image_url: null,
+                  large_image_url: null,
+                },
+              },
+              title: 'Cowboy Bebop',
+            },
+          },
+        ],
+        manga: [
+          {
+            role: 'Main',
+            manga: {
+              mal_id: 173,
+              url: 'https://mal.test/manga/173',
+              images: {
+                jpg: {
+                  image_url: 'https://cdn.test/manga173.jpg',
+                  small_image_url: null,
+                  large_image_url: null,
+                },
+                webp: {
+                  image_url: 'https://cdn.test/manga173.webp',
+                  small_image_url: null,
+                  large_image_url: null,
+                },
+              },
+              title: 'Cowboy Bebop',
+            },
+          },
+        ],
+        voices: [
+          {
+            person: {
+              mal_id: 11,
+              url: 'https://mal.test/people/11',
+              images: {
+                jpg: { image_url: 'https://cdn.test/person11.jpg' },
+              },
+              name: 'Yamadera, Kouichi',
+            },
+            language: 'Japanese',
+          },
+        ],
+      },
+    };
+
+    mockFetch('https://mal.test/v4/characters/1/full', {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(character),
+    });
+
+    const service = new JikanService(config, logger);
+    const result = await service.getCharacter(1);
+
+    assertEquals(result?.mal_id, 1);
+    assertEquals(result?.name, 'Spike Spiegel');
+    assertEquals(result?.anime.length, 1);
+    assertEquals(result?.voices[0].language, 'Japanese');
+  });
+
+  it('getCharacterByKeyword returns first match from search', async () => {
+    const searchResponse = {
+      pagination: { has_next_page: false, last_visible_page: 1 },
+      data: [
+        {
+          mal_id: 2,
+          url: 'https://mal.test/character/2',
+          images: {
+            jpg: {
+              image_url: 'https://cdn.test/character2.jpg',
+              small_image_url: null,
+              large_image_url: null,
+            },
+            webp: {
+              image_url: 'https://cdn.test/character2.webp',
+              small_image_url: null,
+              large_image_url: null,
+            },
+          },
+          name: 'Faye Valentine',
+          name_kanji: null,
+          nicknames: [],
+          favorites: 32000,
+          about: 'A bounty hunter with a mysterious past.',
+        },
+      ],
+    };
+
+    mockFetch('https://mal.test/v4/characters?q=FayeValentine&limit=5', {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(searchResponse),
+    });
+
+    const service = new JikanService(config, logger);
+    const result = await service.getCharacterByKeyword('FayeValentine');
+
+    assertEquals(result?.mal_id, 2);
+    assertEquals(result?.name, 'Faye Valentine');
+    assertEquals(result?.anime.length, 0);
+  });
+
   it('getAnime with staff:true includes staff_list', async () => {
     const anime = {
       data: {

@@ -11,7 +11,7 @@ export class StudioController {
   constructor(
     private readonly service: StudioService,
     private readonly logger: LoggerService,
-  ) { }
+  ) {}
 
   @Get('studios/:malId')
   @ReturnedSchema(StudioSwagger)

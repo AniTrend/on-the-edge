@@ -11,7 +11,7 @@ export class PeopleController {
   constructor(
     private readonly service: PeopleService,
     private readonly logger: LoggerService,
-  ) { }
+  ) {}
 
   @Get('people/:malId')
   @ReturnedSchema(PeopleSwagger)

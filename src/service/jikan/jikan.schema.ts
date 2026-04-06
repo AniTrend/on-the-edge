@@ -316,6 +316,46 @@ export const PersonImagesSchema = z.object({
   jpg: z.object({ image_url: z.string().nullish() }),
 });
 
+const CharacterImageVariantSchema = z.object({
+  image_url: z.string().nullish().default(null),
+  small_image_url: z.string().nullish().default(null),
+  large_image_url: z.string().nullish().default(null),
+});
+
+export const CharacterImagesSchema = z.object({
+  jpg: CharacterImageVariantSchema,
+  webp: CharacterImageVariantSchema,
+});
+
+const CharacterMediaPreviewSchema = z.object({
+  mal_id: z.number(),
+  url: z.string(),
+  images: CharacterImagesSchema,
+  title: z.string(),
+});
+
+const CharacterVoicePersonSchema = z.object({
+  mal_id: z.number(),
+  url: z.string(),
+  images: PersonImagesSchema,
+  name: z.string(),
+});
+
+export const CharacterAnimeRelationSchema = z.object({
+  role: z.string().nullish(),
+  anime: CharacterMediaPreviewSchema,
+});
+
+export const CharacterMangaRelationSchema = z.object({
+  role: z.string().nullish(),
+  manga: CharacterMediaPreviewSchema,
+});
+
+export const CharacterVoiceSchema = z.object({
+  person: CharacterVoicePersonSchema,
+  language: z.string().nullish(),
+});
+
 export const PersonResourceSchema = z.object({
   mal_id: z.number(),
   url: z.string(),
@@ -342,4 +382,33 @@ export const PersonSearchPaginationSchema = z.object({
 export const PersonSearchResponseSchema = z.object({
   pagination: PersonSearchPaginationSchema,
   data: z.array(PersonResourceSchema).nullish().default([]),
+});
+
+// Character resource returned by GET /v4/characters/{id}/full and search
+export const CharacterResourceSchema = z.object({
+  mal_id: z.number(),
+  url: z.string(),
+  images: CharacterImagesSchema,
+  name: z.string(),
+  name_kanji: z.string().nullish(),
+  nicknames: z.array(z.string()).nullish().default([]),
+  favorites: z.coerce.number().default(0),
+  about: z.string().nullish(),
+  anime: z.array(CharacterAnimeRelationSchema).nullish().default([]),
+  manga: z.array(CharacterMangaRelationSchema).nullish().default([]),
+  voices: z.array(CharacterVoiceSchema).nullish().default([]),
+});
+
+export const CharacterResourceResponseSchema = z.object({
+  data: CharacterResourceSchema,
+});
+
+export const CharacterSearchPaginationSchema = z.object({
+  has_next_page: z.boolean(),
+  last_visible_page: z.number(),
+});
+
+export const CharacterSearchResponseSchema = z.object({
+  pagination: CharacterSearchPaginationSchema,
+  data: z.array(CharacterResourceSchema).nullish().default([]),
 });

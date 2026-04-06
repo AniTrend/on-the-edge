@@ -1,11 +1,13 @@
 import type {
   AnimeResource,
+  CharacterResource,
   MangaResource,
   PersonResource,
   ProducerResource,
 } from '../jikan.types.ts';
 import {
   JikanAnime,
+  JikanCharacter,
   JikanManga,
   JikanPerson,
   JikanProducer,
@@ -37,3 +39,10 @@ export const personTransform: Transform<PersonResource, JikanPerson> = (
 ): JikanPerson => ({
   ...sourceData,
 });
+
+export const characterTransform: Transform<CharacterResource, JikanCharacter> =
+  (
+    sourceData,
+  ): JikanCharacter => ({
+    ...sourceData,
+  });

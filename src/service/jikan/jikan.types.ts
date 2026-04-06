@@ -6,6 +6,7 @@ import {
   AnimeStatusSchema,
   AnimeTypeSchema,
   BroadcastDaySchema,
+  CharacterResourceSchema,
   MalEntityTypeSchema,
   MangaResourceSchema,
   MangaStatusSchema,
@@ -23,6 +24,7 @@ export type AnimeEpisode = z.infer<typeof AnimeEpisodeSchema>;
 export type AnimeStaffEntry = z.infer<typeof AnimeStaffEntrySchema>;
 export type ProducerResource = z.infer<typeof ProducerResourceSchema>;
 export type PersonResource = z.infer<typeof PersonResourceSchema>;
+export type CharacterResource = z.infer<typeof CharacterResourceSchema>;
 
 export type TitleType = z.infer<typeof TitleTypeSchema>;
 export type MalEntityType = z.infer<typeof MalEntityTypeSchema>;

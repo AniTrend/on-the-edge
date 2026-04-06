@@ -8,7 +8,7 @@ export class PeopleService {
   constructor(
     private readonly repository: PeopleRepository,
     private readonly logger: LoggerService,
-  ) { }
+  ) {}
 
   async aggregate(
     malId: number,

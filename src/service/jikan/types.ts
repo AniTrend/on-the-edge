@@ -2,6 +2,7 @@ import type {
   AnimeResource,
   AnimeStaffEntry,
   AnimeType,
+  CharacterResource,
   MangaResource,
   MangaType,
   PersonResource,
@@ -51,3 +52,8 @@ export type JikanProducer = ProducerResource;
  * Jikan person/staff model returned by `/v4/people/{id}` and search endpoints.
  */
 export type JikanPerson = PersonResource;
+
+/**
+ * Jikan fictional character model returned by `/v4/characters/{id}` and search endpoints.
+ */
+export type JikanCharacter = CharacterResource;

@@ -5,6 +5,7 @@ import { EpisodeModule } from './episodes/index.ts';
 import { SeriesModule } from './series/index.ts';
 import { StudioModule } from './studio/index.ts';
 import { PeopleModule } from './people/index.ts';
+import { CharacterModule } from './character/index.ts';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { PeopleModule } from './people/index.ts';
     SeriesModule,
     StudioModule,
     PeopleModule,
+    CharacterModule,
   ],
 })
 export class PackageModule {}

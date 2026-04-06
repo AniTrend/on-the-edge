@@ -20,7 +20,7 @@ export class PeopleRepository {
     private readonly mongo: MongoService,
     private readonly logger: LoggerService,
     private readonly resolver: PeopleResolver,
-  ) { }
+  ) {}
 
   private get collection(): Collection<PeopleDocument> {
     return new MongoCollectionAdapter(
