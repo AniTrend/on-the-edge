@@ -11,14 +11,14 @@ export class StudioController {
   constructor(
     private readonly service: StudioService,
     private readonly logger: LoggerService,
-  ) {}
+  ) { }
 
-  @Get('studios/:anilistId')
+  @Get('studios/:malId')
   @ReturnedSchema(StudioSwagger)
   async studio(
-    @Param('anilistId') anilistId: string,
+    @Param('malId') malId: string,
     @Query(StudioQuerySchema) query: { name?: string },
   ): Promise<StudioDocument> {
-    return await this.service.aggregate(Number(anilistId), query.name);
+    return await this.service.aggregate(Number(malId), query.name);
   }
 }

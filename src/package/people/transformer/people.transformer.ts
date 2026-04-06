@@ -8,15 +8,11 @@ function nowSeconds(): number {
   return Math.floor(Date.now() / 1000);
 }
 
-export function peopleTransform(
-  anilistId: number,
-  person: JikanPerson,
-): PeopleDocument {
+export function peopleTransform(person: JikanPerson): PeopleDocument {
   const now = nowSeconds();
   const expiresAt = now + PEOPLE_TTL_DAYS * SECONDS_PER_DAY;
 
   return {
-    anilistId,
     malId: person.mal_id,
     name: person.name,
     givenName: person.given_name ?? null,

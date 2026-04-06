@@ -7,17 +7,12 @@ const emptyToUndefined = (value: unknown) => {
   return value;
 };
 
-export const StudioParamsSchema = z.object({
-  anilistId: z.coerce.number().int().positive(),
-});
-
 export const StudioQuerySchema = z.object({
   name: z.preprocess(emptyToUndefined, z.string().trim().min(1).optional()),
 });
 
 export const StudioDocumentSchema = z.object({
-  anilistId: z.number().int().positive(),
-  malId: z.number().int().positive().nullish(),
+  malId: z.number().int().positive(),
   titles: z.array(
     z.object({
       type: z.string().nullish(),

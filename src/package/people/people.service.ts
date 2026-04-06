@@ -8,16 +8,16 @@ export class PeopleService {
   constructor(
     private readonly repository: PeopleRepository,
     private readonly logger: LoggerService,
-  ) {}
+  ) { }
 
   async aggregate(
-    anilistId: number,
+    malId: number,
     nameHint?: string,
   ): Promise<PeopleDocument> {
-    const result = await this.repository.invoke(anilistId, nameHint);
+    const result = await this.repository.invoke(malId, nameHint);
 
     if (!result) {
-      this.logger.instance.warn('Person not found', { anilistId, nameHint });
+      this.logger.instance.warn('Person not found', { malId, nameHint });
       throw new NotFoundException();
     }
 

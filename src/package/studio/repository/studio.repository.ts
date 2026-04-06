@@ -20,7 +20,7 @@ export class StudioRepository {
     private readonly mongo: MongoService,
     private readonly logger: LoggerService,
     private readonly resolver: StudioResolver,
-  ) {}
+  ) { }
 
   private get collection(): Collection<StudioDocument> {
     return new MongoCollectionAdapter(
@@ -29,34 +29,29 @@ export class StudioRepository {
   }
 
   async invoke(
-    anilistId: number,
+    malId: number,
     nameHint?: string,
   ): Promise<WithId<StudioDocument> | null> {
     const now = nowSeconds();
 
-    const cached = await this.collection.findOne({ anilistId });
+    const cached = await this.collection.findOne({ malId });
 
     if (cached && cached.expiresAt > now) {
-      this.logger.instance.debug('Studio cache hit', { anilistId });
+      this.logger.instance.debug('Studio cache hit', { malId });
       return cached;
     }
 
-    const knownMalId = cached?.malId ?? null;
-
-    const producer = await this.resolver.resolve(knownMalId, nameHint);
+    const producer = await this.resolver.resolve(malId, nameHint);
 
     if (!producer) {
-      this.logger.instance.debug('Studio not resolved', {
-        anilistId,
-        nameHint,
-      });
+      this.logger.instance.debug('Studio not resolved', { malId, nameHint });
       return null;
     }
 
-    const document = studioTransform(anilistId, producer);
+    const document = studioTransform(producer);
 
     return await this.collection.findOneAndReplace(
-      { anilistId },
+      { malId },
       document,
       { upsert: true },
     );

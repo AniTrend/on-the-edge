@@ -14,7 +14,6 @@ function makeStudioDocument(
 ): StudioDocument {
   const now = nowSeconds();
   return {
-    anilistId: 42,
     malId: 1,
     titles: [{ type: 'Default', title: 'Toei Animation' }],
     name: 'Toei Animation',
@@ -39,7 +38,7 @@ describe('StudioService', () => {
     const service = new StudioService(repository, logger);
 
     await assertRejects(
-      () => service.aggregate(42),
+      () => service.aggregate(1),
       NotFoundException,
     );
   });
@@ -54,11 +53,10 @@ describe('StudioService', () => {
     } as unknown as StudioRepository;
 
     const service = new StudioService(repository, logger);
-    const result = await service.aggregate(42);
+    const result = await service.aggregate(1);
 
-    assertEquals(result.anilistId, 42);
-    assertEquals(result.name, 'Toei Animation');
     assertEquals(result.malId, 1);
+    assertEquals(result.name, 'Toei Animation');
   });
 
   it('passes nameHint to repository when provided', async () => {
@@ -72,12 +70,64 @@ describe('StudioService', () => {
     } as unknown as StudioRepository;
 
     const service = new StudioService(repository, logger);
-    await service.aggregate(42, 'Toei Animation');
+    await service.aggregate(1, 'Toei Animation');
 
     assertEquals(invokeSpy.calls.length, 1);
     assertEquals(
       (invokeSpy.calls[0] as { args: unknown[] }).args,
-      [42, 'Toei Animation'],
+      [1, 'Toei Animation'],
+    );
+  });
+});
+
+describe('StudioService', () => {
+  it('throws NotFoundException when repository returns null', async () => {
+    const { logger } = createMockLogger();
+    const repository = {
+      invoke: spy(async () => null),
+    } as unknown as StudioRepository;
+
+    const service = new StudioService(repository, logger);
+
+    await assertRejects(
+      () => service.aggregate(1),
+      NotFoundException,
+    );
+  });
+
+  it('returns studio document when resolved', async () => {
+    const { logger } = createMockLogger();
+    const { ObjectId } = await import('mongodb');
+    const doc = { _id: new ObjectId(), ...makeStudioDocument() };
+
+    const repository = {
+      invoke: spy(async () => doc),
+    } as unknown as StudioRepository;
+
+    const service = new StudioService(repository, logger);
+    const result = await service.aggregate(1);
+
+    assertEquals(result.malId, 1);
+    assertEquals(result.name, 'Toei Animation');
+  });
+
+  it('passes nameHint to repository when provided', async () => {
+    const { logger } = createMockLogger();
+    const { ObjectId } = await import('mongodb');
+    const doc = { _id: new ObjectId(), ...makeStudioDocument() };
+
+    const invokeSpy = spy(async () => doc);
+    const repository = {
+      invoke: invokeSpy,
+    } as unknown as StudioRepository;
+
+    const service = new StudioService(repository, logger);
+    await service.aggregate(1, 'Toei Animation');
+
+    assertEquals(invokeSpy.calls.length, 1);
+    assertEquals(
+      (invokeSpy.calls[0] as { args: unknown[] }).args,
+      [1, 'Toei Animation'],
     );
   });
 });

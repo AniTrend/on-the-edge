@@ -7,17 +7,12 @@ const emptyToUndefined = (value: unknown) => {
   return value;
 };
 
-export const PeopleParamsSchema = z.object({
-  anilistId: z.coerce.number().int().positive(),
-});
-
 export const PeopleQuerySchema = z.object({
   name: z.preprocess(emptyToUndefined, z.string().trim().min(1).optional()),
 });
 
 export const PeopleDocumentSchema = z.object({
-  anilistId: z.number().int().positive(),
-  malId: z.number().int().positive().nullish(),
+  malId: z.number().int().positive(),
   name: z.string(),
   givenName: z.string().nullish(),
   familyName: z.string().nullish(),

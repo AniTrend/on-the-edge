@@ -11,14 +11,14 @@ export class PeopleController {
   constructor(
     private readonly service: PeopleService,
     private readonly logger: LoggerService,
-  ) {}
+  ) { }
 
-  @Get('people/:anilistId')
+  @Get('people/:malId')
   @ReturnedSchema(PeopleSwagger)
   async person(
-    @Param('anilistId') anilistId: string,
+    @Param('malId') malId: string,
     @Query(PeopleQuerySchema) query: { name?: string },
   ): Promise<PeopleDocument> {
-    return await this.service.aggregate(Number(anilistId), query.name);
+    return await this.service.aggregate(Number(malId), query.name);
   }
 }

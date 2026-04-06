@@ -8,10 +8,7 @@ function nowSeconds(): number {
   return Math.floor(Date.now() / 1000);
 }
 
-export function studioTransform(
-  anilistId: number,
-  producer: JikanProducer,
-): StudioDocument {
+export function studioTransform(producer: JikanProducer): StudioDocument {
   const now = nowSeconds();
   const expiresAt = now + STUDIO_TTL_DAYS * SECONDS_PER_DAY;
 
@@ -21,7 +18,6 @@ export function studioTransform(
     'Unknown';
 
   return {
-    anilistId,
     malId: producer.mal_id,
     titles: producer.titles.map((t) => ({ type: t.type, title: t.title })),
     name: defaultTitle,

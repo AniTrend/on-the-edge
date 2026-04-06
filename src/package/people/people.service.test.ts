@@ -14,7 +14,6 @@ function makePeopleDocument(
 ): PeopleDocument {
   const now = nowSeconds();
   return {
-    anilistId: 99,
     malId: 10,
     name: 'Hayao Miyazaki',
     givenName: 'Hayao',
@@ -41,7 +40,7 @@ describe('PeopleService', () => {
     const service = new PeopleService(repository, logger);
 
     await assertRejects(
-      () => service.aggregate(99),
+      () => service.aggregate(10),
       NotFoundException,
     );
   });
@@ -56,11 +55,10 @@ describe('PeopleService', () => {
     } as unknown as PeopleRepository;
 
     const service = new PeopleService(repository, logger);
-    const result = await service.aggregate(99);
+    const result = await service.aggregate(10);
 
-    assertEquals(result.anilistId, 99);
-    assertEquals(result.name, 'Hayao Miyazaki');
     assertEquals(result.malId, 10);
+    assertEquals(result.name, 'Hayao Miyazaki');
   });
 
   it('passes nameHint to repository when provided', async () => {
@@ -74,12 +72,12 @@ describe('PeopleService', () => {
     } as unknown as PeopleRepository;
 
     const service = new PeopleService(repository, logger);
-    await service.aggregate(99, 'Hayao Miyazaki');
+    await service.aggregate(10, 'Hayao Miyazaki');
 
     assertEquals(invokeSpy.calls.length, 1);
     assertEquals(
       (invokeSpy.calls[0] as { args: unknown[] }).args,
-      [99, 'Hayao Miyazaki'],
+      [10, 'Hayao Miyazaki'],
     );
   });
 });

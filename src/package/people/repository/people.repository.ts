@@ -20,7 +20,7 @@ export class PeopleRepository {
     private readonly mongo: MongoService,
     private readonly logger: LoggerService,
     private readonly resolver: PeopleResolver,
-  ) {}
+  ) { }
 
   private get collection(): Collection<PeopleDocument> {
     return new MongoCollectionAdapter(
@@ -29,34 +29,29 @@ export class PeopleRepository {
   }
 
   async invoke(
-    anilistId: number,
+    malId: number,
     nameHint?: string,
   ): Promise<WithId<PeopleDocument> | null> {
     const now = nowSeconds();
 
-    const cached = await this.collection.findOne({ anilistId });
+    const cached = await this.collection.findOne({ malId });
 
     if (cached && cached.expiresAt > now) {
-      this.logger.instance.debug('People cache hit', { anilistId });
+      this.logger.instance.debug('People cache hit', { malId });
       return cached;
     }
 
-    const knownMalId = cached?.malId ?? null;
-
-    const person = await this.resolver.resolve(knownMalId, nameHint);
+    const person = await this.resolver.resolve(malId, nameHint);
 
     if (!person) {
-      this.logger.instance.debug('Person not resolved', {
-        anilistId,
-        nameHint,
-      });
+      this.logger.instance.debug('Person not resolved', { malId, nameHint });
       return null;
     }
 
-    const document = peopleTransform(anilistId, person);
+    const document = peopleTransform(person);
 
     return await this.collection.findOneAndReplace(
-      { anilistId },
+      { malId },
       document,
       { upsert: true },
     );
