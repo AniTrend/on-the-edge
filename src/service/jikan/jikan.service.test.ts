@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, it } from '@std/testing/bdd';
-import { assertEquals } from '@std/assert';
+import { assertEquals, assertExists } from '@std/assert';
 import { mockFetch, resetFetch } from '@c4spar/mock-fetch';
 import { JikanService } from '@scope/service/jikan';
 import { createMockLogger, createMockSecret } from '@scope/common/testing';
@@ -440,10 +440,11 @@ describe('JikanService', () => {
     const service = new JikanService(config, logger);
     const result = await service.getCharacter(1);
 
+    assertExists(result);
     assertEquals(result?.mal_id, 1);
     assertEquals(result?.name, 'Spike Spiegel');
-    assertEquals(result?.anime.length, 1);
-    assertEquals(result?.voices[0].language, 'Japanese');
+    assertEquals(result.anime?.length ?? 0, 1);
+    assertEquals(result.voices?.[0]?.language ?? null, 'Japanese');
   });
 
   it('getCharacterByKeyword returns first match from search', async () => {
@@ -483,9 +484,10 @@ describe('JikanService', () => {
     const service = new JikanService(config, logger);
     const result = await service.getCharacterByKeyword('FayeValentine');
 
+    assertExists(result);
     assertEquals(result?.mal_id, 2);
     assertEquals(result?.name, 'Faye Valentine');
-    assertEquals(result?.anime.length, 0);
+    assertEquals(result.anime?.length ?? 0, 0);
   });
 
   it('getAnime with staff:true includes staff_list', async () => {
