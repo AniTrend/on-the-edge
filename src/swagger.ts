@@ -32,6 +32,4 @@ try {
   }
 }
 
-if (exitCode !== 0) {
-  Deno.exit(exitCode);
-}
+Deno.exit(exitCode);

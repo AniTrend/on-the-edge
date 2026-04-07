@@ -3,8 +3,19 @@ import { ConfigModule } from './config/index.ts';
 import { NewsModule } from './news/index.ts';
 import { EpisodeModule } from './episodes/index.ts';
 import { SeriesModule } from './series/index.ts';
+import { StudioModule } from './studio/index.ts';
+import { PeopleModule } from './people/index.ts';
+import { CharacterModule } from './character/index.ts';
 
 @Module({
-  imports: [ConfigModule, NewsModule, EpisodeModule, SeriesModule],
+  imports: [
+    ConfigModule,
+    NewsModule,
+    EpisodeModule,
+    SeriesModule,
+    StudioModule,
+    PeopleModule,
+    CharacterModule,
+  ],
 })
 export class PackageModule {}
