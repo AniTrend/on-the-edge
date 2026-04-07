@@ -5,8 +5,12 @@ import { NewsDocument } from './news.document.ts';
 export const transform: Transform<OtakumodeFeed, NewsDocument[]> = (
   source,
 ): NewsDocument[] => {
-  return source?.map((item) => {
-    return {
+  return source?.flatMap((item) => {
+    if (!Number.isFinite(item.pubDate)) {
+      return [];
+    }
+
+    return [{
       id: item.guid,
       title: item.title,
       link: item.link,
@@ -19,6 +23,6 @@ export const transform: Transform<OtakumodeFeed, NewsDocument[]> = (
       publishedOn: item.pubDate,
       image: item['media:content']?.url,
       updatedAt: Date.now(),
-    };
+    }];
   }) || [];
 };

@@ -11,7 +11,7 @@ export const NewsSchema = z.object({
   genre: z.string().nullish(),
   area: z.string().nullish(),
   lang: z.string().nullish(),
-  publishedOn: z.number(),
+  publishedOn: z.number().finite(),
   image: z.string().url().nullish(),
 });
 
