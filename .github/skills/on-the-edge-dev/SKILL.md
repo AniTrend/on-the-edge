@@ -36,7 +36,7 @@ Load a reference when the task falls in that domain — do **not** load all at o
 
 1. **Understand the change scope** — locate affected module(s) in `src/`; check the matching `.github/instructions/*.instructions.md` for domain-specific rules.
 2. **Look up docs if uncertain** — use [./references/libraries.md](./references/libraries.md) before fetching web pages.
-3. **Implement** — follow layering: controller → service → repository → transformer. Inject all dependencies; no globals in business logic.
+3. **Implement** — follow layering: controller → service → repository → transformer. Inject all dependencies; no globals in business logic. Treat persisted documents as an external boundary and re-validate repository outputs against the public Zod schema before they reach controllers.
 4. **Write/update tests** — deterministic, offline; in-memory adapters and `@c4spar/mock-fetch` only.
 5. **Run local quality gates** (in order):
    ```
@@ -85,6 +85,9 @@ import { helper } from "./utils.ts";
 ```ts
 // Prefer nullish + default over optional
 field: z.string().nullish().default(null),
+
+// Use finite numbers for values that must survive JSON/OpenAPI/GraphQL serialization
+publishedOn: z.number().finite(),
 
 // Transform at the boundary
 rawField: z.string().transform((v) => v.trim()),

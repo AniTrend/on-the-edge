@@ -214,3 +214,4 @@ Import conventions and module boundaries
 - Run `deno fmt`, `deno lint`, and relevant `deno task test` locally before pushing.
 - Prefer extracting helpers and writing characterization tests before refactors. Default to interfaces + adapters for external systems.
 - Document new feature flags and secrets under `docs/` and update other related references to keep documentation and instructions up to date.
+- After completing a task, be sure to run the quality gates and report the results. If any gate fails, address the issues before proceeding to the next task.
