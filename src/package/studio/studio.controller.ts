@@ -1,10 +1,10 @@
-import { Controller, Get, Param } from '@danet/core';
+import { Controller, Get } from '@danet/core';
 import { Query, ReturnedSchema } from '@danet/zod';
 import { LoggerService } from '@scope/logger';
 import { StudioService } from './studio.service.ts';
 import { StudioQuerySchema } from './studio.schema.ts';
 import { StudioSwagger } from './studio.swagger.ts';
-import type { StudioDocument } from './studio.types.ts';
+import type { StudioDocument, StudioQuery } from './studio.types.ts';
 
 @Controller('v1')
 export class StudioController {
@@ -13,12 +13,11 @@ export class StudioController {
     private readonly logger: LoggerService,
   ) {}
 
-  @Get('studios/:malId')
+  @Get('studios')
   @ReturnedSchema(StudioSwagger)
   async studio(
-    @Param('malId') malId: string,
-    @Query(StudioQuerySchema) query: { name?: string },
+    @Query(StudioQuerySchema) query: StudioQuery,
   ): Promise<StudioDocument> {
-    return await this.service.aggregate(Number(malId), query.name);
+    return await this.service.aggregate(query);
   }
 }

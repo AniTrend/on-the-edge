@@ -29,16 +29,30 @@ export class CharacterRepository {
   }
 
   async invoke(
-    malId: number,
+    malId?: number,
     nameHint?: string,
   ): Promise<WithId<CharacterDocument> | null> {
     const now = nowSeconds();
 
-    const cached = await this.collection.findOne({ malId });
+    if (malId !== undefined) {
+      const cached = await this.collection.findOne({ malId });
 
-    if (cached && cached.expiresAt > now) {
-      this.logger.instance.debug('Character cache hit', { malId });
-      return cached;
+      if (cached && cached.expiresAt > now) {
+        this.logger.instance.debug('Character cache hit', { malId });
+        return cached;
+      }
+    }
+
+    if (malId === undefined && nameHint) {
+      const cached = await this.collection.findOne({ name: nameHint });
+
+      if (cached && cached.expiresAt > now) {
+        this.logger.instance.debug('Character cache hit by name', {
+          malId: cached.malId,
+          nameHint,
+        });
+        return cached;
+      }
     }
 
     const character = await this.resolver.resolve(malId, nameHint);
@@ -51,7 +65,7 @@ export class CharacterRepository {
     const document = characterTransform(character);
 
     return await this.collection.findOneAndReplace(
-      { malId },
+      { malId: document.malId },
       document,
       { upsert: true },
     );

@@ -1,7 +1,11 @@
-import { Injectable, NotFoundException } from '@danet/core';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@danet/core';
 import { LoggerService } from '@scope/logger';
 import { PeopleRepository } from './repository/index.ts';
-import type { PeopleDocument } from './people.types.ts';
+import type { PeopleDocument, PeopleQuery } from './people.types.ts';
 
 @Injectable()
 export class PeopleService {
@@ -10,14 +14,21 @@ export class PeopleService {
     private readonly logger: LoggerService,
   ) {}
 
-  async aggregate(
-    malId: number,
-    nameHint?: string,
-  ): Promise<PeopleDocument> {
-    const result = await this.repository.invoke(malId, nameHint);
+  async aggregate(query: PeopleQuery): Promise<PeopleDocument> {
+    const nameHint = query.name?.trim() || undefined;
+
+    if (query.malId === undefined && nameHint === undefined) {
+      this.logger.instance.warn('People query missing identifiers', { query });
+      throw new BadRequestException();
+    }
+
+    const result = await this.repository.invoke(query.malId, nameHint);
 
     if (!result) {
-      this.logger.instance.warn('Person not found', { malId, nameHint });
+      this.logger.instance.warn('Person not found', {
+        malId: query.malId,
+        nameHint,
+      });
       throw new NotFoundException();
     }
 

@@ -69,11 +69,15 @@ Tests are fully offline: use `@c4spar/mock-fetch`, in-memory cache/database adap
 
 ## Enrichment endpoints
 
-The service exposes Jikan-backed enrichment routes for MAL entities. Each route accepts an optional `name` query parameter that is used as a keyword-search fallback when a direct MAL lookup misses.
+The service exposes Jikan-backed enrichment routes for MAL entities. Each route accepts query parameters instead of a required path parameter.
 
-- `GET /v1/studios/:malId` returns cached studio metadata.
-- `GET /v1/people/:malId` returns cached staff or voice actor metadata.
-- `GET /v1/characters/:malId` returns cached fictional character metadata, including anime, manga, and voice actor relations.
+- `name` should be a non-empty string and is the preferred identifier when a MAL ID is unavailable.
+- `malId` is optional and, when provided, must be a positive integer.
+- At least one of `name` or `malId` is required.
+
+- `GET /v1/studios?name=&malId=` returns cached studio metadata.
+- `GET /v1/people?name=&malId=` returns cached staff or voice actor metadata.
+- `GET /v1/characters?name=&malId=` returns cached fictional character metadata, including anime, manga, and voice actor relations.
 
 ## Project layout
 

@@ -1,10 +1,10 @@
-import { Controller, Get, Param } from '@danet/core';
+import { Controller, Get } from '@danet/core';
 import { Query, ReturnedSchema } from '@danet/zod';
 import { LoggerService } from '@scope/logger';
 import { CharacterService } from './character.service.ts';
 import { CharacterQuerySchema } from './character.schema.ts';
 import { CharacterSwagger } from './character.swagger.ts';
-import type { CharacterDocument } from './character.types.ts';
+import type { CharacterDocument, CharacterQuery } from './character.types.ts';
 
 @Controller('v1')
 export class CharacterController {
@@ -13,12 +13,11 @@ export class CharacterController {
     private readonly logger: LoggerService,
   ) {}
 
-  @Get('characters/:malId')
+  @Get('characters')
   @ReturnedSchema(CharacterSwagger)
   async character(
-    @Param('malId') malId: string,
-    @Query(CharacterQuerySchema) query: { name?: string },
+    @Query(CharacterQuerySchema) query: CharacterQuery,
   ): Promise<CharacterDocument> {
-    return await this.service.aggregate(Number(malId), query.name);
+    return await this.service.aggregate(query);
   }
 }

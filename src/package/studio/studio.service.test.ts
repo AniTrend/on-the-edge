@@ -1,10 +1,11 @@
 import { describe, it } from '@std/testing/bdd';
-import { assertEquals, assertRejects } from '@std/assert';
+import { assertEquals, assertRejects, assertThrows } from '@std/assert';
 import { spy } from '@std/testing/mock';
-import { NotFoundException } from '@danet/core';
+import { BadRequestException, NotFoundException } from '@danet/core';
 import { StudioService } from './studio.service.ts';
 import { StudioRepository } from './repository/index.ts';
 import { createMockLogger } from '@scope/common/testing';
+import { StudioQuerySchema } from './studio.schema.ts';
 import type { StudioDocument } from './studio.types.ts';
 
 const nowSeconds = () => Math.floor(Date.now() / 1000);
@@ -29,6 +30,35 @@ function makeStudioDocument(
 }
 
 describe('StudioService', () => {
+  it('allows empty query objects at schema level', () => {
+    assertEquals(StudioQuerySchema.parse({}), {});
+  });
+
+  it('rejects non-positive MAL identifiers in query schema', () => {
+    assertThrows(
+      () => StudioQuerySchema.parse({ malId: '0', name: 'Toei Animation' }),
+      Error,
+    );
+  });
+
+  it('parses positive integer MAL identifiers in query schema', () => {
+    assertEquals(
+      StudioQuerySchema.parse({ malId: '1', name: 'Toei Animation' }),
+      { malId: 1, name: 'Toei Animation' },
+    );
+  });
+
+  it('throws BadRequestException when identifiers are missing', async () => {
+    const { logger } = createMockLogger();
+    const repository = {} as StudioRepository;
+    const service = new StudioService(repository, logger);
+
+    await assertRejects(
+      () => service.aggregate({}),
+      BadRequestException,
+    );
+  });
+
   it('throws NotFoundException when repository returns null', async () => {
     const { logger } = createMockLogger();
     const repository = {
@@ -38,7 +68,7 @@ describe('StudioService', () => {
     const service = new StudioService(repository, logger);
 
     await assertRejects(
-      () => service.aggregate(1),
+      () => service.aggregate({ malId: 1 }),
       NotFoundException,
     );
   });
@@ -53,13 +83,13 @@ describe('StudioService', () => {
     } as unknown as StudioRepository;
 
     const service = new StudioService(repository, logger);
-    const result = await service.aggregate(1);
+    const result = await service.aggregate({ malId: 1 });
 
     assertEquals(result.malId, 1);
     assertEquals(result.name, 'Toei Animation');
   });
 
-  it('passes nameHint to repository when provided', async () => {
+  it('passes name-only queries to repository when MAL id is unavailable', async () => {
     const { logger } = createMockLogger();
     const { ObjectId } = await import('mongodb');
     const doc = { _id: new ObjectId(), ...makeStudioDocument() };
@@ -70,48 +100,16 @@ describe('StudioService', () => {
     } as unknown as StudioRepository;
 
     const service = new StudioService(repository, logger);
-    await service.aggregate(1, 'Toei Animation');
+    await service.aggregate({ name: 'Toei Animation' });
 
     assertEquals(invokeSpy.calls.length, 1);
     assertEquals(
       (invokeSpy.calls[0] as { args: unknown[] }).args,
-      [1, 'Toei Animation'],
-    );
-  });
-});
-
-describe('StudioService', () => {
-  it('throws NotFoundException when repository returns null', async () => {
-    const { logger } = createMockLogger();
-    const repository = {
-      invoke: spy(async () => null),
-    } as unknown as StudioRepository;
-
-    const service = new StudioService(repository, logger);
-
-    await assertRejects(
-      () => service.aggregate(1),
-      NotFoundException,
+      [undefined, 'Toei Animation'],
     );
   });
 
-  it('returns studio document when resolved', async () => {
-    const { logger } = createMockLogger();
-    const { ObjectId } = await import('mongodb');
-    const doc = { _id: new ObjectId(), ...makeStudioDocument() };
-
-    const repository = {
-      invoke: spy(async () => doc),
-    } as unknown as StudioRepository;
-
-    const service = new StudioService(repository, logger);
-    const result = await service.aggregate(1);
-
-    assertEquals(result.malId, 1);
-    assertEquals(result.name, 'Toei Animation');
-  });
-
-  it('passes nameHint to repository when provided', async () => {
+  it('passes both identifiers to repository when provided', async () => {
     const { logger } = createMockLogger();
     const { ObjectId } = await import('mongodb');
     const doc = { _id: new ObjectId(), ...makeStudioDocument() };
@@ -122,7 +120,7 @@ describe('StudioService', () => {
     } as unknown as StudioRepository;
 
     const service = new StudioService(repository, logger);
-    await service.aggregate(1, 'Toei Animation');
+    await service.aggregate({ malId: 1, name: 'Toei Animation' });
 
     assertEquals(invokeSpy.calls.length, 1);
     assertEquals(

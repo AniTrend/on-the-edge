@@ -24,6 +24,10 @@ const CharacterVoiceRelationSchema = z.object({
 });
 
 export const CharacterQuerySchema = z.object({
+  malId: z.preprocess(
+    emptyToUndefined,
+    z.coerce.number().int().positive().finite().optional(),
+  ),
   name: z.preprocess(emptyToUndefined, z.string().trim().min(1).optional()),
 });
 

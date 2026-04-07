@@ -1,10 +1,10 @@
-import { Controller, Get, Param } from '@danet/core';
+import { Controller, Get } from '@danet/core';
 import { Query, ReturnedSchema } from '@danet/zod';
 import { LoggerService } from '@scope/logger';
 import { PeopleService } from './people.service.ts';
 import { PeopleQuerySchema } from './people.schema.ts';
 import { PeopleSwagger } from './people.swagger.ts';
-import type { PeopleDocument } from './people.types.ts';
+import type { PeopleDocument, PeopleQuery } from './people.types.ts';
 
 @Controller('v1')
 export class PeopleController {
@@ -13,12 +13,11 @@ export class PeopleController {
     private readonly logger: LoggerService,
   ) {}
 
-  @Get('people/:malId')
+  @Get('people')
   @ReturnedSchema(PeopleSwagger)
   async person(
-    @Param('malId') malId: string,
-    @Query(PeopleQuerySchema) query: { name?: string },
+    @Query(PeopleQuerySchema) query: PeopleQuery,
   ): Promise<PeopleDocument> {
-    return await this.service.aggregate(Number(malId), query.name);
+    return await this.service.aggregate(query);
   }
 }

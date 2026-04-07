@@ -29,16 +29,30 @@ export class PeopleRepository {
   }
 
   async invoke(
-    malId: number,
+    malId?: number,
     nameHint?: string,
   ): Promise<WithId<PeopleDocument> | null> {
     const now = nowSeconds();
 
-    const cached = await this.collection.findOne({ malId });
+    if (malId !== undefined) {
+      const cached = await this.collection.findOne({ malId });
 
-    if (cached && cached.expiresAt > now) {
-      this.logger.instance.debug('People cache hit', { malId });
-      return cached;
+      if (cached && cached.expiresAt > now) {
+        this.logger.instance.debug('People cache hit', { malId });
+        return cached;
+      }
+    }
+
+    if (malId === undefined && nameHint) {
+      const cached = await this.collection.findOne({ name: nameHint });
+
+      if (cached && cached.expiresAt > now) {
+        this.logger.instance.debug('People cache hit by name', {
+          malId: cached.malId,
+          nameHint,
+        });
+        return cached;
+      }
     }
 
     const person = await this.resolver.resolve(malId, nameHint);
@@ -51,7 +65,7 @@ export class PeopleRepository {
     const document = peopleTransform(person);
 
     return await this.collection.findOneAndReplace(
-      { malId },
+      { malId: document.malId },
       document,
       { upsert: true },
     );

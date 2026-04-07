@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { StudioDocumentSchema } from './studio.schema.ts';
+import { StudioDocumentSchema, StudioQuerySchema } from './studio.schema.ts';
 
 export type StudioDocument = z.infer<typeof StudioDocumentSchema>;
-export type StudioQuery = { anilistId: number; name?: string };
+export type StudioQuery = z.infer<typeof StudioQuerySchema>;

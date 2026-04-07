@@ -1,7 +1,11 @@
-import { Injectable, NotFoundException } from '@danet/core';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@danet/core';
 import { LoggerService } from '@scope/logger';
 import { StudioRepository } from './repository/index.ts';
-import type { StudioDocument } from './studio.types.ts';
+import type { StudioDocument, StudioQuery } from './studio.types.ts';
 
 @Injectable()
 export class StudioService {
@@ -10,14 +14,21 @@ export class StudioService {
     private readonly logger: LoggerService,
   ) {}
 
-  async aggregate(
-    malId: number,
-    nameHint?: string,
-  ): Promise<StudioDocument> {
-    const result = await this.repository.invoke(malId, nameHint);
+  async aggregate(query: StudioQuery): Promise<StudioDocument> {
+    const nameHint = query.name?.trim() || undefined;
+
+    if (query.malId === undefined && nameHint === undefined) {
+      this.logger.instance.warn('Studio query missing identifiers', { query });
+      throw new BadRequestException();
+    }
+
+    const result = await this.repository.invoke(query.malId, nameHint);
 
     if (!result) {
-      this.logger.instance.warn('Studio not found', { malId, nameHint });
+      this.logger.instance.warn('Studio not found', {
+        malId: query.malId,
+        nameHint,
+      });
       throw new NotFoundException();
     }
 
