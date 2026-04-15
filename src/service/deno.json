@@ -5,6 +5,7 @@
   "exports": {
     ".": "./index.ts",
     "./arm": "./arm/index.ts",
+    "./animethemes": "./animethemes/index.ts",
     "./jikan": "./jikan/index.ts",
     "./otakumode": "./otakumode/index.ts",
     "./notify": "./notify/index.ts",

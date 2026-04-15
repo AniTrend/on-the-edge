@@ -7,6 +7,7 @@ export type AppFeatures = {
   'platform-source'?: PlatformSource;
   'news-refactor-api': boolean;
   'enable-analytics': boolean;
+  'enable-animethemes-api'?: boolean;
   // Numeric threshold for fuzzy title alignment (0..1). If absent, fallback disabled
   'episode-align-title-sim'?: number;
   // Enable emitting diagnostics on episodes response

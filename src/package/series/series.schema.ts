@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { Format, Source, Status } from '@scope/service/notify';
-import { AnimeTheme } from '@scope/service/theme';
+import { AnimeThemeSchema } from '@scope/service/theme';
 import { JikanType } from '@scope/service/jikan';
 
 const emptyToUndefined = (value: unknown) => {
@@ -143,7 +143,7 @@ export const MangaMetadataSchema = z.object({
 });
 
 export const AnimeMetadataSchema = z.object({
-  themeSongs: z.array(z.custom<AnimeTheme>()),
+  themeSongs: z.array(AnimeThemeSchema),
   schedule: SeriesScheduleSchema.nullish(),
   trailers: z.array(SeriesTrailerSchema),
   networks: z.array(SeriesNetworkSchema),

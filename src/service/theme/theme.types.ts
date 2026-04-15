@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import {
+  AnimeThemeSchema,
   MirrorSchema,
   ThemeMetaSchema,
   ThemeModelSchema,
@@ -10,4 +11,5 @@ export type MirrorModel = z.infer<typeof MirrorSchema>;
 export type ThemeMetaModel = z.infer<typeof ThemeMetaSchema>;
 export type ThemeModel = z.infer<typeof ThemeModelSchema>;
 
-export type AnimeTheme = Theme;
+export type AnimeTheme = z.infer<typeof AnimeThemeSchema>;
+export type LegacyAnimeTheme = Theme;

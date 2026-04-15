@@ -21,3 +21,19 @@ export const ThemeModelSchema = z.object({
 });
 
 export const ThemeCollectionSchema = z.array(ThemeModelSchema);
+
+export const AnimeThemeMetaSchema = z.object({
+  type: z.enum(['OP', 'ED']),
+  number: z.number().finite(),
+  version: z.number().finite(),
+});
+
+export const AnimeThemeSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  video: z.string().url(),
+  audio: z.string().url().nullish().default(null),
+  meta: AnimeThemeMetaSchema,
+});
+
+export const AnimeThemeCollectionSchema = z.array(AnimeThemeSchema);
