@@ -22,6 +22,7 @@
     "jsr:@std/assert@^1.0.18": "1.0.18",
     "jsr:@std/assert@~0.225.2": "0.225.3",
     "jsr:@std/async@1": "1.1.1",
+    "jsr:@std/async@^1.1.0": "1.1.1",
     "jsr:@std/bytes@1": "1.0.6",
     "jsr:@std/bytes@^1.0.2-rc.3": "1.0.6",
     "jsr:@std/cli@^1.0.27": "1.0.27",
@@ -120,7 +121,7 @@
     "@db/redis@0.40.0": {
       "integrity": "98bef146ad2d1262c0a5388c32e9d62e83ada410c9cc49cee3868085037e930b",
       "dependencies": [
-        "jsr:@std/async",
+        "jsr:@std/async@1",
         "jsr:@std/bytes@1",
         "jsr:@std/collections@1",
         "jsr:@std/io",
@@ -249,6 +250,7 @@
       "integrity": "87bdc2700fa98249d48a17cd72413352d3d3680dcfbdb64947fd0982d6bbf681",
       "dependencies": [
         "jsr:@std/assert@^1.0.17",
+        "jsr:@std/async@^1.1.0",
         "jsr:@std/data-structures",
         "jsr:@std/fs",
         "jsr:@std/internal",
