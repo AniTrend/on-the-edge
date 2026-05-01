@@ -1,3 +1,13 @@
+/**
+ * Cache key format:
+ * - edge:{key}
+ * - edge:{key}:{subkey1}
+ * - edge:{key}:{subkey1}:{subkey2}
+ * - edge:{key}:{subkey1}:{subkey2}:{subkey3}
+ * - edge:{key}:{subkey1}:{subkey2}:{subkey3}:{subkey4}
+ *
+ * This structure allows for organized and hierarchical caching, where the main key is followed by optional subkeys to further categorize the cached data.
+ */
 export type CacheKey =
   | `edge:${string}`
   | `edge:${string}:${string}`
