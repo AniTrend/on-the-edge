@@ -2,9 +2,10 @@ import { Injectable, Logger, SCOPE } from '@danet/core';
 import { OnAppBootstrap, OnAppClose } from '@danet/core/hook';
 
 import { NodeSDK } from '@opentelemetry/sdk-node';
-import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
+import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
+import { MongoDBInstrumentation } from '@opentelemetry/instrumentation-mongodb';
 import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
 import { SecretService } from '@scope/secret';
 import { TelemetryFactory } from './telemetry.factory.ts';
@@ -41,18 +42,8 @@ export class TelemetryService implements OnAppBootstrap, OnAppClose {
       }),
       logRecordProcessors: [factory.batchLogProcessor],
       instrumentations: [
-        getNodeAutoInstrumentations({
-          // Enable auto-instrumentation for HTTP, MongoDB, etc.
-          '@opentelemetry/instrumentation-mongodb': {
-            enabled: true,
-          },
-          '@opentelemetry/instrumentation-http': {
-            enabled: true,
-          },
-          '@opentelemetry/instrumentation-fs': {
-            enabled: false, // Disable file system instrumentation for performance
-          },
-        }),
+        new HttpInstrumentation(),
+        new MongoDBInstrumentation(),
       ],
     });
   }
