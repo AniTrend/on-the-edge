@@ -83,9 +83,15 @@ export class TmdbService implements OnAppBootstrap {
   }
 
   async getShow(tmdb: number): Promise<TmdbShow | undefined> {
+    const cacheKey = `edge:tmdb:show:${tmdb}` as const;
     try {
+      const cached = await this.cache.get<TmdbShow>(cacheKey);
+      if (cached) return cached;
+
       const show = await this.fetchShow(tmdb);
-      return showTransformer(show, this.imageProvider) as TmdbShow;
+      const transformed = showTransformer(show, this.imageProvider) as TmdbShow;
+      await this.cache.set(cacheKey, transformed);
+      return transformed;
     } catch (error) {
       this.logger.instance.warn('Unable to get show from remote', error);
       return undefined;
@@ -93,9 +99,18 @@ export class TmdbService implements OnAppBootstrap {
   }
 
   async getMovie(tmdb: number): Promise<TmdbMovie | undefined> {
+    const cacheKey = `edge:tmdb:movie:${tmdb}` as const;
     try {
+      const cached = await this.cache.get<TmdbMovie>(cacheKey);
+      if (cached) return cached;
+
       const movie = await this.fetchMovie(tmdb);
-      return movieTransformer(movie, this.imageProvider) as TmdbMovie;
+      const transformed = movieTransformer(
+        movie,
+        this.imageProvider,
+      ) as TmdbMovie;
+      await this.cache.set(cacheKey, transformed);
+      return transformed;
     } catch (error) {
       this.logger.instance.warn('Unable to get movie from remote', error);
       return undefined;
@@ -111,9 +126,18 @@ export class TmdbService implements OnAppBootstrap {
       return undefined;
     }
 
+    const cacheKey = `edge:tmdb:season:${tmdb}:${seasonNumber}` as const;
     try {
+      const cached = await this.cache.get<TmdbSeason>(cacheKey);
+      if (cached) return cached;
+
       const season = await this.fetchSeason(tmdb, seasonNumber);
-      return seasonTransformer(season, this.imageProvider) as TmdbSeason;
+      const transformed = seasonTransformer(
+        season,
+        this.imageProvider,
+      ) as TmdbSeason;
+      await this.cache.set(cacheKey, transformed);
+      return transformed;
     } catch (error) {
       this.logger.instance.warn('Unable to get season from remote', error);
       return undefined;

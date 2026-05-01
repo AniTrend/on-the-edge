@@ -2,7 +2,11 @@ import { afterEach, beforeEach, describe, it } from '@std/testing/bdd';
 import { assertEquals } from '@std/assert';
 import { mockFetch, resetFetch } from '@c4spar/mock-fetch';
 import { TraktService } from '@scope/service/trakt';
-import { createMockLogger, createMockSecret } from '@scope/common/testing';
+import {
+  createMockCache,
+  createMockLogger,
+  createMockSecret,
+} from '@scope/common/testing';
 
 describe('TraktService', () => {
   const config = createMockSecret({
@@ -11,9 +15,11 @@ describe('TraktService', () => {
     CLIENT_REQUEST_TIMEOUT: '5000',
   }).service;
   const { logger } = createMockLogger();
+  const { service, cache } = createMockCache();
 
   beforeEach(() => {
     resetFetch();
+    cache.clear();
   });
 
   afterEach(() => {
@@ -60,8 +66,8 @@ describe('TraktService', () => {
       body: JSON.stringify(show),
     });
 
-    const service = new TraktService(config, logger);
-    const result = await service.getShow('sample-show');
+    const trakt = new TraktService(config, logger, service);
+    const result = await trakt.getShow('sample-show');
 
     assertEquals(result?.ids.slug, 'sample-show');
     assertEquals(result?.runtime, 24);
@@ -114,8 +120,8 @@ describe('TraktService', () => {
       },
     );
 
-    const service = new TraktService(config, logger);
-    const result = await service.getSeasons('sample-show', {
+    const trakt = new TraktService(config, logger, service);
+    const result = await trakt.getSeasons('sample-show', {
       extended: 'episodes',
     });
 
