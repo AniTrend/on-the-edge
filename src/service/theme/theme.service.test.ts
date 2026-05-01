@@ -3,6 +3,7 @@ import { assertEquals } from '@std/assert';
 import { assertSpyCalls, spy } from '@std/testing/mock';
 import { mockFetch, resetFetch } from '@c4spar/mock-fetch';
 import {
+  createMockCache,
   createMockExperiment,
   createMockLogger,
   createMockSecret,
@@ -14,8 +15,12 @@ const legacyLookupUrl = (malId: number) =>
   `https://themes.test/api/themes/${malId}`;
 
 describe('ThemeService', () => {
+  const mockCache = createMockCache();
+  const cache = mockCache.service;
+
   beforeEach(() => {
     resetFetch();
+    mockCache.cache.clear();
   });
 
   afterEach(() => {
@@ -75,8 +80,18 @@ describe('ThemeService', () => {
       getThemesForAnime,
     } as unknown as AnimeThemesService;
 
-    const service = new ThemeService(secret, logger, experiment, animeThemes);
+    const service = new ThemeService(
+      cache,
+      secret,
+      logger,
+      experiment,
+      animeThemes,
+    );
     const result = await service.getThemesForAnime(37521);
+
+    resetFetch();
+    const cachedResult = await service.getThemesForAnime(37521);
+    assertEquals(cachedResult, result);
 
     assertEquals(result, [
       {
@@ -120,10 +135,19 @@ describe('ThemeService', () => {
       getThemesForAnime,
     } as unknown as AnimeThemesService;
 
-    const service = new ThemeService(secret, logger, experiment, animeThemes);
+    const service = new ThemeService(
+      cache,
+      secret,
+      logger,
+      experiment,
+      animeThemes,
+    );
     const result = await service.getThemesForAnime(37521);
 
+    const cachedResult = await service.getThemesForAnime(37521);
+
     assertEquals(result, themes);
+    assertEquals(cachedResult, themes);
     assertSpyCalls(getThemesForAnime, 1);
     assertEquals(getThemesForAnime.calls[0]?.args, [37521]);
   });

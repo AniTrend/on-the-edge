@@ -1,5 +1,6 @@
-import { Injectable, SCOPE } from '@danet/core';
+import { Inject, Injectable, SCOPE } from '@danet/core';
 import { createClient, type RequestClient } from '@anitrend/request-client';
+import { type CacheService, TOKEN_CACHE_SERVICE } from '@scope/cache';
 import { ExperimentService } from '@scope/experiment';
 import { LoggerService } from '@scope/logger';
 import { SecretService } from '@scope/secret';
@@ -18,23 +19,39 @@ export class ThemeService {
   private client: RequestClient | null = null;
 
   constructor(
+    @Inject(TOKEN_CACHE_SERVICE) private readonly cache: CacheService,
     private readonly secret: SecretService,
     private readonly logger: LoggerService,
     private readonly experiment: ExperimentService,
     private readonly animeThemes: AnimeThemesService,
-  ) {}
+  ) { }
 
   async getThemesForAnime(mal: number): Promise<AnimeTheme[] | undefined> {
+    const cacheKey = this.experiment.isEnabled('enable-animethemes-api')
+      ? `edge:theme:animethemes:${mal}` as const
+      : `edge:theme:legacy:${mal}` as const;
+
+    const cached = await this.cache.get<AnimeTheme[]>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     if (this.experiment.isEnabled('enable-animethemes-api')) {
       this.logger.instance.debug('Using AnimeThemes provider for themes', {
         mal,
       });
-      return await this.animeThemes.getThemesForAnime(mal);
+      const themes = await this.animeThemes.getThemesForAnime(mal);
+      if (themes) {
+        await this.cache.set(cacheKey, themes);
+      }
+      return themes;
     }
 
     try {
       const models = await this.fetchThemesByMalId(mal);
-      return transformThemes(models, this.secret.get<string>('THEMES'));
+      const themes = transformThemes(models, this.secret.get<string>('THEMES'));
+      await this.cache.set(cacheKey, themes);
+      return themes;
     } catch (error) {
       this.logger.instance.warn('Unable to get themes from remote', error);
       return undefined;
