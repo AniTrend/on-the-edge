@@ -16,4 +16,4 @@ import { ThemeService } from './theme.service.ts';
   ],
   injectables: [ThemeService],
 })
-export class ThemeModule { }
+export class ThemeModule {}

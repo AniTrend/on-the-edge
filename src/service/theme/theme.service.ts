@@ -24,7 +24,7 @@ export class ThemeService {
     private readonly logger: LoggerService,
     private readonly experiment: ExperimentService,
     private readonly animeThemes: AnimeThemesService,
-  ) { }
+  ) {}
 
   async getThemesForAnime(mal: number): Promise<AnimeTheme[] | undefined> {
     const cacheKey = this.experiment.isEnabled('enable-animethemes-api')
