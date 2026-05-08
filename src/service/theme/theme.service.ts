@@ -1,6 +1,10 @@
 import { Inject, Injectable, SCOPE } from '@danet/core';
 import { createClient, type RequestClient } from '@anitrend/request-client';
-import { type CacheService, TOKEN_CACHE_SERVICE } from '@scope/cache';
+import {
+  CACHE_DEFAULT_TTL_SECONDS,
+  type CacheService,
+  TOKEN_CACHE_SERVICE,
+} from '@scope/cache';
 import { ExperimentService } from '@scope/experiment';
 import { LoggerService } from '@scope/logger';
 import { SecretService } from '@scope/secret';
@@ -42,15 +46,23 @@ export class ThemeService {
       });
       const themes = await this.animeThemes.getThemesForAnime(mal);
       if (themes) {
-        await this.cache.set(cacheKey, themes);
+        await this.cache.set(cacheKey, themes, {
+          ttl: CACHE_DEFAULT_TTL_SECONDS,
+        });
       }
       return themes;
     }
 
     try {
       const models = await this.fetchThemesByMalId(mal);
+      if (!models) {
+        return undefined;
+      }
+
       const themes = transformThemes(models, this.secret.get<string>('THEMES'));
-      await this.cache.set(cacheKey, themes);
+      await this.cache.set(cacheKey, themes, {
+        ttl: CACHE_DEFAULT_TTL_SECONDS,
+      });
       return themes;
     } catch (error) {
       this.logger.instance.warn('Unable to get themes from remote', error);
@@ -58,13 +70,15 @@ export class ThemeService {
     }
   }
 
-  private async fetchThemesByMalId(malId: number): Promise<ThemeModel[]> {
+  private async fetchThemesByMalId(
+    malId: number,
+  ): Promise<ThemeModel[] | undefined> {
     try {
       const { data } = await this.getClient().get(`/api/themes/${malId}`);
       return ThemeCollectionSchema.parse(data);
     } catch (error) {
       this.logger.instance.warn('Unable to parse theme response', error);
-      return [];
+      return undefined;
     }
   }
 

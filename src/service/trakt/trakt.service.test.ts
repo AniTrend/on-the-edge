@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, it } from '@std/testing/bdd';
 import { assertEquals } from '@std/assert';
+import { assertSpyCalls } from '@std/testing/mock';
 import { mockFetch, resetFetch } from '@c4spar/mock-fetch';
 import { TraktService } from '@scope/service/trakt';
 import {
@@ -15,7 +16,9 @@ describe('TraktService', () => {
     CLIENT_REQUEST_TIMEOUT: '5000',
   }).service;
   const { logger } = createMockLogger();
-  const { service, cache } = createMockCache();
+  const mockCache = createMockCache();
+  const service = mockCache.service;
+  const cache = mockCache.cache;
 
   beforeEach(() => {
     resetFetch();
@@ -72,6 +75,12 @@ describe('TraktService', () => {
     assertEquals(result?.ids.slug, 'sample-show');
     assertEquals(result?.runtime, 24);
     assertEquals(result?.status, 'returning series');
+    assertSpyCalls(mockCache.spies.set, 1);
+    assertEquals(mockCache.spies.set.calls[0]?.args, [
+      'edge:trakt:show:sample-show',
+      result,
+      { ttl: 60 * 60 * 4 },
+    ]);
   });
 
   it('parses seasons when episodes provide null numeric fields', async () => {
@@ -127,5 +136,10 @@ describe('TraktService', () => {
 
     assertEquals(result?.[0].episodes?.[0].number_abs, 0);
     assertEquals(result?.[0].episodes?.[0].runtime, 0);
+    assertEquals(mockCache.spies.set.calls.at(-1)?.args, [
+      'edge:trakt:seasons:sample-show:episodes',
+      result,
+      { ttl: 60 * 60 * 4 },
+    ]);
   });
 });

@@ -15,12 +15,8 @@ const legacyLookupUrl = (malId: number) =>
   `https://themes.test/api/themes/${malId}`;
 
 describe('ThemeService', () => {
-  const mockCache = createMockCache();
-  const cache = mockCache.service;
-
   beforeEach(() => {
     resetFetch();
-    mockCache.cache.clear();
   });
 
   afterEach(() => {
@@ -28,6 +24,9 @@ describe('ThemeService', () => {
   });
 
   it('uses the legacy THEMES compatibility path when the GrowthBook flag is off', async () => {
+    const mockCache = createMockCache();
+    const cache = mockCache.service;
+
     mockFetch(legacyLookupUrl(37521), {
       status: 200,
       headers: { 'content-type': 'application/json' },
@@ -107,9 +106,17 @@ describe('ThemeService', () => {
       },
     ]);
     assertSpyCalls(getThemesForAnime, 0);
+    assertEquals(mockCache.spies.set.calls.at(-1)?.args, [
+      'edge:theme:legacy:37521',
+      result,
+      { ttl: 60 * 60 * 4 },
+    ]);
   });
 
   it('uses AnimeThemes when the GrowthBook flag is on', async () => {
+    const mockCache = createMockCache();
+    const cache = mockCache.service;
+
     const themes = [
       {
         id: 'OP1',
@@ -150,5 +157,46 @@ describe('ThemeService', () => {
     assertEquals(cachedResult, themes);
     assertSpyCalls(getThemesForAnime, 1);
     assertEquals(getThemesForAnime.calls[0]?.args, [37521]);
+    assertEquals(mockCache.spies.set.calls.at(-1)?.args, [
+      'edge:theme:animethemes:37521',
+      themes,
+      { ttl: 60 * 60 * 4 },
+    ]);
+  });
+
+  it('does not cache legacy theme failures', async () => {
+    const mockCache = createMockCache();
+    const cache = mockCache.service;
+
+    mockFetch(legacyLookupUrl(37521), {
+      status: 500,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ message: 'upstream unavailable' }),
+    });
+
+    const secret = createMockSecret({
+      THEMES: 'https://themes.test',
+      CLIENT_REQUEST_TIMEOUT: '5000',
+    }).service;
+    const { logger } = createMockLogger();
+    const experiment = createMockExperiment({
+      'enable-animethemes-api': false,
+    });
+    const animeThemes = {
+      getThemesForAnime: spy(async (_malId: number) => undefined),
+    } as unknown as AnimeThemesService;
+
+    const service = new ThemeService(
+      cache,
+      secret,
+      logger,
+      experiment,
+      animeThemes,
+    );
+
+    const result = await service.getThemesForAnime(37521);
+
+    assertEquals(result, undefined);
+    assertSpyCalls(mockCache.spies.set, 0);
   });
 });

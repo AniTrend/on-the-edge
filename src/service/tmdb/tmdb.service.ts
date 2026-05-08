@@ -2,6 +2,7 @@ import { Inject, Injectable, SCOPE } from '@danet/core';
 import { SecretService } from '@scope/secret';
 import { LoggerService } from '@scope/logger';
 import { createClient, type RequestClient } from '@anitrend/request-client';
+import { CACHE_DEFAULT_TTL_SECONDS } from '@scope/cache';
 import { DEFAULT_HEADERS } from '../constants.ts';
 import {
   ConfigurationSchema,
@@ -27,6 +28,8 @@ import {
   responseInterceptor,
 } from '../interceptor/client.interceptor.ts';
 import { type CacheService, TOKEN_CACHE_SERVICE } from '@scope/cache';
+
+const TMDB_CONFIGURATION_TTL_SECONDS = 24 * 60 * 60;
 
 @Injectable({ scope: SCOPE.GLOBAL })
 export class TmdbService implements OnAppBootstrap {
@@ -70,7 +73,9 @@ export class TmdbService implements OnAppBootstrap {
         const { data } = await this.client.get('/3/configuration');
         configuration = ConfigurationSchema.parse(data);
         this.logger.instance.debug('Caching TMDB configuration...');
-        await this.cache.set('edge:tmdb:configuration', configuration);
+        await this.cache.set('edge:tmdb:configuration', configuration, {
+          ttl: TMDB_CONFIGURATION_TTL_SECONDS,
+        });
       }
       this.logger.instance.debug('TMDB configuration loaded successfully');
       this.imageProvider = new ImageProvider(configuration);
@@ -90,7 +95,9 @@ export class TmdbService implements OnAppBootstrap {
 
       const show = await this.fetchShow(tmdb);
       const transformed = showTransformer(show, this.imageProvider) as TmdbShow;
-      await this.cache.set(cacheKey, transformed);
+      await this.cache.set(cacheKey, transformed, {
+        ttl: CACHE_DEFAULT_TTL_SECONDS,
+      });
       return transformed;
     } catch (error) {
       this.logger.instance.warn('Unable to get show from remote', error);
@@ -109,7 +116,9 @@ export class TmdbService implements OnAppBootstrap {
         movie,
         this.imageProvider,
       ) as TmdbMovie;
-      await this.cache.set(cacheKey, transformed);
+      await this.cache.set(cacheKey, transformed, {
+        ttl: CACHE_DEFAULT_TTL_SECONDS,
+      });
       return transformed;
     } catch (error) {
       this.logger.instance.warn('Unable to get movie from remote', error);
@@ -136,7 +145,9 @@ export class TmdbService implements OnAppBootstrap {
         season,
         this.imageProvider,
       ) as TmdbSeason;
-      await this.cache.set(cacheKey, transformed);
+      await this.cache.set(cacheKey, transformed, {
+        ttl: CACHE_DEFAULT_TTL_SECONDS,
+      });
       return transformed;
     } catch (error) {
       this.logger.instance.warn('Unable to get season from remote', error);

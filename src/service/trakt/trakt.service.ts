@@ -9,7 +9,11 @@ import {
   requestInterceptor,
   responseInterceptor,
 } from '../interceptor/client.interceptor.ts';
-import { type CacheService, TOKEN_CACHE_SERVICE } from '@scope/cache';
+import {
+  CACHE_DEFAULT_TTL_SECONDS,
+  type CacheService,
+  TOKEN_CACHE_SERVICE,
+} from '@scope/cache';
 
 @Injectable({ scope: SCOPE.GLOBAL })
 export class TraktService {
@@ -43,7 +47,9 @@ export class TraktService {
         params: { extended: 'full' },
       });
       const parsed = ShowModelSchema.parse(data);
-      await this.cache.set(cacheKey, parsed);
+      await this.cache.set(cacheKey, parsed, {
+        ttl: CACHE_DEFAULT_TTL_SECONDS,
+      });
       return parsed;
     } catch (error) {
       this.logger.instance.warn(
@@ -68,7 +74,9 @@ export class TraktService {
         params: { extended },
       });
       const parsed = SeasonsSchema.parse(data);
-      await this.cache.set(cacheKey, parsed);
+      await this.cache.set(cacheKey, parsed, {
+        ttl: CACHE_DEFAULT_TTL_SECONDS,
+      });
       return parsed;
     } catch (error) {
       this.logger.instance.warn(
