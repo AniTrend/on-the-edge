@@ -4,7 +4,6 @@ import { SkyhookService } from '@scope/service/skyhook';
 import { TmdbService } from '@scope/service/tmdb';
 import { TraktService } from '@scope/service/trakt';
 import { NotifyService } from '@scope/service/notify';
-import { ThemeService } from '@scope/service/theme';
 import { TheXemService } from '@scope/service/thexem';
 import { ArmService } from '@scope/service/arm';
 import type { SeriesRelationId } from '@scope/service/arm';
@@ -26,7 +25,6 @@ import { toInstant } from '@scope/common/utils';
  * - Fetch episode data from multiple sources (Jikan, Skyhook, TMDB, etc.)
  * - Merge episodes using Dice coefficient title matching
  * - Normalize episode numbering via TheXem
- * - Enrich with themes from AnimeThemes
  *
  * Architecture:
  * - Injectable service with all external service dependencies
@@ -39,7 +37,6 @@ import { toInstant } from '@scope/common/utils';
  * 3. Skyhook (TVDB) - Episode numbering, guest stars
  * 4. Trakt - User ratings, watch counts
  * 5. Notify - Alternative titles
- * 6. Theme - Opening/ending themes
  */
 @Injectable()
 export class EpisodesResolver {
@@ -49,12 +46,11 @@ export class EpisodesResolver {
     private readonly tmdb: TmdbService,
     private readonly trakt: TraktService,
     private readonly notify: NotifyService,
-    private readonly theme: ThemeService,
     private readonly thexem: TheXemService,
     private readonly logger: LoggerService,
     private readonly experiment: ExperimentService,
     private readonly arm: ArmService,
-  ) {}
+  ) { }
 
   /**
    * Resolve and merge episodes from all available sources.
@@ -97,9 +93,9 @@ export class EpisodesResolver {
       // Prepare cross-source ID relations once (avoid repeated ARM calls)
       const needRelations = Boolean(
         this.experiment?.isEnabled('enable-skyhook-source') ||
-          this.experiment?.isEnabled('enable-tmdb-source') ||
-          this.experiment?.isEnabled('enable-trakt-source') ||
-          this.experiment?.isEnabled('enable-notify-source'),
+        this.experiment?.isEnabled('enable-tmdb-source') ||
+        this.experiment?.isEnabled('enable-trakt-source') ||
+        this.experiment?.isEnabled('enable-notify-source'),
       );
       let relations: SeriesRelationId | undefined;
       if (needRelations) {
@@ -174,43 +170,6 @@ export class EpisodesResolver {
         titleSimThreshold,
         ...result.stats,
       });
-
-      // Optional enrichment: Themes (openings/endings)
-      if (this.experiment?.isEnabled('enable-themes-source')) {
-        try {
-          const themes = await this.theme.getThemesForAnime(malId);
-          if (themes && themes.length > 0) {
-            const openings = themes
-              .filter((t) => t.meta.type === 'OP')
-              .map((t) => t.name);
-            const endings = themes
-              .filter((t) => t.meta.type === 'ED')
-              .map((t) => t.name);
-
-            if (openings.length > 0 || endings.length > 0) {
-              for (const ep of result.episodes) {
-                const currentOpenings = ep.themes?.openings ?? [];
-                const currentEndings = ep.themes?.endings ?? [];
-                ep.themes = {
-                  openings: currentOpenings.length > 0
-                    ? currentOpenings
-                    : openings.slice(),
-                  endings: currentEndings.length > 0
-                    ? currentEndings
-                    : endings.slice(),
-                } as typeof ep.themes;
-                if (!ep.sources.includes('THEMES')) {
-                  ep.sources.push('THEMES');
-                }
-              }
-            }
-          }
-        } catch (e) {
-          this.logger.instance.warn('Themes enrichment failed', {
-            error: (e as Error).message,
-          });
-        }
-      }
 
       return { ...result, titleSimThreshold };
     } catch (error) {
