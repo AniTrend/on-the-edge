@@ -1,9 +1,9 @@
 import { currentDate, toInstant } from '@scope/common/utils';
 import { SeriesRelationId } from '@scope/service/arm';
+import type { AnimeThemesLookupModel } from '@scope/service/animethemes';
 import { Jikan, JikanAnime, JikanManga } from '@scope/service/jikan';
-import { NotifyAnime } from '@scope/service/notify';
+import { Format, NotifyAnime } from '@scope/service/notify';
 import { SkyhookShow } from '@scope/service/skyhook';
-import { AnimeTheme } from '@scope/service/theme';
 import type {
   Tmdb,
   TmdbEpisodeToAir,
@@ -30,6 +30,24 @@ import {
 } from '../series.types.ts';
 import { inferMediaKind } from '../repository/helpers/qualifier.ts';
 
+const animeThemesResources = (lookup?: AnimeThemesLookupModel) => lookup?.anime ?? [];
+
+const firstAnimeThemesValue = <T>(
+  lookup: AnimeThemesLookupModel | undefined,
+  selector: (resource: AnimeThemesLookupModel['anime'][number]) => T | null | undefined,
+) => {
+  for (const resource of animeThemesResources(lookup)) {
+    const value = selector(resource);
+    if (value !== null && value !== undefined) {
+      if (typeof value !== 'string' || value.length > 0) {
+        return value;
+      }
+    }
+  }
+
+  return null;
+};
+
 const seriesId = (
   relation?: SeriesRelationId,
   skyhook?: SkyhookShow,
@@ -37,6 +55,7 @@ const seriesId = (
   notify?: NotifyAnime,
   jikan?: Jikan,
   trakt?: TraktShow,
+  animeThemes?: AnimeThemesLookupModel,
 ): SeriesId => ({
   anidb: relation?.anidb ?? null,
   anilist: relation?.anilist ?? null,
@@ -51,7 +70,8 @@ const seriesId = (
   myanimelist: relation?.myanimelist ?? jikan?.mal_id ?? null,
   tvMazeId: skyhook?.tvMazeId ?? null,
   tvrage: trakt?.ids?.tvrage ?? null,
-  slug: relation?.animePlanet ?? trakt?.ids?.slug ?? skyhook?.slug ?? null,
+  slug: relation?.animePlanet ?? trakt?.ids?.slug ?? skyhook?.slug ??
+    firstAnimeThemesValue(animeThemes, (resource) => resource.slug) ?? null,
   shoboi: notify?.mediaId?.shoboi ? Number(notify.mediaId.shoboi) : null,
   trakt: trakt?.ids?.trakt ?? null,
 });
@@ -63,19 +83,46 @@ const seriesTitle = (
   tmdb?: Tmdb,
   notify?: NotifyAnime,
   jikan?: Jikan,
+  animeThemes?: AnimeThemesLookupModel,
 ): SeriesTitle => ({
   english: jikan?.title_english ?? notify?.title?.english ?? null,
-  canonical: jikan?.title ?? notify?.title?.canonical ?? null,
+  canonical: jikan?.title || notify?.title?.canonical ||
+    firstAnimeThemesValue(animeThemes, (resource) => resource.name) || null,
   harigana: notify?.title?.harigana ?? null,
   japanese: jikan?.title_japanese ?? notify?.title?.native ??
     tmdb?.original_name ?? null,
-  romaji: notify?.title.romaji ?? null,
+  romaji: notify?.title.romaji ??
+    firstAnimeThemesValue(animeThemes, (resource) => resource.name) ?? null,
   // Prefer Jikan synonyms (works for anime & manga). If empty array, fallback to notify synonyms.
   synonyms:
     (jikan?.title_synonyms && jikan.title_synonyms.length > 0
       ? jikan.title_synonyms
       : notify?.title?.synonyms) ?? null,
 });
+
+const seriesFormat = (
+  notify?: NotifyAnime,
+  animeThemes?: AnimeThemesLookupModel,
+) => {
+  if (notify?.format) {
+    return notify.format;
+  }
+
+  switch (firstAnimeThemesValue(animeThemes, (resource) => resource.media_format)?.toUpperCase()) {
+    case Format.TV:
+      return Format.TV;
+    case Format.MOVIE:
+      return Format.MOVIE;
+    case Format.SPECIAL:
+      return Format.SPECIAL;
+    case Format.OVA:
+      return Format.OVA;
+    case Format.ONA:
+      return Format.ONA;
+    default:
+      return null;
+  }
+};
 
 const seriesScheduleEpisode = (
   episodeToAir: TmdbEpisodeToAir | null,
@@ -278,25 +325,33 @@ export const seriesTransform = (
   relation?: SeriesRelationId,
   skyhook?: SkyhookShow,
   tmdb?: Tmdb,
-  themes?: AnimeTheme[],
+  animeThemes?: AnimeThemesLookupModel,
   notify?: NotifyAnime,
   jikan?: Jikan,
   trakt?: TraktShow,
 ): MediaUnion => {
   const kind: MediaKind = inferMediaKind(jikan?.type) ??
-    ((notify || skyhook || themes || trakt) ? 'ANIME' : 'MANGA');
+    ((notify || skyhook || animeThemes || trakt) ? 'ANIME' : 'MANGA');
 
   const base: Partial<MediaUnion> = {
     kind,
     classification: jikan?.type ?? null,
-    mediaId: seriesId(relation, skyhook, tmdb, notify, jikan, trakt),
+    mediaId: seriesId(
+      relation,
+      skyhook,
+      tmdb,
+      notify,
+      jikan,
+      trakt,
+      animeThemes,
+    ),
     banner: tmdb?.backdrop_path ?? skyhook?.banner ?? null,
     cover: seriesCover(notify, jikan),
     fanart: skyhook?.fanart ?? null,
-    format: notify?.format ?? null,
+    format: seriesFormat(notify, animeThemes),
     source: notify?.source ?? null,
     status: notify?.status ?? null,
-    title: seriesTitle(tmdb, notify, jikan),
+    title: seriesTitle(tmdb, notify, jikan, animeThemes),
     ageRating: seriesContentRating(jikan, skyhook, trakt),
     images: seriesImages(tmdb?.images),
     moreInfo: jikan?.moreinfo ?? null,
@@ -328,7 +383,9 @@ export const seriesTransform = (
     const { broadcast, duration, type } = jikan as JikanAnime;
     const isMovie = type === 'Movie';
     const anime: AnimeMetadata = {
-      themeSongs: themes ?? [],
+      animethemes: animeThemesResources(animeThemes).flatMap((resource) =>
+        resource.animethemes ?? []
+      ),
       schedule: seriesSchedule(isMovie, tmdb),
       trailers: seriesTrailers(notify),
       broadcast: broadcast?.string ?? null,

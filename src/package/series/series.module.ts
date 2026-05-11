@@ -1,4 +1,5 @@
 import { Module } from '@danet/core';
+import { ExperimentModule } from '@scope/experiment';
 import { LoggerModule } from '@scope/logger';
 import { ServiceModule } from '@scope/service';
 import { DatabaseModule } from '@scope/database';
@@ -12,8 +13,9 @@ import { SeriesResolver } from './repository/series.resolver.ts';
     LoggerModule,
     ServiceModule,
     DatabaseModule,
+    ExperimentModule,
   ],
   controllers: [SeriesController],
   injectables: [SeriesRepository, SeriesService, SeriesResolver],
 })
-export class SeriesModule {}
+export class SeriesModule { }
