@@ -1,5 +1,10 @@
-import { Injectable, SCOPE } from '@danet/core';
+import { Inject, Injectable, SCOPE } from '@danet/core';
 import { createClient, type RequestClient } from '@anitrend/request-client';
+import {
+  CACHE_DEFAULT_TTL_SECONDS,
+  type CacheService,
+  TOKEN_CACHE_SERVICE,
+} from '@scope/cache';
 import { LoggerService } from '@scope/logger';
 import { SecretService } from '@scope/secret';
 import { DEFAULT_HEADERS } from '../constants.ts';
@@ -8,8 +13,7 @@ import {
   responseInterceptor,
 } from '../interceptor/client.interceptor.ts';
 import { AnimeThemesLookupSchema } from './animethemes.schema.ts';
-import { transformAnimeThemes } from './transformer/index.ts';
-import type { Theme } from '../theme/transformer/types.ts';
+import type { AnimeThemesLookupModel } from './animethemes.types.ts';
 
 const ANIME_THEMES_INCLUDE =
   'animethemes.animethemeentries.videos.audio,animethemes.song';
@@ -21,10 +25,19 @@ export class AnimeThemesService {
   constructor(
     private readonly secret: SecretService,
     private readonly logger: LoggerService,
-  ) {}
+    @Inject(TOKEN_CACHE_SERVICE) private readonly cache: CacheService,
+  ) { }
 
-  async getThemesForAnime(malId: number): Promise<Theme[] | undefined> {
+  async getThemesForAnime(
+    malId: number,
+  ): Promise<AnimeThemesLookupModel | undefined> {
+    const cacheKey = `edge:animethemes:anime:${malId}` as const;
     try {
+      const cached = await this.cache.get<AnimeThemesLookupModel>(cacheKey);
+      if (cached) {
+        return cached;
+      }
+
       const { data } = await this.getClient().get('/anime', {
         params: {
           'filter[has]': 'resources',
@@ -35,8 +48,11 @@ export class AnimeThemesService {
         },
       });
 
-      const anime = AnimeThemesLookupSchema.parse(data).anime.at(0) ?? null;
-      return anime ? transformAnimeThemes(anime) : [];
+      const parsed = AnimeThemesLookupSchema.parse(data);
+      await this.cache.set(cacheKey, parsed, {
+        ttl: CACHE_DEFAULT_TTL_SECONDS,
+      });
+      return parsed;
     } catch (error) {
       this.logger.instance.warn('Unable to get themes from AnimeThemes', error);
       return undefined;

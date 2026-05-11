@@ -3,7 +3,12 @@ import { assertEquals } from '@std/assert';
 import { assertSpyCalls } from '@std/testing/mock';
 import { mockFetch, resetFetch } from '@c4spar/mock-fetch';
 import { AnimeThemesService } from '@scope/service/animethemes';
-import { createMockLogger, createMockSecret } from '@scope/common/testing';
+import {
+  createMockCache,
+  createMockLogger,
+  createMockSecret,
+} from '@scope/common/testing';
+import type { AnimeThemesLookupModel } from './animethemes.types.ts';
 
 const lookupUrl = (malId: number) =>
   'https://animethemes.test/anime?' +
@@ -15,17 +20,18 @@ describe('AnimeThemesService', () => {
     ANIME_THEMES: 'https://animethemes.test',
     CLIENT_REQUEST_TIMEOUT: '5000',
   }).service;
+  const mockCache = createMockCache();
 
   const createService = () => {
     const { logger, spies } = createMockLogger();
     return {
-      service: new AnimeThemesService(secret, logger),
+      service: new AnimeThemesService(secret, logger, mockCache.service),
       spies,
     };
   };
-
   beforeEach(() => {
     resetFetch();
+    mockCache.cache.clear();
   });
 
   afterEach(() => {
@@ -38,12 +44,16 @@ describe('AnimeThemesService', () => {
     }).service;
     const { logger } = createMockLogger();
 
-    const service = new AnimeThemesService(noAnimeThemesSecret, logger);
+    const service = new AnimeThemesService(
+      noAnimeThemesSecret,
+      logger,
+      mockCache.service,
+    );
 
     assertEquals(service instanceof AnimeThemesService, true);
   });
 
-  it('queries AnimeThemes by MAL id and returns flattened themes', async () => {
+  it('queries AnimeThemes by MAL id and returns raw lookup model', async () => {
     const payload = {
       anime: [
         {
@@ -101,22 +111,11 @@ describe('AnimeThemesService', () => {
     const { service } = createService();
     const result = await service.getThemesForAnime(37521);
 
-    assertEquals(result, [
-      {
-        id: 'OP1',
-        name: 'MUKANJYO',
-        video: 'https://animethemes.moe/video/VinlandSaga-OP1.webm',
-        audio: null,
-        meta: {
-          type: 'OP',
-          number: 1,
-          version: 1,
-        },
-      },
-    ]);
+    const expected: AnimeThemesLookupModel = payload as AnimeThemesLookupModel;
+    assertEquals(result, expected);
   });
 
-  it('returns an empty array when no AnimeThemes anime matches the MAL id', async () => {
+  it('returns an empty lookup when no AnimeThemes anime matches the MAL id', async () => {
     mockFetch(lookupUrl(37521), {
       status: 200,
       headers: { 'content-type': 'application/json' },
@@ -126,7 +125,7 @@ describe('AnimeThemesService', () => {
     const { service } = createService();
     const result = await service.getThemesForAnime(37521);
 
-    assertEquals(result, []);
+    assertEquals(result, { anime: [] });
   });
 
   it('returns undefined on validation errors from AnimeThemes', async () => {
@@ -163,5 +162,31 @@ describe('AnimeThemesService', () => {
 
     assertEquals(result, undefined);
     assertSpyCalls(spies.warn, 1);
+  });
+
+  it('returns cached AnimeThemes lookup when available', async () => {
+    const cached: AnimeThemesLookupModel = {
+      anime: [{
+        id: 1,
+        name: 'Cached Series',
+        slug: 'cached-series',
+        year: 2024,
+        season: 'Spring',
+        media_format: 'TV',
+        animethemes: [],
+      }],
+    };
+    await mockCache.service.set('edge:animethemes:anime:37521', cached, {
+      ttl: 60 * 60 * 4,
+    });
+    const getCallsBefore = mockCache.spies.get.calls.length;
+    const setCallsBefore = mockCache.spies.set.calls.length;
+
+    const { service } = createService();
+    const result = await service.getThemesForAnime(37521);
+
+    assertEquals(result, cached);
+    assertEquals(mockCache.spies.get.calls.length - getCallsBefore, 1);
+    assertEquals(mockCache.spies.set.calls.length - setCallsBefore, 0);
   });
 });

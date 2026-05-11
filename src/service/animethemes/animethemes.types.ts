@@ -1,17 +1,17 @@
 import { z } from 'zod';
 import {
-  AnimeThemesAnimeSchema,
+  AnimeThemesResourceSchema,
   AnimeThemesAudioSchema,
   AnimeThemesEntrySchema,
   AnimeThemesLookupSchema,
   AnimeThemesSongSchema,
-  AnimeThemesThemeSchema,
+  AnimeThemesSchema,
   AnimeThemesVideoSchema,
 } from './animethemes.schema.ts';
 
-export type AnimeThemesLookup = z.infer<typeof AnimeThemesLookupSchema>;
-export type AnimeThemesAnimeModel = z.infer<typeof AnimeThemesAnimeSchema>;
-export type AnimeThemesThemeModel = z.infer<typeof AnimeThemesThemeSchema>;
+export type AnimeThemesLookupModel = z.infer<typeof AnimeThemesLookupSchema>;
+export type AnimeThemesResourceModel = z.infer<typeof AnimeThemesResourceSchema>;
+export type AnimeThemesModel = z.infer<typeof AnimeThemesSchema>;
 export type AnimeThemesEntryModel = z.infer<typeof AnimeThemesEntrySchema>;
 export type AnimeThemesVideoModel = z.infer<typeof AnimeThemesVideoSchema>;
 export type AnimeThemesAudioModel = z.infer<typeof AnimeThemesAudioSchema>;

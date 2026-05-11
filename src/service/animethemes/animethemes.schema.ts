@@ -34,7 +34,7 @@ export const AnimeThemesSongSchema = z.object({
   title: z.string().nullish().default(null),
 });
 
-export const AnimeThemesThemeSchema = z.object({
+export const AnimeThemesSchema = z.object({
   id: z.number(),
   type: z.enum(['OP', 'ED']),
   sequence: z.number().nullish().default(1),
@@ -43,16 +43,16 @@ export const AnimeThemesThemeSchema = z.object({
   song: AnimeThemesSongSchema.nullish().default(null),
 });
 
-export const AnimeThemesAnimeSchema = z.object({
+export const AnimeThemesResourceSchema = z.object({
   id: z.number(),
   name: z.string(),
   slug: z.string(),
   year: z.number().nullish().default(null),
   season: z.string().nullish().default(null),
   media_format: z.string().nullish().default(null),
-  animethemes: z.array(AnimeThemesThemeSchema).nullish().default([]),
+  animethemes: z.array(AnimeThemesSchema).nullish().default([]),
 });
 
 export const AnimeThemesLookupSchema = z.object({
-  anime: z.array(AnimeThemesAnimeSchema),
+  anime: z.array(AnimeThemesResourceSchema),
 });
