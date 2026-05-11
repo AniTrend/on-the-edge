@@ -17,5 +17,4 @@ export type AppFeatures = {
   'enable-tmdb-source'?: boolean;
   'enable-trakt-source'?: boolean;
   'enable-notify-source'?: boolean;
-  'enable-themes-source'?: boolean;
 };

@@ -44,7 +44,6 @@ export class ExperimentService implements OnAppClose {
       | 'enable-tmdb-source'
       | 'enable-trakt-source'
       | 'enable-notify-source'
-      | 'enable-themes-source'
     >,
   ): boolean {
     return this.invoke(() => this.growthBook.isOn(feature));
