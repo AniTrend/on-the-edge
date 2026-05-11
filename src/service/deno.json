@@ -10,7 +10,6 @@
     "./otakumode": "./otakumode/index.ts",
     "./notify": "./notify/index.ts",
     "./skyhook": "./skyhook/index.ts",
-    "./theme": "./theme/index.ts",
     "./thexem": "./thexem/index.ts",
     "./tmdb": "./tmdb/index.ts",
     "./trakt": "./trakt/index.ts"
