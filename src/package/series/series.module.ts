@@ -18,4 +18,4 @@ import { SeriesResolver } from './repository/series.resolver.ts';
   controllers: [SeriesController],
   injectables: [SeriesRepository, SeriesService, SeriesResolver],
 })
-export class SeriesModule { }
+export class SeriesModule {}

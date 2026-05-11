@@ -8,4 +8,4 @@ import { AnimeThemesService } from './animethemes.service.ts';
   imports: [SecretModule, LoggerModule, CacheModule],
   injectables: [AnimeThemesService],
 })
-export class AnimeThemesModule { }
+export class AnimeThemesModule {}

@@ -3,7 +3,10 @@ import { assertEquals } from '@std/assert';
 import { assertSpyCalls, spy } from '@std/testing/mock';
 import { SeriesResolver } from './series.resolver.ts';
 import { createMockExperiment, createMockLogger } from '@scope/common/testing';
-import type { AnimeThemesLookupModel, AnimeThemesService } from '@scope/service/animethemes';
+import type {
+  AnimeThemesLookupModel,
+  AnimeThemesService,
+} from '@scope/service/animethemes';
 import type { ArmService, SeriesRelationId } from '@scope/service/arm';
 import type { JikanAnime, JikanService } from '@scope/service/jikan';
 import type { NotifyService } from '@scope/service/notify';
@@ -157,6 +160,9 @@ describe('SeriesResolver', () => {
     const result = await resolver.resolve({ anilist: 400 });
 
     assertSpyCalls(getThemesForAnime, 1);
-    assertEquals('animethemes' in result ? result.animethemes : [], animeThemesLookup.anime[0].animethemes);
+    assertEquals(
+      'animethemes' in result ? result.animethemes : [],
+      animeThemesLookup.anime[0].animethemes,
+    );
   });
 });

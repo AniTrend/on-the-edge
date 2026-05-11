@@ -16,13 +16,13 @@ import type { JikanAnime } from '@scope/service/jikan';
 import type { TheXem } from '@scope/service/thexem';
 import { createMockExperiment, createMockLogger } from '@scope/common/testing';
 import {
+  createAnimeThemesSpy,
   createArmAnilistSpy,
   createArmTvdbSpy,
   createJikanSpy,
   createNotifySpy,
   createServiceSpies,
   createSkyhookSpy,
-  createAnimeThemesSpy,
   createTheXemSpy,
   createTmdbSpy,
   createTraktSpy,

@@ -90,7 +90,7 @@ class MockJikanService {
 
 // Mock MongoService
 class MockMongoService {
-  constructor(private memoryCollection: InMemoryCollection<EpisodeDocument>) { }
+  constructor(private memoryCollection: InMemoryCollection<EpisodeDocument>) {}
 
   // deno-lint-ignore no-explicit-any
   collection<T>(_name: string): any {

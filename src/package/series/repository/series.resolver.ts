@@ -26,7 +26,7 @@ export class SeriesResolver {
     private readonly animeThemes: AnimeThemesService,
     private readonly experiment: ExperimentService,
     private readonly logger: LoggerService,
-  ) { }
+  ) {}
 
   private resolveTrakt = async (
     id?: string | number | null,
@@ -161,9 +161,12 @@ export class SeriesResolver {
       return undefined;
     }
     if (!this.experiment.isEnabled('enable-animethemes-api')) {
-      this.logger.instance.info('Skipping AnimeThemes fetch because feature flag is disabled', {
-        malId,
-      });
+      this.logger.instance.info(
+        'Skipping AnimeThemes fetch because feature flag is disabled',
+        {
+          malId,
+        },
+      );
       return undefined;
     }
     try {

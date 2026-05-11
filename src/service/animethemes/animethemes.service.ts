@@ -26,7 +26,7 @@ export class AnimeThemesService {
     private readonly secret: SecretService,
     private readonly logger: LoggerService,
     @Inject(TOKEN_CACHE_SERVICE) private readonly cache: CacheService,
-  ) { }
+  ) {}
 
   async getThemesForAnime(
     malId: number,

@@ -50,7 +50,7 @@ export class EpisodesResolver {
     private readonly logger: LoggerService,
     private readonly experiment: ExperimentService,
     private readonly arm: ArmService,
-  ) { }
+  ) {}
 
   /**
    * Resolve and merge episodes from all available sources.
@@ -93,9 +93,9 @@ export class EpisodesResolver {
       // Prepare cross-source ID relations once (avoid repeated ARM calls)
       const needRelations = Boolean(
         this.experiment?.isEnabled('enable-skyhook-source') ||
-        this.experiment?.isEnabled('enable-tmdb-source') ||
-        this.experiment?.isEnabled('enable-trakt-source') ||
-        this.experiment?.isEnabled('enable-notify-source'),
+          this.experiment?.isEnabled('enable-tmdb-source') ||
+          this.experiment?.isEnabled('enable-trakt-source') ||
+          this.experiment?.isEnabled('enable-notify-source'),
       );
       let relations: SeriesRelationId | undefined;
       if (needRelations) {

@@ -22,4 +22,4 @@ import { TraktModule } from './trakt/trakt.module.ts';
     TraktModule,
   ],
 })
-export class ServiceModule { }
+export class ServiceModule {}

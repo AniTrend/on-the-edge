@@ -30,11 +30,14 @@ import {
 } from '../series.types.ts';
 import { inferMediaKind } from '../repository/helpers/qualifier.ts';
 
-const animeThemesResources = (lookup?: AnimeThemesLookupModel) => lookup?.anime ?? [];
+const animeThemesResources = (lookup?: AnimeThemesLookupModel) =>
+  lookup?.anime ?? [];
 
 const firstAnimeThemesValue = <T>(
   lookup: AnimeThemesLookupModel | undefined,
-  selector: (resource: AnimeThemesLookupModel['anime'][number]) => T | null | undefined,
+  selector: (
+    resource: AnimeThemesLookupModel['anime'][number],
+  ) => T | null | undefined,
 ) => {
   for (const resource of animeThemesResources(lookup)) {
     const value = selector(resource);
@@ -108,7 +111,10 @@ const seriesFormat = (
     return notify.format;
   }
 
-  switch (firstAnimeThemesValue(animeThemes, (resource) => resource.media_format)?.toUpperCase()) {
+  switch (
+    firstAnimeThemesValue(animeThemes, (resource) => resource.media_format)
+      ?.toUpperCase()
+  ) {
     case Format.TV:
       return Format.TV;
     case Format.MOVIE:
