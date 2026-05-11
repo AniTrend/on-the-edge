@@ -78,7 +78,7 @@ describe('SeriesService', () => {
       moreInfo: null,
       duration: null,
       networks: [],
-      themeSongs: [],
+      animethemes: [],
       trailers: [],
       schedule: null,
     };

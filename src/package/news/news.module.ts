@@ -7,7 +7,6 @@ import { NewsService } from './news.service.ts';
 import { NewsRepository } from './news.repository.ts';
 import { DatabaseModule } from '@scope/database';
 import { CacheModule } from '@scope/cache';
-import { DateHelperModule } from '@scope/common/date';
 
 @Module({
   imports: [
@@ -16,7 +15,6 @@ import { DateHelperModule } from '@scope/common/date';
     OtakumodeModule,
     DatabaseModule,
     CacheModule,
-    DateHelperModule,
   ],
   controllers: [NewsController],
   injectables: [NewsService, NewsRepository],

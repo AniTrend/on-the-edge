@@ -1,4 +1,4 @@
-import { Injectable, SCOPE } from '@danet/core';
+import { Inject, Injectable, SCOPE } from '@danet/core';
 import { SecretService } from '@scope/secret';
 import { LoggerService } from '@scope/logger';
 import { createClient, type RequestClient } from '@anitrend/request-client';
@@ -9,6 +9,11 @@ import {
   requestInterceptor,
   responseInterceptor,
 } from '../interceptor/client.interceptor.ts';
+import {
+  CACHE_DEFAULT_TTL_SECONDS,
+  type CacheService,
+  TOKEN_CACHE_SERVICE,
+} from '@scope/cache';
 
 @Injectable({ scope: SCOPE.GLOBAL })
 export class TraktService {
@@ -17,6 +22,7 @@ export class TraktService {
   constructor(
     private readonly secret: SecretService,
     private readonly logger: LoggerService,
+    @Inject(TOKEN_CACHE_SERVICE) private readonly cache: CacheService,
   ) {
     this.client = createClient({
       baseURL: this.secret.get('TRAKT'),
@@ -32,11 +38,19 @@ export class TraktService {
   }
 
   async getShow(trakt: number | string): Promise<TraktShow | undefined> {
+    const cacheKey = `edge:trakt:show:${trakt}` as const;
     try {
+      const cached = await this.cache.get<TraktShow>(cacheKey);
+      if (cached) return cached;
+
       const { data } = await this.client.get(`/shows/${trakt}`, {
         params: { extended: 'full' },
       });
-      return ShowModelSchema.parse(data);
+      const parsed = ShowModelSchema.parse(data);
+      await this.cache.set(cacheKey, parsed, {
+        ttl: CACHE_DEFAULT_TTL_SECONDS,
+      });
+      return parsed;
     } catch (error) {
       this.logger.instance.warn(
         'Unable to transform show from remote',
@@ -50,11 +64,20 @@ export class TraktService {
     show: number | string,
     opts: { extended?: 'episodes' | 'full' } = {},
   ): Promise<TraktSeason[] | undefined> {
+    const extended = opts.extended ?? 'episodes';
+    const cacheKey = `edge:trakt:seasons:${show}:${extended}` as const;
     try {
+      const cached = await this.cache.get<TraktSeason[]>(cacheKey);
+      if (cached) return cached;
+
       const { data } = await this.client.get(`/shows/${show}/seasons`, {
-        params: { extended: opts.extended ?? 'episodes' },
+        params: { extended },
       });
-      return SeasonsSchema.parse(data);
+      const parsed = SeasonsSchema.parse(data);
+      await this.cache.set(cacheKey, parsed, {
+        ttl: CACHE_DEFAULT_TTL_SECONDS,
+      });
+      return parsed;
     } catch (error) {
       this.logger.instance.warn(
         'Unable to get trakt seasons from remote',

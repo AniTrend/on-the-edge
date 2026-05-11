@@ -5,7 +5,8 @@ import { NotifyAnime, NotifyService } from '@scope/service/notify';
 import { JikanAnime, JikanManga, JikanService } from '@scope/service/jikan';
 import { ArmService, SeriesRelationId } from '@scope/service/arm';
 import { TheXem, TheXemService } from '@scope/service/thexem';
-import { Theme, ThemeService } from '@scope/service/theme';
+import { AnimeThemesService } from '@scope/service/animethemes';
+import { ExperimentService } from '@scope/experiment';
 import { LoggerService } from '@scope/logger';
 import { Injectable } from '@danet/core';
 import { MediaUnion, SeriesQuery } from '../series.types.ts';
@@ -22,7 +23,8 @@ export class SeriesResolver {
     private readonly jikan: JikanService,
     private readonly arm: ArmService,
     private readonly thexem: TheXemService,
-    private readonly theme: ThemeService,
+    private readonly animeThemes: AnimeThemesService,
+    private readonly experiment: ExperimentService,
     private readonly logger: LoggerService,
   ) {}
 
@@ -154,14 +156,23 @@ export class SeriesResolver {
     }
   };
 
-  private resolveThemes = async (malId: number | null) => {
+  private resolveAnimeThemes = async (malId: number | null) => {
     if (!malId) {
       return undefined;
     }
+    if (!this.experiment.isEnabled('enable-animethemes-api')) {
+      this.logger.instance.info(
+        'Skipping AnimeThemes fetch because feature flag is disabled',
+        {
+          malId,
+        },
+      );
+      return undefined;
+    }
     try {
-      return await this.theme.getThemesForAnime(malId);
+      return await this.animeThemes.getThemesForAnime(malId);
     } catch (error) {
-      this.logger.instance.warn('Failed to fetch themes', {
+      this.logger.instance.warn('Failed to fetch AnimeThemes anime', {
         malId,
         error: (error as Error).message,
       });
@@ -186,13 +197,13 @@ export class SeriesResolver {
       this.resolveJikan(relation?.myanimelist),
     ]);
 
-    let themes: Theme[] | undefined,
+    let animeThemes,
       skyhook: SkyhookShow | undefined,
       trakt: TraktShow | undefined,
       tmdb: TmdbShow | TmdbMovie | undefined;
     if (isAnime(mal?.type)) {
-      [themes, skyhook] = await Promise.all([
-        this.resolveThemes(relation?.myanimelist),
+      [animeThemes, skyhook] = await Promise.all([
+        this.resolveAnimeThemes(relation?.myanimelist),
         this.resolveSkyhook(relation?.thetvdb),
       ]);
       [trakt] = await Promise.all([
@@ -209,7 +220,7 @@ export class SeriesResolver {
       relation,
       skyhook,
       tmdb,
-      themes,
+      animeThemes,
       notify,
       mal,
       trakt,

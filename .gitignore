@@ -181,3 +181,5 @@ dist
 .temp
 config.toml
 seed.sql
+# Added by code-review-graph
+.code-review-graph/

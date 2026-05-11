@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, it } from '@std/testing/bdd';
 import { assertEquals } from '@std/assert';
+import { assertSpyCalls } from '@std/testing/mock';
 import { mockFetch, resetFetch } from '@c4spar/mock-fetch';
 import { TmdbService } from '@scope/service/tmdb';
 import { createMockLogger, createMockSecret } from '@scope/common/testing';
@@ -178,6 +179,17 @@ describe('TmdbService', () => {
       result?.images.backdrops?.[0]?.file_path?.includes('image.tmdb.org'),
       true,
     );
+    assertSpyCalls(mockCache.spies.set, 2);
+    assertEquals(mockCache.spies.set.calls[0]?.args, [
+      'edge:tmdb:configuration',
+      configuration,
+      { ttl: 24 * 60 * 60 },
+    ]);
+    assertEquals(mockCache.spies.set.calls[1]?.args, [
+      'edge:tmdb:show:100',
+      result,
+      { ttl: 60 * 60 * 4 },
+    ]);
   });
 
   it('fetches season data', async () => {
@@ -292,5 +304,10 @@ describe('TmdbService', () => {
 
     assertEquals(result?.id, 200);
     assertEquals(result?.season_number, 1);
+    assertEquals(mockCache.spies.set.calls.at(-1)?.args, [
+      'edge:tmdb:season:100:1',
+      result,
+      { ttl: 60 * 60 * 4 },
+    ]);
   });
 });

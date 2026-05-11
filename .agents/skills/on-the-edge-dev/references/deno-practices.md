@@ -2,9 +2,8 @@
 
 ## Runtime & Version
 
-- **Pinned version**: Deno `2.7.11` (CI, Dockerfile, recommended locally).
-- Verify with `deno --version`. If mismatched, use `deno upgrade --version 2.7.11`.
-- Deno 2.7 stabilized: **Temporal API**, **Decorators**, **Emit Decorator Metadata** (no longer requires `--unstable-*` CLI flags for these).
+- **Pinned version**: Deno (CI, Dockerfile, recommended locally).
+- Verify with `deno --version`.
 
 ---
 

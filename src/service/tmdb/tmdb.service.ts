@@ -2,6 +2,7 @@ import { Inject, Injectable, SCOPE } from '@danet/core';
 import { SecretService } from '@scope/secret';
 import { LoggerService } from '@scope/logger';
 import { createClient, type RequestClient } from '@anitrend/request-client';
+import { CACHE_DEFAULT_TTL_SECONDS } from '@scope/cache';
 import { DEFAULT_HEADERS } from '../constants.ts';
 import {
   ConfigurationSchema,
@@ -27,6 +28,8 @@ import {
   responseInterceptor,
 } from '../interceptor/client.interceptor.ts';
 import { type CacheService, TOKEN_CACHE_SERVICE } from '@scope/cache';
+
+const TMDB_CONFIGURATION_TTL_SECONDS = 24 * 60 * 60;
 
 @Injectable({ scope: SCOPE.GLOBAL })
 export class TmdbService implements OnAppBootstrap {
@@ -70,7 +73,9 @@ export class TmdbService implements OnAppBootstrap {
         const { data } = await this.client.get('/3/configuration');
         configuration = ConfigurationSchema.parse(data);
         this.logger.instance.debug('Caching TMDB configuration...');
-        await this.cache.set('edge:tmdb:configuration', configuration);
+        await this.cache.set('edge:tmdb:configuration', configuration, {
+          ttl: TMDB_CONFIGURATION_TTL_SECONDS,
+        });
       }
       this.logger.instance.debug('TMDB configuration loaded successfully');
       this.imageProvider = new ImageProvider(configuration);
@@ -83,9 +88,17 @@ export class TmdbService implements OnAppBootstrap {
   }
 
   async getShow(tmdb: number): Promise<TmdbShow | undefined> {
+    const cacheKey = `edge:tmdb:show:${tmdb}` as const;
     try {
+      const cached = await this.cache.get<TmdbShow>(cacheKey);
+      if (cached) return cached;
+
       const show = await this.fetchShow(tmdb);
-      return showTransformer(show, this.imageProvider) as TmdbShow;
+      const transformed = showTransformer(show, this.imageProvider) as TmdbShow;
+      await this.cache.set(cacheKey, transformed, {
+        ttl: CACHE_DEFAULT_TTL_SECONDS,
+      });
+      return transformed;
     } catch (error) {
       this.logger.instance.warn('Unable to get show from remote', error);
       return undefined;
@@ -93,9 +106,20 @@ export class TmdbService implements OnAppBootstrap {
   }
 
   async getMovie(tmdb: number): Promise<TmdbMovie | undefined> {
+    const cacheKey = `edge:tmdb:movie:${tmdb}` as const;
     try {
+      const cached = await this.cache.get<TmdbMovie>(cacheKey);
+      if (cached) return cached;
+
       const movie = await this.fetchMovie(tmdb);
-      return movieTransformer(movie, this.imageProvider) as TmdbMovie;
+      const transformed = movieTransformer(
+        movie,
+        this.imageProvider,
+      ) as TmdbMovie;
+      await this.cache.set(cacheKey, transformed, {
+        ttl: CACHE_DEFAULT_TTL_SECONDS,
+      });
+      return transformed;
     } catch (error) {
       this.logger.instance.warn('Unable to get movie from remote', error);
       return undefined;
@@ -111,9 +135,20 @@ export class TmdbService implements OnAppBootstrap {
       return undefined;
     }
 
+    const cacheKey = `edge:tmdb:season:${tmdb}:${seasonNumber}` as const;
     try {
+      const cached = await this.cache.get<TmdbSeason>(cacheKey);
+      if (cached) return cached;
+
       const season = await this.fetchSeason(tmdb, seasonNumber);
-      return seasonTransformer(season, this.imageProvider) as TmdbSeason;
+      const transformed = seasonTransformer(
+        season,
+        this.imageProvider,
+      ) as TmdbSeason;
+      await this.cache.set(cacheKey, transformed, {
+        ttl: CACHE_DEFAULT_TTL_SECONDS,
+      });
+      return transformed;
     } catch (error) {
       this.logger.instance.warn('Unable to get season from remote', error);
       return undefined;

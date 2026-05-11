@@ -65,7 +65,7 @@ describe('SeriesRepository helpers', () => {
       moreInfo: null,
       duration: 24,
       networks: [],
-      themeSongs: [],
+      animethemes: [],
       trailers: [],
       schedule: null,
     };
@@ -129,8 +129,7 @@ describe('SeriesRepository helpers', () => {
       moreInfo: null,
       duration: null,
       networks: [],
-      themes: [],
-      themeSongs: [],
+      animethemes: [],
       trailers: [],
       schedule: null,
     };

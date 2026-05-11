@@ -1,8 +1,13 @@
 import { afterEach, beforeEach, describe, it } from '@std/testing/bdd';
 import { assertEquals } from '@std/assert';
+import { assertSpyCalls } from '@std/testing/mock';
 import { mockFetch, resetFetch } from '@c4spar/mock-fetch';
 import { TraktService } from '@scope/service/trakt';
-import { createMockLogger, createMockSecret } from '@scope/common/testing';
+import {
+  createMockCache,
+  createMockLogger,
+  createMockSecret,
+} from '@scope/common/testing';
 
 describe('TraktService', () => {
   const config = createMockSecret({
@@ -11,9 +16,13 @@ describe('TraktService', () => {
     CLIENT_REQUEST_TIMEOUT: '5000',
   }).service;
   const { logger } = createMockLogger();
+  const mockCache = createMockCache();
+  const service = mockCache.service;
+  const cache = mockCache.cache;
 
   beforeEach(() => {
     resetFetch();
+    cache.clear();
   });
 
   afterEach(() => {
@@ -60,12 +69,18 @@ describe('TraktService', () => {
       body: JSON.stringify(show),
     });
 
-    const service = new TraktService(config, logger);
-    const result = await service.getShow('sample-show');
+    const trakt = new TraktService(config, logger, service);
+    const result = await trakt.getShow('sample-show');
 
     assertEquals(result?.ids.slug, 'sample-show');
     assertEquals(result?.runtime, 24);
     assertEquals(result?.status, 'returning series');
+    assertSpyCalls(mockCache.spies.set, 1);
+    assertEquals(mockCache.spies.set.calls[0]?.args, [
+      'edge:trakt:show:sample-show',
+      result,
+      { ttl: 60 * 60 * 4 },
+    ]);
   });
 
   it('parses seasons when episodes provide null numeric fields', async () => {
@@ -114,12 +129,17 @@ describe('TraktService', () => {
       },
     );
 
-    const service = new TraktService(config, logger);
-    const result = await service.getSeasons('sample-show', {
+    const trakt = new TraktService(config, logger, service);
+    const result = await trakt.getSeasons('sample-show', {
       extended: 'episodes',
     });
 
     assertEquals(result?.[0].episodes?.[0].number_abs, 0);
     assertEquals(result?.[0].episodes?.[0].runtime, 0);
+    assertEquals(mockCache.spies.set.calls.at(-1)?.args, [
+      'edge:trakt:seasons:sample-show:episodes',
+      result,
+      { ttl: 60 * 60 * 4 },
+    ]);
   });
 });

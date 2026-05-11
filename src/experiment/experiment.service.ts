@@ -37,13 +37,13 @@ export class ExperimentService implements OnAppClose {
       AppFeatures,
       | 'news-refactor-api'
       | 'enable-analytics'
+      | 'enable-animethemes-api'
       | 'episode-align-title-sim'
       | 'episodes-diagnostics'
       | 'enable-skyhook-source'
       | 'enable-tmdb-source'
       | 'enable-trakt-source'
       | 'enable-notify-source'
-      | 'enable-themes-source'
     >,
   ): boolean {
     return this.invoke(() => this.growthBook.isOn(feature));

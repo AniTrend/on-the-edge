@@ -11,7 +11,10 @@ import type {
 } from '@scope/service/jikan';
 import type { ArmService, SeriesRelationId } from '@scope/service/arm';
 import type { TheXem, TheXemService } from '@scope/service/thexem';
-import { AnimeTheme, ThemeService } from '@scope/service/theme';
+import type {
+  AnimeThemesLookupModel,
+  AnimeThemesService,
+} from '@scope/service/animethemes';
 
 /**
  * Type-safe spy for TraktService.getShow
@@ -105,12 +108,16 @@ export function createTheXemSpy(
 }
 
 /**
- * Type-safe spy for Themes.getThemesForAnime
+ * Type-safe spy for AnimeThemesService.getThemesForAnime
  */
-export function createThemesSpy(
-  impl?: (tvdbId?: number) => Promise<AnimeTheme[]>,
-): Spy<ThemeService, [tvdbId?: number], Promise<AnimeTheme[]>> {
-  return spy(impl ?? (async () => []));
+export function createAnimeThemesSpy(
+  impl?: (malId?: number) => Promise<AnimeThemesLookupModel | undefined>,
+): Spy<
+  AnimeThemesService,
+  [malId?: number],
+  Promise<AnimeThemesLookupModel | undefined>
+> {
+  return spy(impl ?? (async () => undefined));
 }
 
 /**
@@ -125,7 +132,7 @@ export function createServiceSpies() {
   const armAnilistSpy = createArmAnilistSpy();
   const armTvdbSpy = createArmTvdbSpy();
   const thexemSpy = createTheXemSpy();
-  const themeSpy = createThemesSpy();
+  const animeThemesSpy = createAnimeThemesSpy();
 
   return {
     services: {
@@ -151,9 +158,9 @@ export function createServiceSpies() {
       thexem: {
         getMappingsByTvdb: thexemSpy,
       } as unknown as TheXemService,
-      theme: {
-        getThemesForAnime: themeSpy,
-      } as unknown as ThemeService,
+      animeThemes: {
+        getThemesForAnime: animeThemesSpy,
+      } as unknown as AnimeThemesService,
     },
     spies: {
       trakt: traktSpy,
@@ -164,7 +171,7 @@ export function createServiceSpies() {
       armAnilist: armAnilistSpy,
       armTvdb: armTvdbSpy,
       thexem: thexemSpy,
-      themes: themeSpy,
+      animeThemes: animeThemesSpy,
     },
   };
 }

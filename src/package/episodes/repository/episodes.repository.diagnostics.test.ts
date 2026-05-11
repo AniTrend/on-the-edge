@@ -11,7 +11,6 @@ import type { SkyhookService } from '@scope/service/skyhook';
 import type { TmdbService } from '@scope/service/tmdb';
 import type { TraktService } from '@scope/service/trakt';
 import type { NotifyService } from '@scope/service/notify';
-import type { ThemeService } from '@scope/service/theme';
 import type { TheXemService } from '@scope/service/thexem';
 import type { MongoService } from '@scope/database';
 import type { EpisodeKind } from '../episodes.types.ts';
@@ -121,7 +120,6 @@ describe('EpisodesRepository diagnostics (persisted)', () => {
       {} as unknown as TmdbService,
       {} as unknown as TraktService,
       {} as unknown as NotifyService,
-      {} as unknown as ThemeService,
       {} as unknown as TheXemService,
       logger,
       {
@@ -162,7 +160,6 @@ describe('EpisodesRepository diagnostics (persisted)', () => {
       {} as unknown as TmdbService,
       {} as unknown as TraktService,
       {} as unknown as NotifyService,
-      {} as unknown as ThemeService,
       {} as unknown as TheXemService,
       logger,
       {

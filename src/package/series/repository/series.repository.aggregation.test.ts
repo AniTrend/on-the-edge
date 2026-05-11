@@ -11,24 +11,24 @@ import type { TmdbShow } from '@scope/service/tmdb';
 import type { SkyhookShow } from '@scope/service/skyhook';
 import type { SeriesRelationId } from '@scope/service/arm';
 import type { NotifyAnime } from '@scope/service/notify';
+import type { AnimeThemesLookupModel } from '@scope/service/animethemes';
 import type { JikanAnime } from '@scope/service/jikan';
 import type { TheXem } from '@scope/service/thexem';
-import { createMockLogger } from '@scope/common/testing';
+import { createMockExperiment, createMockLogger } from '@scope/common/testing';
 import {
+  createAnimeThemesSpy,
   createArmAnilistSpy,
   createArmTvdbSpy,
   createJikanSpy,
   createNotifySpy,
   createServiceSpies,
   createSkyhookSpy,
-  createThemesSpy,
   createTheXemSpy,
   createTmdbSpy,
   createTraktSpy,
 } from './testing/mod.ts';
 import { SeriesResolver } from './series.resolver.ts';
 import { LoggerService } from '@scope/logger';
-import { AnimeTheme } from '@scope/service/theme';
 
 function createArmRelation(
   overrides: Partial<SeriesRelationId> = {},
@@ -131,17 +131,26 @@ function createMockData() {
     },
   ];
 
-  const themes: AnimeTheme[] = [{
-    id: '1',
-    name: 'OP1',
-    video: 'https://example.com/op1.mp4',
-    audio: 'https://example.com/op1.mp3',
-    meta: {
-      type: 'OP',
-      number: 1,
-      version: 0,
-    },
-  }];
+  const animethemes: AnimeThemesLookupModel = {
+    anime: [{
+      id: 456,
+      name: 'Series',
+      slug: 'series',
+      year: 2024,
+      season: 'Spring',
+      media_format: 'TV',
+      animethemes: [
+        {
+          id: 1,
+          type: 'OP',
+          sequence: 1,
+          slug: 'series-op1',
+          song: { id: 11, title: 'OP1' },
+          animethemeentries: [],
+        },
+      ],
+    }],
+  };
 
   return {
     traktShow,
@@ -151,7 +160,7 @@ function createMockData() {
     jikanAnime,
     armRelations,
     thexemRows,
-    themes,
+    animethemes,
   };
 }
 
@@ -209,8 +218,7 @@ function createCachedSeriesDocument(
     moreInfo: null,
     duration: null,
     networks: [],
-    themes: [],
-    themeSongs: [],
+    animethemes: [],
     trailers: [],
     schedule: null,
     updatedAt: Math.floor(Date.now() / 1000),
@@ -248,7 +256,8 @@ describe.skip('SeriesRepository aggregation', () => {
       mocks.services.jikan,
       mocks.services.arm,
       mocks.services.thexem,
-      mocks.services.theme,
+      mocks.services.animeThemes,
+      createMockExperiment({ 'enable-animethemes-api': true }),
       logger,
     );
   }
@@ -296,7 +305,9 @@ describe.skip('SeriesRepository aggregation', () => {
       mocks.spies.jikan = createJikanSpy(async () => mockData.jikanAnime);
       mocks.spies.armTvdb = createArmTvdbSpy(async () => []);
       mocks.spies.thexem = createTheXemSpy(async () => mockData.thexemRows);
-      mocks.spies.themes = createThemesSpy(async () => mockData.themes);
+      mocks.spies.animeThemes = createAnimeThemesSpy(
+        async () => mockData.animethemes,
+      );
 
       mocks.services.arm.getAniListRelationId = mocks.spies.armAnilist;
       mocks.services.trakt.getShow = mocks.spies.trakt;
@@ -306,6 +317,7 @@ describe.skip('SeriesRepository aggregation', () => {
       mocks.services.jikan.getAnime = mocks.spies.jikan;
       mocks.services.arm.getRelationsByTvdb = mocks.spies.armTvdb;
       mocks.services.thexem.getMappingsByTvdb = mocks.spies.thexem;
+      mocks.services.animeThemes.getThemesForAnime = mocks.spies.animeThemes;
 
       const repository = new SeriesRepository(
         createMockMongoService(collection),
