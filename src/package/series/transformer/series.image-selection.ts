@@ -12,7 +12,8 @@ const preferredBuckets = (locale?: string | null): string[] => {
     : ['jp'];
 };
 
-const maxImagesForLocale = (locale?: string | null) => locale ? preferredBuckets(locale).length : 2;
+const maxImagesForLocale = (locale?: string | null) =>
+  locale ? preferredBuckets(locale).length : 2;
 
 const shouldUseBestAvailableFallback = (locale?: string | null) => !locale;
 
