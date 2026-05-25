@@ -90,7 +90,8 @@
   "test": {
     "permissions": {
       "read": [".env"],
-      "env": true
+      "env": true,
+      "run": ["/bin/sh"]
     },
     "include": ["**/*.test.ts", "**/*.spec.ts", "**/testing"]
   },
