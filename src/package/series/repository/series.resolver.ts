@@ -168,15 +168,6 @@ export class SeriesResolver {
     if (!malId) {
       return undefined;
     }
-    if (!this.experiment.isEnabled('enable-animethemes-api')) {
-      this.logger.instance.info(
-        'Skipping AnimeThemes fetch because feature flag is disabled',
-        {
-          malId,
-        },
-      );
-      return undefined;
-    }
     try {
       return await this.animeThemes.getThemesForAnime(malId);
     } catch (error) {

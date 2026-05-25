@@ -119,11 +119,9 @@ const animeThemesLookup: AnimeThemesLookupModel = {
   }],
 };
 
-function createResolver(flagEnabled: boolean) {
+function createResolver() {
   const { logger } = createMockLogger();
-  const experiment = createMockExperiment({
-    'enable-animethemes-api': flagEnabled,
-  });
+  const experiment = createMockExperiment({});
   const getThemesForAnime = spy(async () => animeThemesLookup);
 
   const resolver = new SeriesResolver(
@@ -146,17 +144,8 @@ function createResolver(flagEnabled: boolean) {
 }
 
 describe('SeriesResolver', () => {
-  it('skips AnimeThemes when enable-animethemes-api is disabled', async () => {
-    const { resolver, getThemesForAnime } = createResolver(false);
-
-    const result = await resolver.resolve({ anilist: 400 });
-
-    assertSpyCalls(getThemesForAnime, 0);
-    assertEquals('animethemes' in result ? result.animethemes : [], []);
-  });
-
-  it('uses AnimeThemes when enable-animethemes-api is enabled', async () => {
-    const { resolver, getThemesForAnime } = createResolver(true);
+  it('resolves AnimeThemes correctly', async () => {
+    const { resolver, getThemesForAnime } = createResolver();
 
     const result = await resolver.resolve({ anilist: 400 });
 
@@ -169,9 +158,7 @@ describe('SeriesResolver', () => {
 
   it('throws SeriesNotFoundError when no relation can be resolved', async () => {
     const { logger } = createMockLogger();
-    const experiment = createMockExperiment({
-      'enable-animethemes-api': false,
-    });
+    const experiment = createMockExperiment({});
 
     const resolver = new SeriesResolver(
       { getShow: async () => undefined } as unknown as TraktService,
@@ -199,9 +186,7 @@ describe('SeriesResolver', () => {
 
   it('throws SeriesArmLookupError when ARM lookup fails upstream', async () => {
     const { logger } = createMockLogger();
-    const experiment = createMockExperiment({
-      'enable-animethemes-api': false,
-    });
+    const experiment = createMockExperiment({});
     const upstreamError = new Error('ARM timeout');
 
     const resolver = new SeriesResolver(

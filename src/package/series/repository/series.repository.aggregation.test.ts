@@ -257,7 +257,7 @@ describe.skip('SeriesRepository aggregation', () => {
       mocks.services.arm,
       mocks.services.thexem,
       mocks.services.animeThemes,
-      createMockExperiment({ 'enable-animethemes-api': true }),
+      createMockExperiment({}),
       logger,
     );
   }
