@@ -26,7 +26,7 @@ const readUntil = async (
 
 const assertSignalShutdown = async (signal: ShutdownSignal) => {
   const child = new Deno.Command('/bin/sh', {
-    args: ['-c', `deno run -P ${FIXTURE_PATH} --signal=${signal}`],
+    args: ['-c', `exec deno run -P ${FIXTURE_PATH} --signal=${signal}`],
     stdout: 'piped',
     stderr: 'piped',
   }).spawn();
