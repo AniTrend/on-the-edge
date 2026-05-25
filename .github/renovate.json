@@ -10,7 +10,7 @@
   "reviewers": [
     "wax911"
   ],
-  "baseBranches": [
+  "baseBranchPatterns": [
     "dev"
   ],
   "automerge": true,
