@@ -6,10 +6,22 @@ type RankedImage = {
 };
 
 const preferredBuckets = (locale?: string | null): string[] => {
-  const deviceLanguage = toLanguage(locale);
+  const deviceLanguage = toBucketLanguage(toLanguage(locale));
   return deviceLanguage && deviceLanguage !== 'jp'
     ? ['jp', deviceLanguage]
     : ['jp'];
+};
+
+const maxImagesForLocale = (locale?: string | null) => locale ? preferredBuckets(locale).length : 2;
+
+const shouldUseBestAvailableFallback = (locale?: string | null) => !locale;
+
+const toBucketLanguage = (language?: string | null): string | null => {
+  if (!language) {
+    return null;
+  }
+
+  return language === 'ja' ? 'jp' : language;
 };
 
 const toLanguage = (locale?: string | null): string | null => {
@@ -25,10 +37,18 @@ const imageArea = ({ width, height }: SeriesImageAttributes) => width * height;
 
 const rankImage = (
   candidate: RankedImage,
-  bucket: string,
+  bucket?: string | null,
 ): [number, number, number] => {
-  const language = toLanguage(candidate.image.locale);
-  const localeRank = language === bucket ? 2 : language === null ? 1 : 0;
+  const language = toBucketLanguage(toLanguage(candidate.image.locale));
+  let localeRank = 0;
+
+  if (bucket === null) {
+    localeRank = language === null ? 1 : 0;
+  } else if (!bucket) {
+    localeRank = 1;
+  } else {
+    localeRank = language === bucket ? 1 : 0;
+  }
 
   return [localeRank, imageArea(candidate.image), -candidate.index];
 };
@@ -48,7 +68,7 @@ const compareRank = (
 
 const selectForBucket = (
   images: RankedImage[],
-  bucket: string,
+  bucket: string | null | undefined,
   usedUrls: Set<string>,
 ): RankedImage | null => {
   let best: RankedImage | null = null;
@@ -60,6 +80,10 @@ const selectForBucket = (
     }
 
     const candidateRank = rankImage(candidate, bucket);
+    if (bucket !== undefined && candidateRank[0] === 0) {
+      continue;
+    }
+
     if (!bestRank || compareRank(bestRank, candidateRank) > 0) {
       best = candidate;
       bestRank = candidateRank;
@@ -90,12 +114,15 @@ export const selectSeriesImages = (
   const selectedImages: SeriesImageAttributes[] = [];
   const buckets = preferredBuckets(locale);
   const usedUrls = new Set<string>();
+  const maxImagesPerType = maxImagesForLocale(locale);
 
   for (const type of typeOrder) {
     const group = groupedImages.get(type);
     if (!group) {
       continue;
     }
+
+    let selectedForType = 0;
 
     for (const bucket of buckets) {
       const selected = selectForBucket(group, bucket, usedUrls);
@@ -105,6 +132,39 @@ export const selectSeriesImages = (
 
       usedUrls.add(selected.image.url);
       selectedImages.push(selected.image);
+      selectedForType += 1;
+
+      if (selectedForType >= maxImagesPerType) {
+        break;
+      }
+    }
+
+    if (selectedForType >= maxImagesPerType) {
+      continue;
+    }
+
+    const universal = selectForBucket(group, null, usedUrls);
+    if (universal) {
+      usedUrls.add(universal.image.url);
+      selectedImages.push(universal.image);
+      selectedForType += 1;
+    }
+
+    if (selectedForType >= maxImagesPerType) {
+      continue;
+    }
+
+    if (shouldUseBestAvailableFallback(locale)) {
+      while (selectedForType < maxImagesPerType) {
+        const fallback = selectForBucket(group, undefined, usedUrls);
+        if (!fallback) {
+          break;
+        }
+
+        usedUrls.add(fallback.image.url);
+        selectedImages.push(fallback.image);
+        selectedForType += 1;
+      }
     }
   }
 

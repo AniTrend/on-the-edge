@@ -2,7 +2,7 @@ import { describe, it } from '@std/testing/bdd';
 import { assertEquals, assertRejects } from '@std/assert';
 import { assertSpyCalls, spy } from '@std/testing/mock';
 import { SeriesResolver } from './series.resolver.ts';
-import { SeriesNotFoundError } from './index.ts';
+import { SeriesArmLookupError, SeriesNotFoundError } from './index.ts';
 import { createMockExperiment, createMockLogger } from '@scope/common/testing';
 import type {
   AnimeThemesLookupModel,
@@ -194,6 +194,41 @@ describe('SeriesResolver', () => {
     await assertRejects(
       () => resolver.resolve({ anilist: 400 }),
       SeriesNotFoundError,
+    );
+  });
+
+  it('throws SeriesArmLookupError when ARM lookup fails upstream', async () => {
+    const { logger } = createMockLogger();
+    const experiment = createMockExperiment({
+      'enable-animethemes-api': false,
+    });
+    const upstreamError = new Error('ARM timeout');
+
+    const resolver = new SeriesResolver(
+      { getShow: async () => undefined } as unknown as TraktService,
+      {
+        getShow: async () => undefined,
+        getMovie: async () => undefined,
+      } as unknown as TmdbService,
+      { getShowByTvdb: async () => undefined } as unknown as SkyhookService,
+      { getAnime: async () => undefined } as unknown as NotifyService,
+      { getAnime: async () => undefined } as unknown as JikanService,
+      {
+        getRelationsById: async () => {
+          throw upstreamError;
+        },
+      } as unknown as ArmService,
+      { getMappingsByTvdb: async () => undefined } as unknown as TheXemService,
+      {
+        getThemesForAnime: async () => undefined,
+      } as unknown as AnimeThemesService,
+      experiment,
+      logger,
+    );
+
+    await assertRejects(
+      () => resolver.resolve({ anilist: 400 }),
+      SeriesArmLookupError,
     );
   });
 });

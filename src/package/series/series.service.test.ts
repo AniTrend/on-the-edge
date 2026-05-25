@@ -9,7 +9,10 @@ import {
 import { ObjectId } from 'mongodb';
 import { SeriesService } from './series.service.ts';
 import { SeriesRepository } from './repository/index.ts';
-import { SeriesNotFoundError } from './repository/index.ts';
+import {
+  SeriesArmLookupError,
+  SeriesNotFoundError,
+} from './repository/index.ts';
 import { createMockLogger } from '@scope/common/testing';
 import { toInstant } from '@scope/common/utils';
 
@@ -165,6 +168,88 @@ describe('SeriesService', () => {
     ]);
   });
 
+  it('prefers the device locale before universal fallback when jp is unavailable', async () => {
+    const { logger } = createMockLogger();
+
+    const mockDocument = createSeriesDocument({
+      images: [
+        {
+          type: 'POSTER',
+          locale: null,
+          url: 'poster-universal',
+          width: 1000,
+          height: 1500,
+        },
+        {
+          type: 'POSTER',
+          locale: 'en',
+          url: 'poster-en',
+          width: 900,
+          height: 1350,
+        },
+        {
+          type: 'POSTER',
+          locale: 'fr',
+          url: 'poster-fr',
+          width: 1200,
+          height: 1800,
+        },
+      ],
+    });
+    const repository = {
+      invoke: spy(async () => mockDocument),
+    } as unknown as SeriesRepository;
+
+    const service = new SeriesService(repository, logger);
+    const response = await service.aggregate({ anilist: 789 }, 'en-US');
+
+    assertEquals(response.images.map(({ url }) => url), [
+      'poster-en',
+      'poster-universal',
+    ]);
+  });
+
+  it('does not return unrelated locale images after universal fallback for locale-specific requests', async () => {
+    const { logger } = createMockLogger();
+
+    const mockDocument = createSeriesDocument({
+      images: [
+        {
+          type: 'LOGO',
+          locale: 'ja',
+          url: 'logo-ja',
+          width: 1400,
+          height: 300,
+        },
+        {
+          type: 'LOGO',
+          locale: null,
+          url: 'logo-universal',
+          width: 1000,
+          height: 200,
+        },
+        {
+          type: 'LOGO',
+          locale: 'ru',
+          url: 'logo-ru',
+          width: 1600,
+          height: 400,
+        },
+      ],
+    });
+    const repository = {
+      invoke: spy(async () => mockDocument),
+    } as unknown as SeriesRepository;
+
+    const service = new SeriesService(repository, logger);
+    const response = await service.aggregate({ anilist: 789 }, 'de-DE');
+
+    assertEquals(response.images.map(({ url }) => url), [
+      'logo-ja',
+      'logo-universal',
+    ]);
+  });
+
   it('does not mutate repository-returned document images when filtering the response', async () => {
     const { logger } = createMockLogger();
 
@@ -275,6 +360,31 @@ describe('SeriesService', () => {
       args: [
         'Failed to aggregate series',
         { query: { anilist: 789 }, cause: customError },
+      ],
+    });
+  });
+
+  it('wraps ARM lookup failures in InternalServerErrorException', async () => {
+    const { logger, spies } = createMockLogger();
+
+    const upstreamError = new Error('ARM timeout');
+    const repository = {
+      invoke: spy(async () => {
+        throw new SeriesArmLookupError(upstreamError);
+      }),
+    } as unknown as SeriesRepository;
+
+    const service = new SeriesService(repository, logger);
+
+    await assertRejects(
+      () => service.aggregate({ anilist: 789 }),
+      InternalServerErrorException,
+    );
+
+    assertSpyCall(spies.error, 0, {
+      args: [
+        'Failed to aggregate series',
+        { query: { anilist: 789 }, cause: upstreamError },
       ],
     });
   });

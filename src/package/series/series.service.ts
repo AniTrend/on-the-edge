@@ -5,39 +5,14 @@ import {
   NotFoundException,
 } from '@danet/core';
 import { LoggerService } from '@scope/logger';
-import { SeriesNotFoundError, SeriesRepository } from './repository/index.ts';
+import {
+  SeriesArmLookupError,
+  SeriesNotFoundError,
+  SeriesRepository,
+} from './repository/index.ts';
 import type { Series } from './series.types.ts';
 import type { SeriesQuery } from './series.types.ts';
-import type { SeriesImageAttributes } from './series.types.ts';
 import { selectSeriesImages } from './transformer/index.ts';
-
-const selectAggregateImages = (
-  images: SeriesImageAttributes[],
-  locale?: string | null,
-) => {
-  const selectedImages = selectSeriesImages(images, locale);
-  if (locale) {
-    return selectedImages;
-  }
-
-  const selectedUrls = new Set(selectedImages.map(({ url }) => url));
-  const fallbackTypes = new Set<SeriesImageAttributes['type']>();
-
-  return [
-    ...selectedImages,
-    ...selectSeriesImages(
-      images.filter(({ url }) => !selectedUrls.has(url)),
-      'fallback',
-    ).filter(({ type }) => {
-      if (fallbackTypes.has(type)) {
-        return false;
-      }
-
-      fallbackTypes.add(type);
-      return true;
-    }),
-  ];
-};
 
 @Injectable()
 export class SeriesService {
@@ -78,16 +53,18 @@ export class SeriesService {
       return {
         id: _id.toHexString(),
         ...entity,
-        images: selectAggregateImages(entity.images, locale),
+        images: selectSeriesImages(entity.images, locale),
       } satisfies Series;
     } catch (error) {
       if (error instanceof SeriesNotFoundError) {
         throw new NotFoundException();
       }
 
+      const cause = error instanceof SeriesArmLookupError ? error.cause : error;
+
       this.logger.instance.error('Failed to aggregate series', {
         query,
-        cause: error,
+        cause,
       });
       throw new InternalServerErrorException();
     }

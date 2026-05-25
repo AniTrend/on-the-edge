@@ -70,7 +70,46 @@ describe('series.image-selection', () => {
     );
   });
 
-  it('should choose the best available image when no preferred or universal image exists', () => {
+  it('should prefer the device locale before universal fallback when jp is missing', () => {
+    const images = [
+      image('POSTER', null, 'poster-universal'),
+      image('POSTER', 'en', 'poster-en'),
+      image('POSTER', 'fr', 'poster-fr'),
+    ];
+
+    assertEquals(
+      selectSeriesImages(images, 'en-US').map((entry) => entry.url),
+      ['poster-en', 'poster-universal'],
+    );
+  });
+
+  it('should stop at universal fallback for locale-specific requests', () => {
+    const images = [
+      image('LOGO', 'ja', 'logo-ja', 1400, 300),
+      image('LOGO', null, 'logo-universal', 1000, 200),
+      image('LOGO', 'ru', 'logo-ru', 1600, 400),
+    ];
+
+    assertEquals(
+      selectSeriesImages(images, 'de-DE').map((entry) => entry.url),
+      ['logo-ja', 'logo-universal'],
+    );
+  });
+
+  it('should treat ja and jp as the same japanese bucket', () => {
+    const images = [
+      image('POSTER', 'ja', 'poster-ja'),
+      image('POSTER', 'jp', 'poster-jp'),
+      image('POSTER', 'en', 'poster-en'),
+    ];
+
+    assertEquals(
+      selectSeriesImages(images, 'ja-JP').map((entry) => entry.url),
+      ['poster-ja'],
+    );
+  });
+
+  it('should not choose unrelated locale images when no preferred or universal image exists', () => {
     const images = [
       image('LOGO', 'fr', 'logo-fr-small', 400, 100),
       image('LOGO', 'es', 'logo-es-large', 1200, 300),
@@ -79,6 +118,19 @@ describe('series.image-selection', () => {
 
     assertEquals(
       selectSeriesImages(images, 'en-US').map((entry) => entry.url),
+      [],
+    );
+  });
+
+  it('should choose the best available images when locale is missing', () => {
+    const images = [
+      image('LOGO', 'fr', 'logo-fr-small', 400, 100),
+      image('LOGO', 'es', 'logo-es-large', 1200, 300),
+      image('LOGO', 'de', 'logo-de-medium', 800, 200),
+    ];
+
+    assertEquals(
+      selectSeriesImages(images).map((entry) => entry.url),
       ['logo-es-large', 'logo-de-medium'],
     );
   });
