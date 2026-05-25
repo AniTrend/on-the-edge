@@ -12,6 +12,7 @@ import { Injectable } from '@danet/core';
 import { MediaUnion, SeriesQuery } from '../series.types.ts';
 import { isAnime } from './helpers/qualifier.ts';
 import { seriesTransform } from '../transformer/series.transformer.ts';
+import { SeriesNotFoundError } from './series.errors.ts';
 
 @Injectable()
 export class SeriesResolver {
@@ -188,7 +189,7 @@ export class SeriesResolver {
     const relation = await this.resolveArm(param);
 
     if (!relation) {
-      throw new Error('Series not found');
+      throw new SeriesNotFoundError();
     }
 
     // Fetch Notify and Jikan in parallel as they are independent
