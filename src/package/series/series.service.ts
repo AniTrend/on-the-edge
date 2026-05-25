@@ -1,9 +1,18 @@
-import { Injectable, InternalServerErrorException } from '@danet/core';
-import { BadRequestException } from '@danet/core';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@danet/core';
 import { LoggerService } from '@scope/logger';
-import { SeriesRepository } from './repository/index.ts';
+import {
+  SeriesArmLookupError,
+  SeriesNotFoundError,
+  SeriesRepository,
+} from './repository/index.ts';
 import type { Series } from './series.types.ts';
 import type { SeriesQuery } from './series.types.ts';
+import { selectSeriesImages } from './transformer/index.ts';
 
 @Injectable()
 export class SeriesService {
@@ -24,7 +33,7 @@ export class SeriesService {
    * @throws BadRequestException if query is empty or invalid
    * @throws NotFoundException if no upstream services return data
    */
-  async aggregate(query: SeriesQuery): Promise<Series> {
+  async aggregate(query: SeriesQuery, locale?: string | null): Promise<Series> {
     // Validate query has at least one identifier
     if (!query || Object.keys(query).length === 0) {
       this.logger.instance.warn('Provided empty query to aggregate series');
@@ -44,11 +53,18 @@ export class SeriesService {
       return {
         id: _id.toHexString(),
         ...entity,
+        images: selectSeriesImages(entity.images, locale),
       } satisfies Series;
     } catch (error) {
+      if (error instanceof SeriesNotFoundError) {
+        throw new NotFoundException();
+      }
+
+      const cause = error instanceof SeriesArmLookupError ? error.cause : error;
+
       this.logger.instance.error('Failed to aggregate series', {
         query,
-        cause: error,
+        cause,
       });
       throw new InternalServerErrorException();
     }

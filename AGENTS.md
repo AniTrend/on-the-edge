@@ -23,12 +23,12 @@
 ## Testing Guidelines
 - Test files match `**/*.test.ts`, `**/*.spec.ts`, and `**/testing` helpers.
 - Keep tests deterministic: use in-memory adapters and mock fetch utilities under `src/**/testing/`.
-- Aim for meaningful coverage; CI expects `deno task fmt:check`, `lint`, and `test` to pass.
+- Aim for meaningful coverage; CI mirrors `deno fmt --check`, `deno lint`, `deno task check`, `deno task test`, and `deno task build`, so the local equivalents must pass before committing.
 
 ## Commit & Pull Request Guidelines
 - Follow Conventional Commits: `feat(scope): subject`, `fix(experiment): adjust typings`.
 - Branch from `dev` using `feature/123-brief-title` or `fix/456-bug-title`; PRs should target `dev` and link issues.
-- Include tests, update docs when behavior changes, and ensure `fmt`, `lint`, and targeted tests pass locally.
+- Include tests, update docs when behavior changes, and before committing run the same quality gates enforced in `.github/workflows/ci.yml`: `bash .github/scripts/config-env.sh`, `deno fmt --check`, `deno lint`, `deno task check`, `deno task test`, and `deno task build`.
 
 ## Security & Configuration
 - Configure via `.env` (copy from `.env.example`); never commit secrets.

@@ -12,6 +12,7 @@ import { Injectable } from '@danet/core';
 import { MediaUnion, SeriesQuery } from '../series.types.ts';
 import { isAnime } from './helpers/qualifier.ts';
 import { seriesTransform } from '../transformer/series.transformer.ts';
+import { SeriesArmLookupError, SeriesNotFoundError } from './series.errors.ts';
 
 @Injectable()
 export class SeriesResolver {
@@ -123,20 +124,27 @@ export class SeriesResolver {
     query: SeriesQuery,
   ): Promise<SeriesRelationId | undefined> => {
     const { anilist, mal } = query;
+    if (!anilist && !mal) {
+      throw new Error('No valid identifier provided for ARM lookup');
+    }
+
     try {
       if (anilist) {
         return await this.arm.getRelationsById('anilist', anilist);
-      } else if (mal) {
+      }
+
+      if (mal) {
         return await this.arm.getRelationsById('myanimelist', mal);
       }
-      throw new Error('No valid identifier provided for ARM lookup');
     } catch (error) {
       this.logger.instance.warn('Failed to fetch Arm anime', {
         query,
         error,
       });
-      return undefined;
+      throw new SeriesArmLookupError(error);
     }
+
+    return undefined;
   };
 
   private resolveTheXem = async (
@@ -188,7 +196,7 @@ export class SeriesResolver {
     const relation = await this.resolveArm(param);
 
     if (!relation) {
-      throw new Error('Series not found');
+      throw new SeriesNotFoundError();
     }
 
     // Fetch Notify and Jikan in parallel as they are independent
