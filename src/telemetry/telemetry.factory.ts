@@ -41,6 +41,7 @@ export class TelemetryFactory {
     );
     this.loggerProvider = new LoggerProvider({
       resource: this.resource,
+      processors: [this.batchLogProcessor],
     });
     this.logger.log('Setting global logger provider for OpenTelemetry');
     logs.setGlobalLoggerProvider(this.loggerProvider);

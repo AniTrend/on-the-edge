@@ -16,21 +16,21 @@ export class TelemetryService implements OnAppBootstrap, OnAppClose {
   private readonly sdk?: NodeSDK;
   private readonly enabled: boolean;
 
-  constructor(factory: TelemetryFactory, secret: SecretService) {
+  constructor(
+    private readonly factory: TelemetryFactory,
+    secret: SecretService,
+  ) {
     this.enabled = !secret.isCI();
     if (!this.enabled) {
       this.logger.log('OpenTelemetry disabled in CI mode');
       return;
     }
-    this.sdk = this.initializeSDK(factory, secret);
+    this.sdk = this.initializeSDK(secret);
   }
 
-  private initializeSDK(
-    factory: TelemetryFactory,
-    secret: SecretService,
-  ): NodeSDK {
+  private initializeSDK(secret: SecretService): NodeSDK {
     return new NodeSDK({
-      resource: factory.resource,
+      resource: this.factory.resource,
       traceExporter: new OTLPTraceExporter({
         url: secret.get('OTEL_EXPORTER_OTLP_TRACES_ENDPOINT'),
       }),
@@ -40,7 +40,6 @@ export class TelemetryService implements OnAppBootstrap, OnAppClose {
         }),
         exportIntervalMillis: 60000 * 5, // Export metrics every 5 minutes
       }),
-      logRecordProcessors: [factory.batchLogProcessor],
       instrumentations: [
         new HttpInstrumentation(),
         new MongoDBInstrumentation(),
@@ -61,6 +60,7 @@ export class TelemetryService implements OnAppBootstrap, OnAppClose {
       return;
     }
     this.logger.log('Shutting down OpenTelemetry');
-    return this.sdk.shutdown();
+    await this.sdk.shutdown();
+    await this.factory.loggerProvider.shutdown();
   }
 }
