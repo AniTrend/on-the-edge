@@ -23,8 +23,7 @@
 	 cp .env.example .env
 	 ```
 	 Fill in provider URLs/keys (`TMDB`, `TRAKT`, `ANIME_THEMES`, GrowthBook, Mongo creds, etc.). Keep secrets out of source control.
-	 `ANIME_THEMES` is the active base URL for AnimeThemes lookups. `THEMES` is retained only as a legacy placeholder while the compatibility facade in `src/service/theme/` remains in place.
-	 GrowthBook flag `enable-animethemes-api` switches `ThemeService` between the legacy `THEMES` endpoint and the AnimeThemes API during rollout.
+	 `ANIME_THEMES` is the active base URL for AnimeThemes lookups.
 3. **Install dependencies** (cached by Deno on demand)
 	 ```bash
 	 deno task cache
