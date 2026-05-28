@@ -67,7 +67,8 @@
     "npm:dom-mutator@0.6": "0.6.0",
     "npm:mongodb@^6.21.0": "6.21.0",
     "npm:path-to-regexp@6.2.1": "6.2.1",
-    "npm:zod@3.23.8": "3.23.8"
+    "npm:zod@3.23.8": "3.23.8",
+    "npm:zod@4.4.3": "4.4.3"
   },
   "jsr": {
     "@anitrend/request-client@0.1.4": {
@@ -96,7 +97,7 @@
         "jsr:@std/path@1.0.6",
         "npm:@anatine/zod-openapi@2.2.6",
         "npm:path-to-regexp",
-        "npm:zod"
+        "npm:zod@3.23.8"
       ]
     },
     "@danet/validatte@0.7.4": {
@@ -109,14 +110,14 @@
       "integrity": "1ce7c696b69bff6bbbd788bd4a5955cd24e8c5a8cb117c57dabb03e31968bbee",
       "dependencies": [
         "jsr:@danet/core@^2.5.1",
-        "npm:zod"
+        "npm:zod@3.23.8"
       ]
     },
     "@danet/zod@0.0.9": {
       "integrity": "b57dc2ecf0ec477f90a0b0fcd16e638e108582e2aefc938540fd79bfb317a787",
       "dependencies": [
         "jsr:@danet/core@^2.9.2",
-        "npm:zod"
+        "npm:zod@3.23.8"
       ]
     },
     "@db/redis@0.40.0": {
@@ -265,7 +266,7 @@
       "dependencies": [
         "openapi3-ts",
         "ts-deepmerge",
-        "zod"
+        "zod@3.23.8"
       ]
     },
     "@anatine/zod-openapi@2.2.8_openapi3-ts@4.5.0_zod@3.23.8": {
@@ -273,7 +274,7 @@
       "dependencies": [
         "openapi3-ts",
         "ts-deepmerge",
-        "zod"
+        "zod@3.23.8"
       ]
     },
     "@grpc/grpc-js@1.14.3": {
@@ -883,6 +884,9 @@
     },
     "zod@3.23.8": {
       "integrity": "sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g=="
+    },
+    "zod@4.4.3": {
+      "integrity": "sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ=="
     }
   },
   "workspace": {
@@ -918,7 +922,7 @@
       "npm:@opentelemetry/sdk-node@0.218",
       "npm:@opentelemetry/semantic-conventions@^1.39.0",
       "npm:mongodb@^6.21.0",
-      "npm:zod@3.23.8"
+      "npm:zod@4.4.3"
     ]
   }
 }
