@@ -14,6 +14,14 @@ import {
 export class ArmService {
   private readonly client: RequestClient;
 
+  private parseRelation(data: unknown): SeriesRelationId | undefined {
+    if (data == null) {
+      return undefined;
+    }
+
+    return ArmSchema.parse(data);
+  }
+
   constructor(
     private readonly secret: SecretService,
     private readonly logger: LoggerService,
@@ -44,13 +52,13 @@ export class ArmService {
       );
     }
 
-    return ArmSchema.parse(data);
+    return this.parseRelation(data);
   };
 
   getRelationsById = async (
     source: SeriesRelationSource,
     id: number,
-  ): Promise<SeriesRelationId> => {
+  ): Promise<SeriesRelationId | undefined> => {
     const { data, status } = await this.client
       .get('/api/v2/ids', {
         params: {
@@ -65,7 +73,7 @@ export class ArmService {
       );
     }
 
-    return ArmSchema.parse(data);
+    return this.parseRelation(data);
   };
 
   getRelationsByTvdb = async (

@@ -76,4 +76,17 @@ describe('ArmService', () => {
     assertEquals(result[0].anilist, 20);
     assertEquals(result[1].imdb, 'tt789');
   });
+
+  it('returns undefined when ids lookup responds with null', async () => {
+    mockFetch('https://arm.test/api/v2/ids?source=anilist&id=12373', {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+      body: 'null',
+    });
+
+    const service = new ArmService(config, logger);
+    const result = await service.getRelationsById('anilist', 12373);
+
+    assertEquals(result, undefined);
+  });
 });

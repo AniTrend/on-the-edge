@@ -5,6 +5,7 @@ import { type MongoService } from '@scope/database';
 import { InMemoryCollection } from '@scope/database/testing';
 import type {
   BulkWriteOptions,
+  DeleteResult,
   Filter,
   FindOneAndReplaceOptions,
   FindOptions,
@@ -56,6 +57,10 @@ class MockMongoCollection {
     options?: UpdateOptions,
   ) {
     return this.memoryCollection.updateOne(filter, update, options);
+  }
+
+  deleteMany(filter: Filter<NewsDocument>): Promise<DeleteResult> {
+    return this.memoryCollection.deleteMany(filter);
   }
 
   findOneAndReplace(
@@ -140,6 +145,31 @@ describe('NewsRepository', () => {
     assertEquals(result.data[0].publishedOn, 1_735_700_001);
     assertExists(result.first);
     assertEquals(result.first, result.last);
+  });
+
+  it('purges cached documents that violate the public news schema', async () => {
+    const repository = new NewsRepository(
+      new MockMongoService(
+        new MockMongoCollection(collection),
+      ) as unknown as MongoService,
+      new MockOtakumodeService() as unknown as OtakumodeService,
+      logger,
+    );
+
+    await collection.insertMany([
+      createNewsDocument({ id: 'valid-news', publishedOn: 1_735_700_001 }),
+      createNewsDocument({
+        id: 'invalid-news',
+        publishedOn: null as unknown as number,
+      }),
+    ]);
+
+    await repository.paging({ limit: 10 });
+
+    assertEquals(await collection.countDocuments({}), 1);
+    assertEquals((await collection.find({}, {})).map((item) => item.id), [
+      'valid-news',
+    ]);
   });
 
   it('drops remote RSS items with non-finite publishedOn values before insert', async () => {

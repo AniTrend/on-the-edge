@@ -58,14 +58,32 @@ export class NewsRepository {
     };
   }
 
-  private toPublicNewsBatch(documents: NewsDocumentWithId[]): Array<{
-    cursor: string;
-    item: News;
-  }> {
-    return documents.flatMap((document) => {
+  private async toPublicNewsBatch(
+    documents: NewsDocumentWithId[],
+  ): Promise<
+    Array<{
+      cursor: string;
+      item: News;
+    }>
+  > {
+    const invalidDocumentIds: ObjectId[] = [];
+    const payload = documents.flatMap((document) => {
       const parsed = this.toPublicNews(document);
-      return parsed ? [parsed] : [];
+      if (parsed) {
+        return [parsed];
+      }
+
+      invalidDocumentIds.push(document._id);
+      return [];
     });
+
+    if (invalidDocumentIds.length > 0) {
+      await this.collection.deleteMany({
+        _id: { $in: invalidDocumentIds },
+      });
+    }
+
+    return payload;
   }
 
   async lastUpdatedAt(): Promise<number | undefined> {
@@ -103,7 +121,9 @@ export class NewsRepository {
           limit: 15,
         };
         const results = await this.collection.find({}, options);
-        const payload = this.toPublicNewsBatch(results).map(({ item }) => item);
+        const payload = (await this.toPublicNewsBatch(results)).map((
+          { item },
+        ) => item);
         if (payload.length > 0 || results.length === 0) {
           return payload;
         }
@@ -154,7 +174,7 @@ export class NewsRepository {
       { sort, limit: query.limit },
     );
 
-    const payload = this.toPublicNewsBatch(documents);
+    const payload = await this.toPublicNewsBatch(documents);
     const data = payload.map(({ item }) => item);
 
     const count = data.length;
