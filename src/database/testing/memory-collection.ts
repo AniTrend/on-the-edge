@@ -1,5 +1,6 @@
 import {
   BulkWriteOptions,
+  DeleteResult,
   Document,
   Filter,
   FindOneAndReplaceOptions,
@@ -76,6 +77,12 @@ export class InMemoryCollection<T extends Document> implements Collection<T> {
         if ('$gt' in value && numValue <= (value.$gt as number)) return false;
         if ('$lte' in value && numValue > (value.$lte as number)) return false;
         if ('$gte' in value && numValue < (value.$gte as number)) return false;
+        if (
+          '$in' in value && Array.isArray(value.$in) &&
+          !value.$in.includes(docValue)
+        ) {
+          return false;
+        }
         if ('$exists' in value && (docValue !== undefined) !== value.$exists) {
           return false;
         }
@@ -296,6 +303,19 @@ export class InMemoryCollection<T extends Document> implements Collection<T> {
       upsertedCount: 0,
       upsertedId: null,
     } as UpdateResult;
+  }
+
+  async deleteMany(filter: Filter<T>): Promise<DeleteResult> {
+    const docs = await this.find(filter);
+
+    docs.forEach((doc) => {
+      this.data.delete(doc._id);
+    });
+
+    return {
+      acknowledged: true,
+      deletedCount: docs.length,
+    } as DeleteResult;
   }
 
   /**

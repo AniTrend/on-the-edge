@@ -1,6 +1,7 @@
 import type {
   BulkWriteOptions,
   Collection as MongoCollection,
+  DeleteResult,
   Document,
   Filter,
   FindOneAndReplaceOptions,
@@ -81,5 +82,9 @@ export class MongoCollectionAdapter<T extends Document>
     });
 
     return result;
+  }
+
+  async deleteMany(filter: Filter<T>): Promise<DeleteResult> {
+    return await this.collection.deleteMany(filter);
   }
 }

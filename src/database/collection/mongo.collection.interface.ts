@@ -1,5 +1,6 @@
 import type {
   BulkWriteOptions,
+  DeleteResult,
   Document,
   Filter,
   FindOneAndReplaceOptions,
@@ -45,4 +46,6 @@ export interface Collection<T extends Document> {
     update: UpdateFilter<T>,
     options?: UpdateOptions,
   ): Promise<UpdateResult>;
+
+  deleteMany(filter: Filter<T>): Promise<DeleteResult>;
 }
