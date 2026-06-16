@@ -1,10 +1,3 @@
-import { z } from 'zod';
-import { extendZodWithOpenApi } from '@anatine/zod-openapi';
-import { ConfigSchema } from './config.schema.ts';
+import { ConfigContract } from './config.contract.ts';
 
-extendZodWithOpenApi(z);
-
-export const ConfigSchemaSwagger = ConfigSchema.openapi({
-  title: 'Config',
-  description: 'Client configuration',
-});
+export const ConfigSchemaSwagger = ConfigContract;

@@ -6,6 +6,7 @@
     "./core": "./core/index.ts",
     "./date": "./date/index.ts",
     "./inject": "./inject/index.ts",
+    "./openapi": "./openapi/mod.ts",
     "./testing": "./testing/index.ts",
     "./transformer": "./transformer/index.ts",
     "./utils": "./utils/index.ts",
