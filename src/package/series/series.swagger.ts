@@ -1,10 +1,3 @@
-import { z } from 'zod';
-import { extendZodWithOpenApi } from '@anatine/zod-openapi';
-import { MediaUnionSchema } from './series.schema.ts';
+import { SeriesContract } from './series.contract.ts';
 
-extendZodWithOpenApi(z);
-
-export const SeriesSwagger = MediaUnionSchema.openapi({
-  title: 'Series',
-  description: 'Aggregated of media entities from multiple sources',
-});
+export const SeriesSwagger = SeriesContract;

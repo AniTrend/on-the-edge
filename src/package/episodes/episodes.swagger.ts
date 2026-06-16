@@ -1,64 +1,50 @@
-import { z } from 'zod';
-import { extendZodWithOpenApi } from '@anatine/zod-openapi';
+import { z } from '@scope/common/openapi';
 import {
-  EpisodeCanonicalSchema,
-  EpisodeKindSchema,
-  EpisodeQuerySchema,
-  EpisodesContainerSchema,
-  EpisodeThemesSchema,
-  EpisodeTitleSchema,
-} from './episodes.schema.ts';
-
-extendZodWithOpenApi(z);
+  EpisodeContract,
+  EpisodeKindContract,
+  EpisodesContract,
+  EpisodeThemesContract,
+  EpisodeTitleContract,
+} from './episodes.contract.ts';
+import { EpisodeQuerySchema } from './episodes.schema.ts';
 
 /**
  * OpenAPI schema for episode kind enum
  */
-export const EpisodeKindSwagger = EpisodeKindSchema.openapi({
-  title: 'Episode Kind',
-  description: 'Episode type classification',
-  example: 'main',
-});
+export const EpisodeKindSwagger = EpisodeKindContract;
 
 /**
  * OpenAPI schema for episode title
  */
-export const EpisodeTitleSwagger = EpisodeTitleSchema.openapi({
-  title: 'Episode Title',
-  description: 'Multi-language episode title',
-});
+export const EpisodeTitleSwagger = EpisodeTitleContract;
 
 /**
  * OpenAPI schema for episode themes
  */
-export const EpisodeThemesSwagger = EpisodeThemesSchema.openapi({
-  title: 'Episode Themes',
-  description: 'Opening and ending theme songs',
-});
+export const EpisodeThemesSwagger = EpisodeThemesContract;
 
 /**
  * OpenAPI schema for canonical episode
  */
-export const EpisodeCanonicalSwagger = EpisodeCanonicalSchema.openapi({
-  title: 'Episode',
-  description: 'Canonical episode data from multiple sources',
-});
+export const EpisodeCanonicalSwagger = EpisodeContract;
 
 /**
- * OpenAPI schema for episode query parameters
+ * OpenAPI schema for episode query parameters.
+ *
+ * EpisodeQuerySchema is a runtime schema defined with raw zod. The centralized
+ * extendZodWithOpenApi(z) call globally extends the z singleton, so .openapi()
+ * is available at runtime. We use the centralized z type for the cast.
  */
-export const EpisodeQuerySwagger = EpisodeQuerySchema.openapi({
-  title: 'Episode Query',
-  description: 'Query parameters for episode listing',
-});
+export const EpisodeQuerySwagger =
+  (EpisodeQuerySchema as typeof z.ZodObject.prototype).openapi({
+    title: 'EpisodeQuery',
+    description: 'Query parameters for episode listing',
+  });
 
 /**
  * OpenAPI schema for paginated episodes response
  */
-export const EpisodesContainerSwagger = EpisodesContainerSchema.openapi({
-  title: 'Episodes',
-  description: 'Paginated episode listing with cursor navigation',
-});
+export const EpisodesContainerSwagger = EpisodesContract;
 
 // Maintain backward compatibility
 export const EpisodeSwagger = EpisodesContainerSwagger;

@@ -8,22 +8,59 @@
 
 /**
  * Expected top-level component schema names in the generated OpenAPI document.
- * Add entries here as packages are migrated to explicit public contract schemas.
+ * These correspond to the `title` field in each contract's `.openapi()` call.
  */
 export const EXPECTED_SCHEMA_NAMES = [
+  // Config
   'Config',
+  'ConfigSettings',
+  'ConfigImage',
+  'ConfigNavigationGroup',
+  'ConfigNavigationItem',
+  'ConfigGenre',
+
+  // News
   'News',
-  'NewsPaging',
+  'NewsConnection',
+
+  // Episodes
   'Episodes',
   'Episode',
   'EpisodeKind',
   'EpisodeTitle',
   'EpisodeThemes',
   'EpisodeQuery',
+
+  // Series
   'Series',
+  'SeriesId',
+  'SeriesTitle',
+  'SeriesScheduleEpisode',
+  'SeriesSchedule',
+  'SeriesNetwork',
+  'SeriesImageAttributes',
+  'SeriesTrailer',
+  'SeriesCoverImage',
+  'Media',
+  'MangaMetadata',
+  'AnimeMetadata',
+  'AnimeThemes',
+  'AnimeThemesAudio',
+  'AnimeThemesVideo',
+  'AnimeThemesEntry',
+  'AnimeThemesSong',
+
+  // Studio
   'Studio',
+  'StudioTitle',
+
+  // People
   'Person',
+
+  // Character
   'Character',
+  'CharacterMediaRelation',
+  'CharacterVoiceRelation',
 ] as const;
 
 /**
