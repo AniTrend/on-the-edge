@@ -1,4 +1,3 @@
-import { z } from '@scope/common/openapi';
 import {
   EpisodeContract,
   EpisodeKindContract,
@@ -35,11 +34,11 @@ export const EpisodeCanonicalSwagger = EpisodeContract;
  * extendZodWithOpenApi(z) call globally extends the z singleton, so .openapi()
  * is available at runtime. We use the centralized z type for the cast.
  */
-export const EpisodeQuerySwagger =
-  (EpisodeQuerySchema as typeof z.ZodObject.prototype).openapi({
-    title: 'EpisodeQuery',
-    description: 'Query parameters for episode listing',
-  });
+// deno-lint-ignore no-explicit-any
+export const EpisodeQuerySwagger = (EpisodeQuerySchema as any).openapi({
+  title: 'EpisodeQuery',
+  description: 'Query parameters for episode listing',
+});
 
 /**
  * OpenAPI schema for paginated episodes response

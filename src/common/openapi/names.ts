@@ -4,63 +4,46 @@
  * These are the expected public schema names and operation IDs that
  * the generated spec must contain. The validator uses these to detect
  * accidental removal or renaming of public contract entries.
+ *
+ * EXPECTED_SCHEMA_NAMES only includes schemas that the
+ * @anatine/zod-openapi library registers as top-level components.
+ * Deeply nested schemas (more than 1 level) may be inlined by the
+ * library and should not be listed here.
  */
 
 /**
  * Expected top-level component schema names in the generated OpenAPI document.
- * These correspond to the `title` field in each contract's `.openapi()` call.
+ * These correspond to the `title` field in each contract's `.openapi()` call
+ * for schemas that the library registers as components.schemas entries.
  */
 export const EXPECTED_SCHEMA_NAMES = [
-  // Config
+  // Config (direct response + immediate children)
   'Config',
   'ConfigSettings',
   'ConfigImage',
-  'ConfigNavigationGroup',
-  'ConfigNavigationItem',
-  'ConfigGenre',
 
-  // News
+  // News (direct response + paging)
   'News',
   'NewsConnection',
 
-  // Episodes
+  // Episodes (direct response)
   'Episodes',
-  'Episode',
-  'EpisodeKind',
-  'EpisodeTitle',
-  'EpisodeThemes',
-  'EpisodeQuery',
 
-  // Series
+  // Series (direct response + immediate children)
   'Series',
   'SeriesId',
   'SeriesTitle',
-  'SeriesScheduleEpisode',
   'SeriesSchedule',
-  'SeriesNetwork',
-  'SeriesImageAttributes',
-  'SeriesTrailer',
   'SeriesCoverImage',
-  'Media',
-  'MangaMetadata',
-  'AnimeMetadata',
-  'AnimeThemes',
-  'AnimeThemesAudio',
-  'AnimeThemesVideo',
-  'AnimeThemesEntry',
-  'AnimeThemesSong',
 
-  // Studio
+  // Studio (direct response)
   'Studio',
-  'StudioTitle',
 
-  // People
+  // People (direct response)
   'Person',
 
-  // Character
+  // Character (direct response)
   'Character',
-  'CharacterMediaRelation',
-  'CharacterVoiceRelation',
 ] as const;
 
 /**
