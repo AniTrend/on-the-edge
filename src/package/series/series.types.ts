@@ -1,5 +1,5 @@
 import { SeriesQuerySchema } from './series.schema.ts';
-import z from 'zod';
+import { z } from 'zod';
 import {
   AnimeMetadataSchema,
   MangaMetadataSchema,
