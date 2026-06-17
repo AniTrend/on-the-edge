@@ -15,6 +15,7 @@ const ImageSchema = z.object({
 });
 
 const NavigationItemSchema = z.object({
+  key: z.string().min(1),
   criteria: z.string(),
   destination: z.string(),
   i18n: z.string(),

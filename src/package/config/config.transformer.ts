@@ -10,6 +10,14 @@ const toImageUrl = (image: string, source: PlatformSource): string => {
   return image;
 };
 
+/**
+ * Derive a stable navigation key from a destination path.
+ * Strips leading slashes and replaces path separators with hyphens.
+ * Example: "/forum/recent" → "forum-recent"
+ */
+const keyFromDestination = (destination: string): string =>
+  destination.replace(/^\/+/, '').replace(/\//g, '-') || 'unknown';
+
 export const transform: Transform<
   {
     document: ConfigDocument;
@@ -34,6 +42,9 @@ export const transform: Transform<
       info: toImageUrl(image.info, platformSource),
       default: toImageUrl(image.default, platformSource),
     },
-    navigation: navigation,
+    navigation: navigation.map((item) => ({
+      ...item,
+      key: item.key || keyFromDestination(item.destination),
+    })),
   };
 };

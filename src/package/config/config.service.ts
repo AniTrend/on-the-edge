@@ -3,6 +3,7 @@ import { ExperimentService, PlatformSource } from '@scope/experiment';
 import { ConfigRepository } from './config.repository.ts';
 import { Config } from './config.types.ts';
 import { transform } from './config.transformer.ts';
+import { validateNavigation } from './config.validation.ts';
 import { LoggerService } from '@scope/logger';
 
 @Injectable()
@@ -29,6 +30,21 @@ export class ConfigService {
       this.logger.instance.error('No config document found in database');
       throw new NotFoundException();
     }
-    return transform({ document, ...features });
+    const config = transform({ document, ...features });
+
+    const navErrors = validateNavigation(config.navigation);
+    if (navErrors.length > 0) {
+      this.logger.instance.error(
+        'Config navigation payload validation failed',
+        { errors: navErrors },
+      );
+      throw new Error(
+        `Config navigation payload is invalid: ${
+          navErrors.map((e) => e.message).join('; ')
+        }`,
+      );
+    }
+
+    return config;
   }
 }
