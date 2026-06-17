@@ -57,6 +57,70 @@ function findTypeArrays(
 }
 
 /**
+ * Assert that path response schemas use $ref (named components) and
+ * do not contain inline object schemas that would produce unstable
+ * GraphQL Mesh type names.
+ *
+ * Accepted:
+ *   { "$ref": "#/components/schemas/Config" }
+ *   { "type": "array", "items": { "$ref": "#/components/schemas/News" } }
+ *
+ * Rejected:
+ *   { "type": "object", "properties": { ... } }
+ */
+function checkInlineResponses(
+  paths: Record<string, unknown>,
+  violations: string[],
+): void {
+  for (const [pathKey, pathEntry] of Object.entries(paths)) {
+    const methods = pathEntry as Record<string, unknown>;
+    for (const [method, operation] of Object.entries(methods)) {
+      const op = operation as Record<string, unknown>;
+      if (!op.responses || typeof op.responses !== 'object') continue;
+
+      const responses = op.responses as Record<string, unknown>;
+      const response = responses['200'] || responses[200];
+      if (!response || typeof response !== 'object') continue;
+
+      const r200 = response as Record<string, unknown>;
+      const content = r200.content as Record<string, unknown> | undefined;
+      if (!content) continue;
+
+      const json = content['application/json'] as
+        | Record<
+          string,
+          unknown
+        >
+        | undefined;
+      if (!json || !json.schema) continue;
+
+      const schema = json.schema as Record<string, unknown>;
+
+      // Accepted: direct $ref
+      if (typeof schema.$ref === 'string') continue;
+
+      // Accepted: array of $ref
+      if (
+        schema.type === 'array' &&
+        schema.items &&
+        typeof (schema.items as Record<string, unknown>).$ref === 'string'
+      ) {
+        continue;
+      }
+
+      // Rejected: inline object or anything else
+      const opId = typeof op.operationId === 'string'
+        ? ` (operationId: ${op.operationId})`
+        : '';
+      violations.push(
+        `Inline response schema at ${method.toUpperCase()} ${pathKey} 200 application/json${opId}. ` +
+          'Expected $ref to a named component or array of $ref.',
+      );
+    }
+  }
+}
+
+/**
  * Assert that an OpenAPI document meets contract hygiene requirements.
  *
  * Checks:
@@ -73,6 +137,16 @@ export function assertOpenApiContract(
   doc: Record<string, unknown>,
 ): void {
   const violations: string[] = [];
+
+  // 0. Required top-level sections must exist
+  if (!doc.components || !(doc.components as Record<string, unknown>).schemas) {
+    violations.push(
+      'Expected components.schemas to exist in the OpenAPI document',
+    );
+  }
+  if (!doc.paths) {
+    violations.push('Expected paths to exist in the OpenAPI document');
+  }
 
   // 1. No undefined schema component
   const schemas = (doc.components as Record<string, unknown>)
@@ -129,6 +203,9 @@ export function assertOpenApiContract(
         );
       }
     }
+
+    // 4b. Check response schemas use $ref (named components)
+    checkInlineResponses(paths, violations);
   }
 
   // 5. Expected schema names

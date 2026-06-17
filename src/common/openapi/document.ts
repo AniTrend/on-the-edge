@@ -73,8 +73,13 @@ function normalizeType(
     );
   }
 
-  // type: ["null"] only — extremely rare, treat as nullable empty
-  return { ...schema, type: 'string', nullable: true };
+  // type: ["null"] only — structurally suspicious, fail loudly
+  throw new Error(
+    `Unsupported null-only OpenAPI 3.0 type array at: type: ${
+      JSON.stringify(type)
+    }. ` +
+      'A null-only type indicates the generator emitted something structurally suspicious.',
+  );
 }
 
 /**

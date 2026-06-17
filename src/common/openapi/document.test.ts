@@ -160,3 +160,21 @@ Deno.test('normalizeOpenApiDocument preserves non-type fields', () => {
   assertEquals(example.example, 'hello');
   assertEquals(example.enum, ['a', 'b']);
 });
+
+Deno.test('normalizeOpenApiDocument throws on type: ["null"] (null-only type array)', () => {
+  const input = {
+    components: {
+      schemas: {
+        BadNull: {
+          type: ['null'],
+        },
+      },
+    },
+  };
+
+  assertThrows(
+    () => normalizeOpenApiDocument(input),
+    Error,
+    'null-only',
+  );
+});

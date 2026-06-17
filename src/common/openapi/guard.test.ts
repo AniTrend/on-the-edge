@@ -61,31 +61,88 @@ function makeValidDoc(
     info: { title: 'Edge API', version: '1.0' },
     paths: {
       '/v1/config': {
-        get: { operationId: 'config', responses: {} },
+        get: {
+          operationId: 'config',
+          responses: {
+            200: {
+              description: 'OK',
+              content: {
+                'application/json': {
+                  schema: { $ref: '#/components/schemas/Config' },
+                },
+              },
+            },
+          },
+        },
       },
       '/v1/news/feed': {
-        get: { operationId: 'newsFeed', responses: {} },
+        get: {
+          operationId: 'newsFeed',
+          responses: {
+            200: {
+              description: 'OK',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'array',
+                    items: { $ref: '#/components/schemas/News' },
+                  },
+                },
+              },
+            },
+          },
+        },
       },
       '/v1/news': {
-        get: { operationId: 'news', responses: {} },
+        get: {
+          operationId: 'news',
+          responses: {},
+        },
       },
       '/v1/episodes': {
-        get: { operationId: 'episodes', responses: {} },
+        get: {
+          operationId: 'episodes',
+          responses: {
+            200: {
+              description: 'OK',
+              content: {
+                'application/json': {
+                  schema: { $ref: '#/components/schemas/Episodes' },
+                },
+              },
+            },
+          },
+        },
       },
       '/v1/series': {
-        get: { operationId: 'series', responses: {} },
+        get: {
+          operationId: 'series',
+          responses: {},
+        },
       },
       '/v1/studio': {
-        get: { operationId: 'studio', responses: {} },
+        get: {
+          operationId: 'studio',
+          responses: {},
+        },
       },
       '/v1/people': {
-        get: { operationId: 'person', responses: {} },
+        get: {
+          operationId: 'person',
+          responses: {},
+        },
       },
       '/v1/character': {
-        get: { operationId: 'character', responses: {} },
+        get: {
+          operationId: 'character',
+          responses: {},
+        },
       },
       '/': {
-        get: { operationId: 'index', responses: {} },
+        get: {
+          operationId: 'index',
+          responses: {},
+        },
       },
     },
     components: { schemas },
@@ -183,5 +240,56 @@ Deno.test('assertOpenApiContract rejects missing expected schema names', () => {
     () => assertOpenApiContract(doc),
     OpenApiContractError,
     '"News"',
+  );
+});
+
+Deno.test('assertOpenApiContract rejects inline 200 response object schema', () => {
+  const doc = makeValidDoc();
+  const paths = doc.paths as Record<string, unknown>;
+  (paths['/v1/config'] as Record<string, unknown>).get = {
+    operationId: 'config',
+    responses: {
+      200: {
+        description: 'OK',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: { id: { type: 'string' } },
+            },
+          },
+        },
+      },
+    },
+  };
+
+  assertThrows(
+    () => assertOpenApiContract(doc),
+    OpenApiContractError,
+    'Inline response schema',
+  );
+});
+
+Deno.test('assertOpenApiContract passes with $ref and array-of-$ref response schemas', () => {
+  // makeValidDoc already uses $ref and array-of-$ref
+  const doc = makeValidDoc();
+  assertOpenApiContract(doc);
+});
+
+Deno.test('assertOpenApiContract rejects missing components.schemas', () => {
+  const doc = makeValidDoc({ components: undefined });
+  assertThrows(
+    () => assertOpenApiContract(doc),
+    OpenApiContractError,
+    'components.schemas',
+  );
+});
+
+Deno.test('assertOpenApiContract rejects missing paths', () => {
+  const doc = makeValidDoc({ paths: undefined });
+  assertThrows(
+    () => assertOpenApiContract(doc),
+    OpenApiContractError,
+    'paths',
   );
 });
