@@ -41,6 +41,10 @@ export const ConfigNavigationGroupContract = z.object({
 });
 
 export const ConfigNavigationItemContract = z.object({
+  key: z.string().min(1).openapi({
+    description:
+      'Stable identity for persistence, dedupe, and diffing. Must not change unless a deliberate migration is intended.',
+  }),
   criteria: z.string(),
   destination: z.string(),
   i18n: z.string(),
