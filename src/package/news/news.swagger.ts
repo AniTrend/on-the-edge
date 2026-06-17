@@ -1,15 +1,17 @@
-import { z } from 'zod';
-import { extendZodWithOpenApi } from '@anatine/zod-openapi';
-import { NewsPagingSchema, NewsSchema } from './news.schema.ts';
+import { NewsConnectionContract, NewsContract } from './news.contract.ts';
+import { NewsPagingQuerySchema, NewsQuerySchema } from './news.schema.ts';
 
-extendZodWithOpenApi(z);
+export const NewsSwagger = NewsContract;
+export const NewsPagingSwagger = NewsConnectionContract;
 
-export const NewsSwagger = NewsSchema.openapi({
-  title: 'News',
-  description: 'Schema representing a news document.',
+// deno-lint-ignore no-explicit-any
+export const NewsQuerySwagger = (NewsQuerySchema as any).openapi({
+  title: 'NewsQuery',
+  description: 'Query parameters for news feed',
 });
 
-export const NewsPagingSwagger = NewsPagingSchema.openapi({
-  title: 'NewsPaging',
-  description: 'Paged response for news documents.',
+// deno-lint-ignore no-explicit-any
+export const NewsPagingQuerySwagger = (NewsPagingQuerySchema as any).openapi({
+  title: 'NewsPagingQuery',
+  description: 'Query parameters for paged news listing',
 });

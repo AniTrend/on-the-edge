@@ -1,8 +1,7 @@
 import { Controller, Get } from '@danet/core';
 import { Query, ReturnedSchema } from '@danet/zod';
 import { EpisodeService } from './episodes.service.ts';
-import { EpisodeSwagger } from './episodes.swagger.ts';
-import { EpisodeQuerySchema } from './episodes.schema.ts';
+import { EpisodeQuerySwagger, EpisodeSwagger } from './episodes.swagger.ts';
 import type { EpisodeQuery, EpisodesContainer } from './episodes.types.ts';
 
 /**
@@ -21,7 +20,7 @@ export class EpisodeController {
   @Get('episodes')
   @ReturnedSchema(EpisodeSwagger)
   async episodes(
-    @Query(EpisodeQuerySchema) query: EpisodeQuery,
+    @Query(EpisodeQuerySwagger) query: EpisodeQuery,
   ): Promise<EpisodesContainer> {
     return this.service.getEpisodes(query);
   }

@@ -7,7 +7,13 @@ import {
   LoggerMiddleware,
   TracingMiddleware,
 } from '@scope/middleware';
+import {
+  assertOpenApiContract,
+  normalizeOpenApiDocument,
+} from '@scope/common/openapi';
 import { trace } from '@opentelemetry/api';
+
+type Spec = ReturnType<SpecBuilder['build']>;
 
 export const setup = async (
   application: DanetApplication,
@@ -25,10 +31,17 @@ export const setup = async (
       .setVersion('1.0')
       .build();
 
-    const document = await SwaggerModule.createDocument(application, spec);
+    const rawDocument = await SwaggerModule.createDocument(application, spec);
+    const normalized = normalizeOpenApiDocument(
+      rawDocument as unknown as Record<string, unknown>,
+    );
+    assertOpenApiContract(normalized);
+    const document = normalized as unknown as Spec;
     await SwaggerModule.setup('docs', application, document);
-    const stream = new TextEncoder().encode(JSON.stringify(document));
-    Deno.writeFileSync('.github/swagger-spec.json', stream);
+    Deno.writeTextFileSync(
+      '.github/swagger-spec.json',
+      JSON.stringify(normalized, null, 2),
+    );
   }
 
   application.addGlobalMiddlewares(

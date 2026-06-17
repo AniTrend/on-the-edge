@@ -74,6 +74,7 @@
     "dev": "deno -P bootstrap.ts",
     "dev:watch": "deno -P --watch-hmr bootstrap.ts",
     "swagger:generate": "deno -P src/swagger.ts",
+    "swagger:validate": "deno -P --allow-read=.github/swagger-spec.json src/swagger-validate.ts",
     "test": "deno test -P --coverage=coverage --allow-sys=osRelease",
     "build": "deno compile -P --ignore-read --output=./build/edge bootstrap.ts"
   },

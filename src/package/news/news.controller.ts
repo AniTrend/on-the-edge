@@ -7,8 +7,12 @@ import type {
   NewsPagingQuery,
   NewsQuery,
 } from './news.types.ts';
-import { NewsPagingQuerySchema, NewsQuerySchema } from './news.schema.ts';
-import { NewsPagingSwagger, NewsSwagger } from './news.swagger.ts';
+import {
+  NewsPagingQuerySwagger,
+  NewsPagingSwagger,
+  NewsQuerySwagger,
+  NewsSwagger,
+} from './news.swagger.ts';
 import { LoggerService } from '@scope/logger';
 
 @Controller('v1')
@@ -20,14 +24,14 @@ export class NewsController {
 
   @Get('news/feed')
   @ReturnedSchema(NewsSwagger, true)
-  async newsFeed(@Query(NewsQuerySchema) query: NewsQuery): Promise<News[]> {
+  async newsFeed(@Query(NewsQuerySwagger) query: NewsQuery): Promise<News[]> {
     return this.service.feed(query);
   }
 
   @Get('news')
   @ReturnedSchema(NewsPagingSwagger)
   async news(
-    @Query(NewsPagingQuerySchema) query: NewsPagingQuery,
+    @Query(NewsPagingQuerySwagger) query: NewsPagingQuery,
   ): Promise<NewsPaging> {
     return this.service.paging(query);
   }

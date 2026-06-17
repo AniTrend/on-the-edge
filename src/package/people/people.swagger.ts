@@ -1,10 +1,10 @@
-import { z } from 'zod';
-import { extendZodWithOpenApi } from '@anatine/zod-openapi';
-import { PeopleDocumentSchema } from './people.schema.ts';
+import { PersonContract } from './people.contract.ts';
+import { PeopleQuerySchema } from './people.schema.ts';
 
-extendZodWithOpenApi(z);
+export const PeopleSwagger = PersonContract;
 
-export const PeopleSwagger = PeopleDocumentSchema.openapi({
-  title: 'Person',
-  description: 'Anime staff or voice actor metadata resolved from Jikan (MAL)',
+// deno-lint-ignore no-explicit-any
+export const PeopleQuerySwagger = (PeopleQuerySchema as any).openapi({
+  title: 'PeopleQuery',
+  description: 'Query parameters for people lookup',
 });

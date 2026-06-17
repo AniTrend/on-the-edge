@@ -77,3 +77,40 @@ This Code of Conduct is adapted from the [Contributor Covenant][homepage], versi
 [version]: http://contributor-covenant.org/version/1/4/
 
 Thank you for your contribution!
+
+## OpenAPI Contract Guidelines
+
+The generated `swagger-spec.json` is consumed by `edge-graphql` to build the GraphQL gateway that `anitrend-v2` depends on. **Every API change must keep this contract valid.**
+
+### Schema layering
+
+| File | Purpose | Imports `z` from |
+|------|---------|-----------------|
+| `*.schema.ts` | Runtime validation, preprocessors, coercion | `zod` |
+| `*.contract.ts` | Public OpenAPI contract, explicit `.openapi()` | `@scope/common/openapi` |
+| `*.swagger.ts` | Re-exports from contract + query wrappers | `@scope/common/openapi` |
+
+### Key rules
+
+- Use `.nullable().optional()` instead of `.nullish()` in contract schemas.
+- Replace `z.custom<T>()` with `z.enum([...])` or `z.string()` in contracts.
+- Every `@Query()` schema needs an `.openapi()`-wrapped export in `*.swagger.ts`.
+- Controllers must import query schemas from `*.swagger.ts`, not `*.schema.ts`.
+- Add new schema titles to `EXPECTED_SCHEMA_NAMES` and operation IDs to `EXPECTED_OPERATION_IDS` in `src/common/openapi/names.ts`.
+
+### Running contract validation locally
+
+The contract check requires MongoDB and Redis running locally:
+
+```bash
+# Start services (example with Docker)
+docker run -d -p 27017:27017 mongo:8
+docker run -d -p 6379:6379 redis:8-alpine
+
+# Copy env and run
+cp .env.example .env
+deno task swagger:generate
+deno task swagger:validate
+```
+
+CI enforces this via the `contract-check` job. A failing check blocks merge.

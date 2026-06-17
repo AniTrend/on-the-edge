@@ -1,11 +1,10 @@
-import { z } from 'zod';
-import { extendZodWithOpenApi } from '@anatine/zod-openapi';
-import { CharacterDocumentSchema } from './character.schema.ts';
+import { CharacterContract } from './character.contract.ts';
+import { CharacterQuerySchema } from './character.schema.ts';
 
-extendZodWithOpenApi(z);
+export const CharacterSwagger = CharacterContract;
 
-export const CharacterSwagger = CharacterDocumentSchema.openapi({
-  title: 'Character',
-  description:
-    'Fictional character metadata resolved from Jikan (MAL), including media and voice-actor relations',
+// deno-lint-ignore no-explicit-any
+export const CharacterQuerySwagger = (CharacterQuerySchema as any).openapi({
+  title: 'CharacterQuery',
+  description: 'Query parameters for character lookup',
 });

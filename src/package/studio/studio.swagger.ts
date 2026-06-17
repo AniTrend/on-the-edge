@@ -1,10 +1,10 @@
-import { z } from 'zod';
-import { extendZodWithOpenApi } from '@anatine/zod-openapi';
-import { StudioDocumentSchema } from './studio.schema.ts';
+import { StudioContract } from './studio.contract.ts';
+import { StudioQuerySchema } from './studio.schema.ts';
 
-extendZodWithOpenApi(z);
+export const StudioSwagger = StudioContract;
 
-export const StudioSwagger = StudioDocumentSchema.openapi({
-  title: 'Studio',
-  description: 'Animation studio metadata resolved from Jikan (MAL)',
+// deno-lint-ignore no-explicit-any
+export const StudioQuerySwagger = (StudioQuerySchema as any).openapi({
+  title: 'StudioQuery',
+  description: 'Query parameters for studio lookup',
 });

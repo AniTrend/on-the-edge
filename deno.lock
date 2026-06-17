@@ -7,6 +7,7 @@
     "jsr:@danet/core@^2.5.1": "2.9.6",
     "jsr:@danet/core@^2.9.2": "2.9.6",
     "jsr:@danet/core@^2.9.6": "2.9.6",
+    "jsr:@danet/swagger@2.3.2": "2.3.2",
     "jsr:@danet/swagger@^2.3.2": "2.3.2",
     "jsr:@danet/validatte@0.7.4": "0.7.4",
     "jsr:@danet/zod@0.0.7": "0.0.7",

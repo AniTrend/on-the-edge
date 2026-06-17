@@ -58,13 +58,15 @@
 
 ## Quality gates
 
-| Purpose       | Command                              |
-|---------------|---------------------------------------|
-| Format        | `deno task fmt` / `deno task fmt:check` |
-| Lint          | `deno task lint`                      |
-| Type check    | `deno task check`                     |
-| Tests         | `deno task test`                      |
-| Targeted test | `deno task test --filter <pattern>`   |
+| Purpose              | Command                              |
+|-----------------------|---------------------------------------|
+| Format                | `deno task fmt` / `deno task fmt:check` |
+| Lint                  | `deno task lint`                      |
+| Type check            | `deno task check`                     |
+| Tests                 | `deno task test`                      |
+| Targeted test         | `deno task test --filter <pattern>`   |
+| Swagger spec generate | `deno task swagger:generate`           |
+| Swagger spec validate | `deno task swagger:validate`           |
 
 Tests are fully offline: use `@c4spar/mock-fetch`, in-memory cache/database adapters, and `FakeTime` for TTL-sensitive flows.
 
@@ -124,9 +126,10 @@ Each folder exposes its public surface via `deno.json`/`index.ts`, enabling impo
 
 ## Contributing checklist
 
-- Follow the [CONTRIBUTING.md](CONTRIBUTING.md) guidelines.
+- Follow the [CONTRIBUTING.md](CONTRIBUTING.md) guidelines, especially the OpenAPI contract rules.
 - Keep pull requests focused; update docs when behavior changes.
 - Run `deno fmt`, `deno lint`, and targeted `deno task test` before pushing.
+- If you changed API schemas or endpoints, run `deno task swagger:generate` + `deno task swagger:validate` (requires local MongoDB/Redis) or rely on CI's `contract-check` job.
 - Document new secrets/flags in `.env.example` or `docs/` as appropriate.
 
 For deeper architecture notes, see the documents under `docs/` (service audit, series pipeline, test infrastructure phases).

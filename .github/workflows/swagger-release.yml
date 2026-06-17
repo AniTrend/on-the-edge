@@ -82,8 +82,9 @@ jobs:
       - name: Config properties file
         run: bash .github/scripts/config-env.sh
       - name: Generate swagger spec
-        continue-on-error: true
         run: deno task swagger:generate
+      - name: Validate swagger spec
+        run: deno task swagger:validate
       - name: Upload swagger spec artifact
         uses: actions/upload-artifact@v7
         with:
