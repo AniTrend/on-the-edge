@@ -39,11 +39,19 @@ export class PushService {
     private readonly logger: LoggerService,
     private readonly secret: SecretService,
   ) {
+    // Use Deno.env.get directly with defaults for optional push env vars.
+    // SecretService.get() throws MissingKeyError on missing keys,
+    // which crashes Swagger generation in CI.
     this.challengeTtlSeconds = Number(
-      this.secret.get<string>('PUSH_CHALLENGE_TTL_SECONDS'),
+      Deno.env.get('PUSH_CHALLENGE_TTL_SECONDS') ?? '300',
     );
-    // Allow HTTP endpoints in development for local testing
     this.isDev = this.secret.environment() === 'development';
+  }
+
+  // --- VAPID ---
+
+  async getApplicationServerKey(): Promise<string> {
+    return this.pushSender.getApplicationServerKey();
   }
 
   // --- Registration ---

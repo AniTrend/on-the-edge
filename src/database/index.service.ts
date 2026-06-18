@@ -27,8 +27,15 @@ export class DatabaseIndexService implements OnAppBootstrap {
   ) {}
 
   async onAppBootstrap(): Promise<void> {
-    await this.createPushInstallationIndexes();
-    await this.createPushDeliveryAttemptIndexes();
+    try {
+      await this.createPushInstallationIndexes();
+      await this.createPushDeliveryAttemptIndexes();
+    } catch (error) {
+      this.logger.instance.warn(
+        'Failed to create database indexes during bootstrap',
+        { cause: error },
+      );
+    }
   }
 
   private async createPushInstallationIndexes(): Promise<void> {

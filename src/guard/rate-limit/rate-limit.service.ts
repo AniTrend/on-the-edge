@@ -47,6 +47,17 @@ export class RateLimitService implements OnAppBootstrap, OnAppClose {
     maxRequests: number,
     windowSeconds: number,
   ): Promise<RateLimitResult> {
+    if (!this.redis.isConnected) {
+      // Allow requests through when Redis is unavailable
+      return {
+        allowed: true,
+        currentCount: 0,
+        limit: maxRequests,
+        remaining: maxRequests,
+        resetAt: 0,
+      };
+    }
+
     const redisKey = this.buildKey(key);
     const currentCount = await this.redis.incr(redisKey);
 
@@ -81,11 +92,10 @@ export class RateLimitService implements OnAppBootstrap, OnAppClose {
         `Rate-limit Redis connection validated: ${pong}`,
       );
     } catch (err) {
-      this.logger.instance.error(
-        'Rate-limit Redis connection failed during bootstrap',
+      this.logger.instance.warn(
+        'Rate-limit Redis connection failed during bootstrap. Rate limiting will be unavailable until Redis is configured.',
         { cause: err },
       );
-      throw err;
     }
   }
 
