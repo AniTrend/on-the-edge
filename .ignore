@@ -1,0 +1,3 @@
+# Exclude from Deno tooling but allow aignore to read deepwork files
+!.slim/deepwork/
+!.slim/deepwork/**
