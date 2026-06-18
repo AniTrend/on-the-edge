@@ -55,11 +55,11 @@ export class PushSenderService implements OnAppBootstrap {
         'Push sender ApplicationServer initialized',
       );
     } catch (error) {
-      this.logger.instance.error(
-        'Failed to initialize push sender',
+      this.logger.instance.warn(
+        'Push sender not initialized — PUSH_VAPID_KEYS missing or invalid. Push delivery will be unavailable until configured.',
         { cause: error },
       );
-      throw error;
+      // Do not throw — allow the application to start without push sending
     } finally {
       this.logger.instance.mark('push-sender-init-end');
       this.logger.instance.measure(
