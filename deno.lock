@@ -3,7 +3,6 @@
   "specifiers": {
     "jsr:@anitrend/request-client@~0.1.4": "0.1.4",
     "jsr:@c4spar/mock-fetch@1": "1.0.0",
-    "jsr:@danet/core@*": "2.11.0",
     "jsr:@danet/core@2": "2.11.0",
     "jsr:@danet/core@^2.11.0": "2.11.0",
     "jsr:@danet/core@^2.5.1": "2.11.0",
@@ -12,16 +11,13 @@
     "jsr:@danet/validatte@0.7.4": "0.7.4",
     "jsr:@danet/zod@0.0.7": "0.0.7",
     "jsr:@danet/zod@^0.0.9": "0.0.9",
-    "jsr:@db/redis@*": "0.40.0",
     "jsr:@db/redis@0.40": "0.40.0",
     "jsr:@dx/reflect@0.2.14": "0.2.14",
     "jsr:@growthbook/growthbook@^1.2.2": "1.2.2",
     "jsr:@hono/hono@4.6.3": "4.6.3",
     "jsr:@libs/xml@^7.0.3": "7.0.3",
     "jsr:@negrel/http-ece@0.7.0": "0.7.0",
-    "jsr:@negrel/webpush@*": "0.5.0",
     "jsr:@negrel/webpush@0.5": "0.5.0",
-    "jsr:@negrel/webpush@0.5.0": "0.5.0",
     "jsr:@onjara/optic@^2.0.3": "2.0.3",
     "jsr:@std/assert@^1.0.18": "1.0.19",
     "jsr:@std/assert@^1.0.19": "1.0.19",
@@ -32,7 +28,6 @@
     "jsr:@std/bytes@^1.0.2-rc.3": "1.0.6",
     "jsr:@std/cli@^1.0.30": "1.0.30",
     "jsr:@std/collections@1": "1.2.0",
-    "jsr:@std/crypto@*": "1.1.0",
     "jsr:@std/data-structures@^1.1.0": "1.1.0",
     "jsr:@std/dotenv@~0.225.6": "0.225.6",
     "jsr:@std/encoding@1": "1.0.10",
@@ -55,8 +50,8 @@
     "jsr:@std/random@0.1.0": "0.1.0",
     "jsr:@std/streams@^1.1.1": "1.1.1",
     "jsr:@std/testing@^1.0.17": "1.0.19",
-    "npm:@anatine/zod-openapi@2.2.6": "2.2.6_openapi3-ts@4.6.0_zod@3.23.8",
-    "npm:@anatine/zod-openapi@^2.2.8": "2.2.8_openapi3-ts@4.6.0_zod@3.23.8",
+    "npm:@anatine/zod-openapi@2.2.6": "2.2.6_openapi3-ts@4.6.0_zod@3.25.76",
+    "npm:@anatine/zod-openapi@^2.2.8": "2.2.8_openapi3-ts@4.6.0_zod@3.25.76",
     "npm:@opentelemetry/api-logs@0.219": "0.219.0",
     "npm:@opentelemetry/api@^1.9.0": "1.9.0",
     "npm:@opentelemetry/exporter-logs-otlp-http@0.219": "0.219.0_@opentelemetry+api@1.9.0",
@@ -74,7 +69,8 @@
     "npm:dom-mutator@0.6": "0.6.0",
     "npm:mongodb@^6.21.0": "6.21.0",
     "npm:path-to-regexp@6.2.1": "6.2.1",
-    "npm:zod@3.23.8": "3.23.8"
+    "npm:zod@3.23.8": "3.23.8",
+    "npm:zod@3.25.76": "3.25.76"
   },
   "jsr": {
     "@anitrend/request-client@0.1.4": {
@@ -103,7 +99,7 @@
         "jsr:@std/path@1.0.6",
         "npm:@anatine/zod-openapi@2.2.6",
         "npm:path-to-regexp",
-        "npm:zod"
+        "npm:zod@3.23.8"
       ]
     },
     "@danet/validatte@0.7.4": {
@@ -116,14 +112,14 @@
       "integrity": "1ce7c696b69bff6bbbd788bd4a5955cd24e8c5a8cb117c57dabb03e31968bbee",
       "dependencies": [
         "jsr:@danet/core@^2.5.1",
-        "npm:zod"
+        "npm:zod@3.23.8"
       ]
     },
     "@danet/zod@0.0.9": {
       "integrity": "b57dc2ecf0ec477f90a0b0fcd16e638e108582e2aefc938540fd79bfb317a787",
       "dependencies": [
         "jsr:@danet/core@^2.9.2",
-        "npm:zod"
+        "npm:zod@3.23.8"
       ]
     },
     "@db/redis@0.40.0": {
@@ -194,9 +190,6 @@
     },
     "@std/collections@1.2.0": {
       "integrity": "47627a21d3a13138b77fd0e4d790ba9d2e603c3510b686cde6b132fe9aa98a88"
-    },
-    "@std/crypto@1.1.0": {
-      "integrity": "b8d6d0a6377a32b213af2661ed7bf1062d94feac0c57def5526a8e74a95c3ec8"
     },
     "@std/data-structures@1.1.0": {
       "integrity": "c35ae4ad5d8e41a38573c2fe3e19b18ea2505f63cfea201edcb8720aca1f7f58"
@@ -279,20 +272,20 @@
     }
   },
   "npm": {
-    "@anatine/zod-openapi@2.2.6_openapi3-ts@4.6.0_zod@3.23.8": {
+    "@anatine/zod-openapi@2.2.6_openapi3-ts@4.6.0_zod@3.25.76": {
       "integrity": "sha512-Z5sr2Nq2xifEpPbPdUcvyl776LY652oR3VHMV++WFSmRrRL8RDP2XTkbuGn+vgfVNOD7UrndYwCWnxaiw7IZog==",
       "dependencies": [
         "openapi3-ts",
         "ts-deepmerge",
-        "zod"
+        "zod@3.25.76"
       ]
     },
-    "@anatine/zod-openapi@2.2.8_openapi3-ts@4.6.0_zod@3.23.8": {
+    "@anatine/zod-openapi@2.2.8_openapi3-ts@4.6.0_zod@3.25.76": {
       "integrity": "sha512-iyM8mB556KdiZ6a1GTZ67ACLnJakU1hrzzXoh7PLaReldAdMq88MlZn/Ir/U56/TBuQctBhh/4seo0b0B343uw==",
       "dependencies": [
         "openapi3-ts",
         "ts-deepmerge",
-        "zod"
+        "zod@3.25.76"
       ]
     },
     "@grpc/grpc-js@1.14.4": {
@@ -917,6 +910,9 @@
     },
     "zod@3.23.8": {
       "integrity": "sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g=="
+    },
+    "zod@3.25.76": {
+      "integrity": "sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ=="
     }
   },
   "workspace": {
@@ -950,7 +946,7 @@
       "npm:@opentelemetry/sdk-node@0.219",
       "npm:@opentelemetry/semantic-conventions@^1.39.0",
       "npm:mongodb@^6.21.0",
-      "npm:zod@3.23.8"
+      "npm:zod@3.25.76"
     ]
   }
 }
