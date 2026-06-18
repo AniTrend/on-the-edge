@@ -44,6 +44,18 @@ export const EXPECTED_SCHEMA_NAMES = [
 
   // Character (direct response)
   'Character',
+
+  // Push (direct response + body schemas)
+  'PushVapid',
+  'PushInstallation',
+  'PushInstallationStatus',
+  'PushProfile',
+  'PushPreferences',
+  'PushRegistrationBody',
+  'PushConfirmBody',
+  'PushProfileBody',
+  'PushPreferencesBody',
+  'PushDeleteBody',
 ] as const;
 
 /**
@@ -60,6 +72,12 @@ export const EXPECTED_OPERATION_IDS = [
   'person',
   'character',
   'index',
+  'pushVapid',
+  'pushRegisterInstallation',
+  'pushConfirmInstallation',
+  'pushUpdateProfile',
+  'pushUpdatePreferences',
+  'pushDeleteInstallation',
 ] as const;
 
 /**

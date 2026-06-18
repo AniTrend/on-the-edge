@@ -9,6 +9,8 @@ import { TheXemModule } from './thexem/thexem.module.ts';
 import { TmdbModule } from './tmdb/tmdb.module.ts';
 import { TraktModule } from './trakt/trakt.module.ts';
 
+import { PushSenderModule } from './push-sender/push-sender.module.ts';
+
 @Module({
   imports: [
     AnimeThemesModule,
@@ -16,6 +18,7 @@ import { TraktModule } from './trakt/trakt.module.ts';
     JikanModule,
     OtakumodeModule,
     NotifyModule,
+    PushSenderModule,
     SkyhookModule,
     TheXemModule,
     TmdbModule,

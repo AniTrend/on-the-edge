@@ -12,6 +12,7 @@
     "./skyhook": "./skyhook/index.ts",
     "./thexem": "./thexem/index.ts",
     "./tmdb": "./tmdb/index.ts",
-    "./trakt": "./trakt/index.ts"
+    "./trakt": "./trakt/index.ts",
+    "./push-sender": "./push-sender/index.ts"
   }
 }

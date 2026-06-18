@@ -6,6 +6,7 @@ import { SeriesModule } from './series/index.ts';
 import { StudioModule } from './studio/index.ts';
 import { PeopleModule } from './people/index.ts';
 import { CharacterModule } from './character/index.ts';
+import { PushModule } from './push/index.ts';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { CharacterModule } from './character/index.ts';
     StudioModule,
     PeopleModule,
     CharacterModule,
+    PushModule,
   ],
 })
 export class PackageModule {}

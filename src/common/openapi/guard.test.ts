@@ -28,6 +28,16 @@ function makeValidDoc(
     'Studio',
     'Person',
     'Character',
+    'PushVapid',
+    'PushInstallation',
+    'PushInstallationStatus',
+    'PushProfile',
+    'PushPreferences',
+    'PushRegistrationBody',
+    'PushConfirmBody',
+    'PushProfileBody',
+    'PushPreferencesBody',
+    'PushDeleteBody',
   ];
   for (const name of expectedNames) {
     schemas[name] = { type: 'object', properties: {} };
@@ -112,6 +122,51 @@ function makeValidDoc(
       '/v1/character': {
         get: {
           operationId: 'character',
+          responses: {},
+        },
+      },
+      '/v1/push/vapid': {
+        get: {
+          operationId: 'pushVapid',
+          responses: {
+            200: {
+              description: 'OK',
+              content: {
+                'application/json': {
+                  schema: { $ref: '#/components/schemas/PushVapid' },
+                },
+              },
+            },
+          },
+        },
+      },
+      '/v1/push/installations': {
+        post: {
+          operationId: 'pushRegisterInstallation',
+          responses: {},
+        },
+      },
+      '/v1/push/installations/{installationId}/confirm': {
+        post: {
+          operationId: 'pushConfirmInstallation',
+          responses: {},
+        },
+      },
+      '/v1/push/installations/{installationId}/profile': {
+        put: {
+          operationId: 'pushUpdateProfile',
+          responses: {},
+        },
+      },
+      '/v1/push/installations/{installationId}/preferences': {
+        patch: {
+          operationId: 'pushUpdatePreferences',
+          responses: {},
+        },
+      },
+      '/v1/push/installations/{installationId}': {
+        delete: {
+          operationId: 'pushDeleteInstallation',
           responses: {},
         },
       },
