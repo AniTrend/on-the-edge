@@ -1,7 +1,7 @@
-import { Injectable } from '@danet/core';
-import { NotFoundException } from '@danet/core';
+import { Injectable, NotFoundException } from '@danet/core';
 import { LoggerService } from '@scope/logger';
 import { ExperimentService } from '@scope/experiment';
+import { PushService } from '../push/push.service.ts';
 import { News, NewsPaging, NewsPagingQuery, NewsQuery } from './news.types.ts';
 import { NewsRepository } from './news.repository.ts';
 
@@ -11,6 +11,7 @@ export class NewsService {
     private readonly logger: LoggerService,
     private readonly repository: NewsRepository,
     private readonly experiment: ExperimentService,
+    private readonly push: PushService,
   ) {}
 
   async feed(query: NewsQuery): Promise<News[]> {
@@ -20,6 +21,16 @@ export class NewsService {
         `Unable to locate news feed for locale ${query.locale}`,
       );
       throw new NotFoundException();
+    }
+
+    // Trigger push fan-out when new items are available
+    if (payload.length > 0) {
+      this.push.fanOutToNewsSubscribers().catch((error) => {
+        this.logger.instance.warn(
+          'News fan-out push failed',
+          { cause: error },
+        );
+      });
     }
 
     return payload;

@@ -2,6 +2,7 @@
   "extends": "../../deno.json",
   "name": "@scope/guard",
   "exports": {
-    ".": "./index.ts"
+    ".": "./index.ts",
+    "./rate-limit": "./rate-limit/index.ts"
   }
 }

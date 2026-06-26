@@ -4,6 +4,7 @@ import { NotFoundException } from '@danet/core';
 import { NewsService } from './news.service.ts';
 import type { ExperimentService } from '@scope/experiment';
 import type { NewsRepository } from './news.repository.ts';
+import type { PushService } from '../push/push.service.ts';
 import { createMockLogger } from '@scope/common/testing';
 
 class ExperimentStub implements Pick<ExperimentService, 'isEnabled'> {
@@ -11,6 +12,10 @@ class ExperimentStub implements Pick<ExperimentService, 'isEnabled'> {
     return true;
   }
 }
+
+const pushService = {
+  fanOutToNewsSubscribers: async () => {},
+} as unknown as PushService;
 
 describe('NewsService', () => {
   it('returns news items for provided locale', async () => {
@@ -23,6 +28,7 @@ describe('NewsService', () => {
       logger,
       repository,
       experiment as unknown as ExperimentService,
+      pushService,
     );
 
     const result = await service.feed({ locale: 'en' });
@@ -40,6 +46,7 @@ describe('NewsService', () => {
       logger,
       repository,
       experiment as unknown as ExperimentService,
+      pushService,
     );
 
     await assertRejects(

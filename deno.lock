@@ -3,11 +3,11 @@
   "specifiers": {
     "jsr:@anitrend/request-client@~0.1.4": "0.1.4",
     "jsr:@c4spar/mock-fetch@1": "1.0.0",
-    "jsr:@danet/core@2": "2.9.6",
-    "jsr:@danet/core@^2.5.1": "2.9.6",
-    "jsr:@danet/core@^2.9.2": "2.9.6",
-    "jsr:@danet/core@^2.9.6": "2.9.6",
-    "jsr:@danet/swagger@2.3.2": "2.3.2",
+    "jsr:@danet/core@2": "2.11.1",
+    "jsr:@danet/core@2.11.0": "2.11.0",
+    "jsr:@danet/core@^2.11.0": "2.11.1",
+    "jsr:@danet/core@^2.5.1": "2.11.1",
+    "jsr:@danet/core@^2.9.2": "2.11.1",
     "jsr:@danet/swagger@^2.3.2": "2.3.2",
     "jsr:@danet/validatte@0.7.4": "0.7.4",
     "jsr:@danet/zod@0.0.7": "0.0.7",
@@ -17,6 +17,8 @@
     "jsr:@growthbook/growthbook@^1.2.2": "1.2.2",
     "jsr:@hono/hono@4.6.3": "4.6.3",
     "jsr:@libs/xml@^7.0.3": "7.0.3",
+    "jsr:@negrel/http-ece@0.7.0": "0.7.0",
+    "jsr:@negrel/webpush@0.5": "0.5.0",
     "jsr:@onjara/optic@^2.0.3": "2.0.3",
     "jsr:@std/assert@^1.0.18": "1.0.19",
     "jsr:@std/assert@^1.0.19": "1.0.19",
@@ -29,6 +31,7 @@
     "jsr:@std/collections@1": "1.2.0",
     "jsr:@std/data-structures@^1.1.0": "1.1.0",
     "jsr:@std/dotenv@~0.225.6": "0.225.6",
+    "jsr:@std/encoding@1": "1.0.10",
     "jsr:@std/encoding@^1.0.10": "1.0.10",
     "jsr:@std/fmt@0.223.0": "0.223.0",
     "jsr:@std/fmt@^1.0.10": "1.0.10",
@@ -48,8 +51,8 @@
     "jsr:@std/random@0.1.0": "0.1.0",
     "jsr:@std/streams@^1.1.1": "1.1.1",
     "jsr:@std/testing@^1.0.17": "1.0.19",
-    "npm:@anatine/zod-openapi@2.2.6": "2.2.6_zod@3.25.76",
-    "npm:@anatine/zod-openapi@^2.2.8": "2.2.8_zod@3.25.76",
+    "npm:@anatine/zod-openapi@2.2.6": "2.2.6_openapi3-ts@4.6.0_zod@3.25.76",
+    "npm:@anatine/zod-openapi@^2.2.8": "2.2.8_openapi3-ts@4.6.0_zod@3.25.76",
     "npm:@opentelemetry/api-logs@0.219": "0.219.0",
     "npm:@opentelemetry/api@^1.9.0": "1.9.0",
     "npm:@opentelemetry/exporter-logs-otlp-http@0.219": "0.219.0_@opentelemetry+api@1.9.0",
@@ -80,8 +83,17 @@
         "jsr:@std/assert@~0.225.2"
       ]
     },
-    "@danet/core@2.9.6": {
-      "integrity": "9c2616c2c1814afa4762ec9a80eccae887047629464d247fa1da0a488043ae68",
+    "@danet/core@2.11.0": {
+      "integrity": "667ad239c8b48a7b388aa8cfea99dcc399456e257bce6f02c59cdf9f472b670a",
+      "dependencies": [
+        "jsr:@danet/validatte",
+        "jsr:@dx/reflect",
+        "jsr:@hono/hono",
+        "jsr:@std/fmt@0.223.0"
+      ]
+    },
+    "@danet/core@2.11.1": {
+      "integrity": "bf8d8cf031cbbed8253670cc4b2481803926eee140a5bc5668746d388fcb9e3d",
       "dependencies": [
         "jsr:@danet/validatte",
         "jsr:@dx/reflect",
@@ -146,6 +158,21 @@
     "@libs/xml@7.0.3": {
       "integrity": "4caad75dfec0a4dd4ad5dc87dc559d9aa25ac53f17373923a9cd006f6c8d42e6"
     },
+    "@negrel/http-ece@0.7.0": {
+      "integrity": "068e61ba6f52da5454051a283cc19621607f8dd6e74d55c01bb365b8c6644076",
+      "dependencies": [
+        "jsr:@std/bytes@1",
+        "jsr:@std/encoding@1"
+      ]
+    },
+    "@negrel/webpush@0.5.0": {
+      "integrity": "919ed5bf4d676923667c5278093f36ffb2efe7fe2f155b6d32723ea3b73fa693",
+      "dependencies": [
+        "jsr:@negrel/http-ece",
+        "jsr:@std/bytes@1",
+        "jsr:@std/encoding@1"
+      ]
+    },
     "@onjara/optic@2.0.3": {
       "integrity": "b4bf8cae0820a3c3f362ba4d78939237fcfa23e3087bbd3f9fd3c883839820f1",
       "dependencies": [
@@ -202,7 +229,7 @@
       "integrity": "e343a9a80aea07c716b91be5c79df764144430ad2dd7c9121ed7443f08dc74f7",
       "dependencies": [
         "jsr:@std/cli",
-        "jsr:@std/encoding",
+        "jsr:@std/encoding@^1.0.10",
         "jsr:@std/fmt@^1.0.10",
         "jsr:@std/fs",
         "jsr:@std/html",
@@ -255,7 +282,7 @@
     }
   },
   "npm": {
-    "@anatine/zod-openapi@2.2.6_zod@3.25.76": {
+    "@anatine/zod-openapi@2.2.6_openapi3-ts@4.6.0_zod@3.25.76": {
       "integrity": "sha512-Z5sr2Nq2xifEpPbPdUcvyl776LY652oR3VHMV++WFSmRrRL8RDP2XTkbuGn+vgfVNOD7UrndYwCWnxaiw7IZog==",
       "dependencies": [
         "openapi3-ts",
@@ -263,7 +290,7 @@
         "zod@3.25.76"
       ]
     },
-    "@anatine/zod-openapi@2.2.8_zod@3.25.76": {
+    "@anatine/zod-openapi@2.2.8_openapi3-ts@4.6.0_zod@3.25.76": {
       "integrity": "sha512-iyM8mB556KdiZ6a1GTZ67ACLnJakU1hrzzXoh7PLaReldAdMq88MlZn/Ir/U56/TBuQctBhh/4seo0b0B343uw==",
       "dependencies": [
         "openapi3-ts",
@@ -311,7 +338,7 @@
       "dependencies": [
         "@opentelemetry/api",
         "@opentelemetry/core",
-        "yaml"
+        "yaml@2.8.1"
       ]
     },
     "@opentelemetry/context-async-hooks@2.8.0_@opentelemetry+api@1.9.0": {
@@ -761,10 +788,10 @@
     "ms@2.1.3": {
       "integrity": "sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA=="
     },
-    "openapi3-ts@4.5.0": {
-      "integrity": "sha512-jaL+HgTq2Gj5jRcfdutgRGLosCy/hT8sQf6VOy+P+g36cZOjI1iukdPnijC+4CmeRzg/jEllJUboEic2FhxhtQ==",
+    "openapi3-ts@4.6.0": {
+      "integrity": "sha512-a4sfn6L2sIShhtzJqmjGrARvxAW/3F2BJDdyRVvNF9VhAsZSh5hSyI3a9TNvmzBxXmq66nY5LNT5bQcBxYAZZg==",
       "dependencies": [
-        "yaml"
+        "yaml@2.9.0"
       ]
     },
     "path-to-regexp@6.2.1": {
@@ -857,6 +884,10 @@
       "integrity": "sha512-lcYcMxX2PO9XMGvAJkJ3OsNMw+/7FKes7/hgerGUYWIoWu5j/+YQqcZr5JnPZWzOsEBgMbSbiSTn/dv/69Mkpw==",
       "bin": true
     },
+    "yaml@2.9.0": {
+      "integrity": "sha512-2AvhNX3mb8zd6Zy7INTtSpl1F15HW6Wnqj0srWlkKLcpYl/gMIMJiyuGq2KeI2YFxUPjdlB+3Lc10seMLtL4cA==",
+      "bin": true
+    },
     "yargs-parser@21.1.1": {
       "integrity": "sha512-tVpsJW7DdjecAiFpbIB1e3qxIQsE6NoPc5/eTdrbbIC4h0LVsWhnoa3g+m2HclBIujHzsxZ4VJVA+GUuc2/LBw=="
     },
@@ -883,12 +914,13 @@
     "dependencies": [
       "jsr:@anitrend/request-client@~0.1.4",
       "jsr:@c4spar/mock-fetch@1",
-      "jsr:@danet/core@^2.9.6",
+      "jsr:@danet/core@^2.11.0",
       "jsr:@danet/swagger@^2.3.2",
       "jsr:@danet/zod@^0.0.9",
       "jsr:@db/redis@0.40",
       "jsr:@growthbook/growthbook@^1.2.2",
       "jsr:@libs/xml@^7.0.3",
+      "jsr:@negrel/webpush@0.5",
       "jsr:@onjara/optic@^2.0.3",
       "jsr:@std/assert@^1.0.18",
       "jsr:@std/dotenv@~0.225.6",

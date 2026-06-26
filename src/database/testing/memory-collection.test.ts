@@ -6,6 +6,7 @@ interface TestDoc {
   name: string;
   value: number;
   category?: string;
+  nested?: { field: number; active?: boolean };
 }
 
 describe('InMemoryCollection', () => {
@@ -242,6 +243,30 @@ describe('InMemoryCollection', () => {
 
       assertEquals(withoutCategory.length, 1);
       assertEquals(withoutCategory[0].name, 'b');
+    });
+  });
+
+  describe('dot notation nested paths', () => {
+    it('should match nested fields via dot notation', async () => {
+      await collection.insertMany([
+        { name: 'a', value: 1, nested: { field: 10, active: true } },
+        { name: 'b', value: 2, nested: { field: 20, active: false } },
+      ]);
+
+      const docs = await collection.find({ 'nested.active': true });
+      assertEquals(docs.length, 1);
+      assertEquals(docs[0].name, 'a');
+    });
+
+    it('should support $lt on nested fields via dot notation', async () => {
+      await collection.insertMany([
+        { name: 'a', value: 1, nested: { field: 10 } },
+        { name: 'b', value: 2, nested: { field: 20 } },
+        { name: 'c', value: 3, nested: { field: 30 } },
+      ]);
+
+      const docs = await collection.find({ 'nested.field': { $lt: 25 } });
+      assertEquals(docs.length, 2);
     });
   });
 

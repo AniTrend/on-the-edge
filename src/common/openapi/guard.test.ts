@@ -28,6 +28,9 @@ function makeValidDoc(
     'Studio',
     'Person',
     'Character',
+    'PushVapid',
+    'PushInstallation',
+    'PushAcknowledgment',
   ];
   for (const name of expectedNames) {
     schemas[name] = { type: 'object', properties: {} };
@@ -113,6 +116,102 @@ function makeValidDoc(
         get: {
           operationId: 'character',
           responses: {},
+        },
+      },
+      '/v1/push/vapid': {
+        get: {
+          operationId: 'vapid',
+          responses: {
+            200: {
+              description: 'OK',
+              content: {
+                'application/json': {
+                  schema: { $ref: '#/components/schemas/PushVapid' },
+                },
+              },
+            },
+          },
+        },
+      },
+      '/v1/push/installations': {
+        post: {
+          operationId: 'registerInstallation',
+          responses: {},
+        },
+      },
+      '/v1/push/installations/:installationId/confirm': {
+        post: {
+          operationId: 'confirmInstallation',
+          responses: {
+            200: {
+              description: 'OK',
+              content: {
+                'application/json': {
+                  schema: { $ref: '#/components/schemas/PushInstallation' },
+                },
+              },
+            },
+          },
+        },
+      },
+      '/v1/push/installations/:installationId/profile': {
+        put: {
+          operationId: 'updateProfile',
+          responses: {
+            200: {
+              description: 'OK',
+              content: {
+                'application/json': {
+                  schema: { $ref: '#/components/schemas/PushAcknowledgment' },
+                },
+              },
+            },
+          },
+        },
+      },
+      '/v1/push/installations/:installationId/preferences': {
+        patch: {
+          operationId: 'updatePreferences',
+          responses: {
+            200: {
+              description: 'OK',
+              content: {
+                'application/json': {
+                  schema: { $ref: '#/components/schemas/PushAcknowledgment' },
+                },
+              },
+            },
+          },
+        },
+      },
+      '/v1/push/installations/:installationId': {
+        delete: {
+          operationId: 'deleteInstallation',
+          responses: {
+            200: {
+              description: 'OK',
+              content: {
+                'application/json': {
+                  schema: { $ref: '#/components/schemas/PushAcknowledgment' },
+                },
+              },
+            },
+          },
+        },
+      },
+      '/v1/push/installations/:installationId/test': {
+        post: {
+          operationId: 'sendTestPush',
+          responses: {
+            200: {
+              description: 'OK',
+              content: {
+                'application/json': {
+                  schema: { $ref: '#/components/schemas/PushAcknowledgment' },
+                },
+              },
+            },
+          },
         },
       },
       '/': {
