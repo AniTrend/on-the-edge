@@ -516,7 +516,10 @@ describe('PushRepository', () => {
       assertEquals(updated.status, 'pending');
       assertExists(updated.challenge);
       assertEquals(updated.challenge!.tokenHash, 'hash-abc123');
-      assertEquals(updated.challenge!.expiresAt, 1700100000);
+      assertEquals(
+        updated.challenge!.expiresAt.getTime(),
+        new Date(1700100000 * 1000).getTime(),
+      );
       assertEquals(updated.challenge!.attempts, 0);
     });
 
@@ -530,7 +533,7 @@ describe('PushRepository', () => {
           status: 'pending',
           challenge: {
             tokenHash: 'old-hash',
-            expiresAt: 1700000000,
+            expiresAt: new Date(1700000000 * 1000),
             attempts: 2,
           },
         }),
@@ -546,7 +549,10 @@ describe('PushRepository', () => {
       const updated = await repo.findById('ch-2', 'default');
       assertExists(updated);
       assertEquals(updated.challenge!.tokenHash, 'new-hash');
-      assertEquals(updated.challenge!.expiresAt, 1700200000);
+      assertEquals(
+        updated.challenge!.expiresAt.getTime(),
+        new Date(1700200000 * 1000).getTime(),
+      );
       assertEquals(updated.challenge!.attempts, 0);
     });
   });
@@ -663,93 +669,6 @@ describe('PushRepository', () => {
       // nowSeconds() may return the same value if both calls fall in the same second
       assert(updated.updatedAt >= original.updatedAt);
       assert(updated.updatedAt > 0);
-    });
-  });
-
-  describe('cleanupExpiredChallenges', () => {
-    it('deletes pending installations with expired challenges', async () => {
-      const repo = createRepo();
-
-      // Pending with expired challenge
-      await repo.upsert(
-        createPushDocument({
-          installationId: 'exp-ch-1',
-          instance: 'default',
-          status: 'pending',
-          challenge: {
-            tokenHash: 'h1',
-            expiresAt: 1000, // expired long ago
-            attempts: 1,
-          },
-        }),
-      );
-
-      // Pending with non-expired challenge
-      await repo.upsert(
-        createPushDocument({
-          installationId: 'valid-ch-1',
-          instance: 'default',
-          status: 'pending',
-          challenge: {
-            tokenHash: 'h2',
-            expiresAt: 3000, // still valid at t=2000
-            attempts: 0,
-          },
-        }),
-      );
-
-      // Active (should never be cleaned)
-      await repo.upsert(
-        createPushDocument({
-          installationId: 'active-1',
-          instance: 'default',
-          status: 'active',
-          challenge: {
-            tokenHash: 'h3',
-            expiresAt: 1000,
-            attempts: 3,
-          },
-        }),
-      );
-
-      const deletedCount = await repo.cleanupExpiredChallenges(2000);
-      assertEquals(deletedCount, 1);
-
-      // Verify the expired one is gone
-      const expired = await repo.findById('exp-ch-1', 'default');
-      assertEquals(expired, null);
-
-      // Verify the valid one still exists
-      const valid = await repo.findById('valid-ch-1', 'default');
-      assertExists(valid);
-
-      // Verify the active one still exists
-      const active = await repo.findById('active-1', 'default');
-      assertExists(active);
-    });
-
-    it('returns 0 when no expired challenges exist', async () => {
-      const repo = createRepo();
-
-      // Only non-expired
-      await repo.upsert(
-        createPushDocument({
-          installationId: 'always-valid',
-          instance: 'default',
-          status: 'pending',
-          challenge: {
-            tokenHash: 'h',
-            expiresAt: 9000,
-            attempts: 0,
-          },
-        }),
-      );
-
-      const deletedCount = await repo.cleanupExpiredChallenges(5000);
-      assertEquals(deletedCount, 0);
-
-      const still = await repo.findById('always-valid', 'default');
-      assertExists(still);
     });
   });
 });

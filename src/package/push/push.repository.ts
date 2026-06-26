@@ -56,7 +56,7 @@ export interface PushInstallationDocument {
   };
   challenge?: {
     tokenHash: string;
-    expiresAt: number;
+    expiresAt: Date;
     attempts: number;
   };
   lastProfileSyncAt?: number;
@@ -241,7 +241,7 @@ export class PushRepository {
         $set: {
           challenge: {
             tokenHash,
-            expiresAt,
+            expiresAt: new Date(expiresAt * 1000),
             attempts: 0,
           },
           status: 'pending',
@@ -318,16 +318,5 @@ export class PushRepository {
         },
       },
     );
-  }
-
-  /**
-   * Delete installations with expired pending challenges.
-   */
-  async cleanupExpiredChallenges(now: number): Promise<number> {
-    const result = await this.collection.deleteMany({
-      status: 'pending',
-      'challenge.expiresAt': { $lt: now },
-    });
-    return result.deletedCount;
   }
 }

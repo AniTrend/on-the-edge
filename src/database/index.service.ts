@@ -113,12 +113,6 @@ export class DatabaseIndexService implements OnAppBootstrap {
         { expireAfterSeconds: 7776000, name: 'idx_attempted_ttl' },
       );
 
-      // Index on delivery status
-      await collection.createIndex(
-        { status: 1 },
-        { name: 'idx_delivery_status' },
-      );
-
       this.logger.instance.debug(
         `Created indexes on ${PUSH_DELIVERY_ATTEMPTS}`,
       );

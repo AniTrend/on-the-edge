@@ -8,6 +8,8 @@ import type {
   PushInstallationDocument,
   PushRepository,
 } from './push.repository.ts';
+import type { PushDeliveryAttemptRepository } from './push-delivery-attempt.repository.ts';
+import type { PushRetryService } from './push-retry.service.ts';
 import type { PushSenderService } from '@scope/service/push-sender';
 import type { SecretService } from '@scope/secret';
 import {
@@ -42,7 +44,9 @@ function makeDoc(
 function createService(
   deps: {
     repository?: Partial<PushRepository>;
+    deliveryRepo?: Partial<PushDeliveryAttemptRepository>;
     pushSender?: Partial<PushSenderService>;
+    retry?: Partial<PushRetryService>;
     secret?: SecretService;
   } = {},
 ): PushService {
@@ -50,7 +54,12 @@ function createService(
   const secret = deps.secret ?? createMockSecret({ DENO_ENV: 'test' }).service;
   return new PushService(
     (deps.repository ?? {}) as PushRepository,
+    (deps.deliveryRepo ?? {
+      insert: async () => {},
+      findByInstallation: async () => [],
+    }) as PushDeliveryAttemptRepository,
     (deps.pushSender ?? {}) as PushSenderService,
+    (deps.retry ?? { enqueue: async () => {} }) as PushRetryService,
     logger,
     secret,
   );
@@ -149,7 +158,11 @@ describe('PushService', () => {
     async () => {
       const doc = makeDoc({
         status: 'pending',
-        challenge: { tokenHash: 'old-hash', expiresAt: 1, attempts: 0 },
+        challenge: {
+          tokenHash: 'old-hash',
+          expiresAt: new Date(1 * 1000),
+          attempts: 0,
+        },
       });
       const repository = {
         findById: spy(async () => doc),

@@ -2,12 +2,16 @@ import { Injectable } from '@danet/core';
 import { BadRequestException } from '@danet/core';
 import { LoggerService } from '@scope/logger';
 import { SecretService } from '@scope/secret';
+import type { PushNotificationPayload } from '@scope/service/push-sender';
+import type { PushSubscription } from '@scope/service/push-sender';
 import { PushSenderService } from '@scope/service/push-sender';
 import { validatePushEndpoint } from '@scope/common/ssrf';
 import {
   type PushInstallationDocument,
   PushRepository,
 } from './push.repository.ts';
+import { PushDeliveryAttemptRepository } from './push-delivery-attempt.repository.ts';
+import { PushRetryService } from './push-retry.service.ts';
 import {
   PushChallengeExpiredError,
   PushChallengeInvalidError,
@@ -35,7 +39,9 @@ export class PushService {
 
   constructor(
     private readonly repository: PushRepository,
+    private readonly deliveryRepo: PushDeliveryAttemptRepository,
     private readonly pushSender: PushSenderService,
+    private readonly retry: PushRetryService,
     private readonly logger: LoggerService,
     private readonly secret: SecretService,
   ) {
@@ -120,8 +126,8 @@ export class PushService {
     const result = await this.repository.upsert(doc);
 
     // Generate challenge token
-    const token = this.generateChallengeToken();
-    const tokenHash = await this.hashToken(token);
+    const token = this.generateChallenge();
+    const tokenHash = await this.sha256(token);
     const expiresAt = now + this.challengeTtlSeconds;
 
     // Store challenge
@@ -138,15 +144,18 @@ export class PushService {
         endpoint: registration.endpoint,
         keys: registration.keys,
       });
-      await this.pushSender.send(
+      await this.deliver(
         subscriber,
         registration.endpoint,
+        registration,
         {
           type: 'push.challenge',
           id: crypto.randomUUID(),
           token,
         },
         result.installationId,
+        result.instance,
+        'push.challenge',
       );
     } catch (error) {
       // Log but don't fail registration — challenge can be retried
@@ -201,12 +210,12 @@ export class PushService {
 
     // Check expiry
     const now = this.nowSeconds();
-    if (installation.challenge.expiresAt < now) {
+    if (installation.challenge.expiresAt.getTime() < now * 1000) {
       throw new PushChallengeExpiredError(installationId);
     }
 
     // Verify token
-    const submittedHash = await this.hashToken(confirmation.token);
+    const submittedHash = await this.sha256(confirmation.token);
     if (submittedHash !== installation.challenge.tokenHash) {
       this.logger.instance.warn(
         `Invalid challenge token for installation ${installationId}`,
@@ -384,22 +393,25 @@ export class PushService {
       keys: installation.keys,
     });
 
-    const result = await this.pushSender.send(
+    const { success, gone } = await this.deliver(
       subscriber,
       installation.endpoint,
+      { endpoint: installation.endpoint, keys: installation.keys },
       {
         type: 'push.test',
         id: crypto.randomUUID(),
         createdAt: Date.now(),
       },
       installationId,
+      instance,
+      'push.test',
     );
 
-    if (result.gone) {
+    if (gone) {
       await this.repository.markExpired(installationId, instance);
     }
 
-    return { success: result.success };
+    return { success };
   }
 
   // --- Fan-Out (news) ---
@@ -432,21 +444,24 @@ export class PushService {
           keys: installation.keys,
         });
 
-        const result = await this.pushSender.send(
+        const { success, gone } = await this.deliver(
           subscriber,
           installation.endpoint,
+          { endpoint: installation.endpoint, keys: installation.keys },
           payload,
           installation.installationId,
+          installation.instance,
+          'news.available',
         );
 
-        if (result.gone) {
+        if (gone) {
           await this.repository.markExpired(
             installation.installationId,
             installation.instance,
           );
         }
 
-        if (result.success) sent++;
+        if (success) sent++;
         else failed++;
       } catch (error) {
         failed++;
@@ -466,7 +481,74 @@ export class PushService {
 
   // --- Helpers ---
 
-  private generateChallengeToken(): string {
+  /**
+   * Send a push notification and persist the delivery outcome.
+   *
+   * Persistence is fire-and-forget: a failure to record the
+   * attempt does not affect the returned delivery result.
+   */
+  private async deliver(
+    subscriber: ReturnType<PushSenderService['subscribe']>,
+    endpoint: string,
+    subscription: PushSubscription,
+    payload: Record<string, unknown>,
+    installationId: string,
+    instance: string,
+    type: string,
+  ): Promise<{ success: boolean; gone: boolean }> {
+    const result = await this.pushSender.send(
+      subscriber,
+      endpoint,
+      payload as PushNotificationPayload,
+      installationId,
+    );
+
+    // Fire-and-forget: record the delivery attempt
+    this.deliveryRepo.insert({
+      installationId,
+      instance,
+      endpointHash: await this.sha256(endpoint),
+      type,
+      id: (payload as { id: string }).id ?? '',
+      success: result.success,
+      gone: result.gone,
+      statusCode: result.statusCode,
+      error: result.error,
+      latencyMs: result.latencyMs,
+      attemptedAt: new Date(),
+    }).catch((error) => {
+      this.logger.instance.warn(
+        'Failed to persist delivery attempt',
+        { cause: error },
+      );
+    });
+
+    // Enqueue retry for retryable failures
+    if (!result.success && !result.gone) {
+      const retryable = !result.statusCode ||
+        result.statusCode === 429 ||
+        result.statusCode >= 500;
+      if (retryable) {
+        this.retry.enqueue({
+          installationId,
+          instance,
+          endpoint,
+          keys: subscription.keys,
+          payload,
+          type,
+        }).catch((error) => {
+          this.logger.instance.warn(
+            'Failed to enqueue retry',
+            { cause: error },
+          );
+        });
+      }
+    }
+
+    return { success: result.success, gone: result.gone };
+  }
+
+  private generateChallenge(): string {
     const bytes = new Uint8Array(32);
     crypto.getRandomValues(bytes);
     return btoa(String.fromCharCode(...bytes))
@@ -475,9 +557,9 @@ export class PushService {
       .replace(/=+$/, '');
   }
 
-  private async hashToken(token: string): Promise<string> {
+  private async sha256(input: string): Promise<string> {
     const encoder = new TextEncoder();
-    const data = encoder.encode(token);
+    const data = encoder.encode(input);
     const hash = await crypto.subtle.digest('SHA-256', data);
     return btoa(String.fromCharCode(...new Uint8Array(hash)));
   }

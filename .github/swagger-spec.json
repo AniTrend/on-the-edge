@@ -1,0 +1,2630 @@
+{
+  "components": {
+    "schemas": {
+      "Character": {
+        "description": "Fictional character metadata resolved from Jikan (MAL), including media and voice-actor relations",
+        "properties": {
+          "about": {
+            "nullable": true,
+            "type": "string"
+          },
+          "anime": {
+            "default": [],
+            "items": {
+              "description": "Media entity related to a character",
+              "properties": {
+                "imageUrl": {
+                  "nullable": true,
+                  "type": "string"
+                },
+                "malId": {
+                  "exclusiveMinimum": 0,
+                  "type": "integer"
+                },
+                "role": {
+                  "nullable": true,
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "malId",
+                "title",
+                "url"
+              ],
+              "title": "CharacterMediaRelation",
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "expiresAt": {
+            "type": "number"
+          },
+          "favorites": {
+            "default": 0,
+            "type": "number"
+          },
+          "fetchedAt": {
+            "type": "number"
+          },
+          "imageUrl": {
+            "nullable": true,
+            "type": "string"
+          },
+          "malId": {
+            "exclusiveMinimum": 0,
+            "type": "integer"
+          },
+          "manga": {
+            "default": [],
+            "items": {
+              "description": "Media entity related to a character",
+              "properties": {
+                "imageUrl": {
+                  "nullable": true,
+                  "type": "string"
+                },
+                "malId": {
+                  "exclusiveMinimum": 0,
+                  "type": "integer"
+                },
+                "role": {
+                  "nullable": true,
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "malId",
+                "title",
+                "url"
+              ],
+              "title": "CharacterMediaRelation",
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "name": {
+            "type": "string"
+          },
+          "nameKanji": {
+            "nullable": true,
+            "type": "string"
+          },
+          "nicknames": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "voices": {
+            "default": [],
+            "items": {
+              "description": "Voice actor relation for a character",
+              "properties": {
+                "imageUrl": {
+                  "nullable": true,
+                  "type": "string"
+                },
+                "language": {
+                  "nullable": true,
+                  "type": "string"
+                },
+                "malId": {
+                  "exclusiveMinimum": 0,
+                  "type": "integer"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "malId",
+                "name",
+                "url"
+              ],
+              "title": "CharacterVoiceRelation",
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "malId",
+          "name",
+          "fetchedAt",
+          "expiresAt"
+        ],
+        "title": "Character",
+        "type": "object"
+      },
+      "CharacterQuery": {
+        "description": "Query parameters for character lookup",
+        "properties": {
+          "malId": {
+            "exclusiveMinimum": 0,
+            "type": "integer"
+          },
+          "name": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "title": "CharacterQuery",
+        "type": "object"
+      },
+      "Config": {
+        "description": "Client configuration",
+        "properties": {
+          "genres": {
+            "default": [],
+            "items": {
+              "description": "Genre entry linked to a media entity",
+              "properties": {
+                "mediaId": {
+                  "minimum": 1,
+                  "type": "number"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "name",
+                "mediaId"
+              ],
+              "title": "ConfigGenre",
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "id": {
+            "type": "string"
+          },
+          "image": {
+            "$ref": "#/components/schemas/ConfigImage"
+          },
+          "navigation": {
+            "default": [],
+            "items": {
+              "description": "A single navigation entry",
+              "properties": {
+                "criteria": {
+                  "type": "string"
+                },
+                "destination": {
+                  "type": "string"
+                },
+                "group": {
+                  "description": "Navigation item group classification",
+                  "properties": {
+                    "authenticated": {
+                      "type": "boolean"
+                    },
+                    "i18n": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "authenticated",
+                    "i18n"
+                  ],
+                  "title": "ConfigNavigationGroup",
+                  "type": "object"
+                },
+                "i18n": {
+                  "type": "string"
+                },
+                "icon": {
+                  "type": "string"
+                },
+                "key": {
+                  "description": "Stable identity for persistence, dedupe, and diffing. Must not change unless a deliberate migration is intended.",
+                  "minLength": 1,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "key",
+                "criteria",
+                "destination",
+                "i18n",
+                "icon",
+                "group"
+              ],
+              "title": "ConfigNavigationItem",
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "settings": {
+            "$ref": "#/components/schemas/ConfigSettings"
+          }
+        },
+        "required": [
+          "id",
+          "settings",
+          "image"
+        ],
+        "title": "Config",
+        "type": "object"
+      },
+      "ConfigImage": {
+        "description": "Image URL configuration for the client",
+        "properties": {
+          "banner": {
+            "format": "uri",
+            "type": "string"
+          },
+          "default": {
+            "format": "uri",
+            "type": "string"
+          },
+          "error": {
+            "format": "uri",
+            "type": "string"
+          },
+          "info": {
+            "format": "uri",
+            "type": "string"
+          },
+          "loading": {
+            "format": "uri",
+            "type": "string"
+          },
+          "poster": {
+            "format": "uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "banner",
+          "poster",
+          "loading",
+          "error",
+          "info",
+          "default"
+        ],
+        "title": "ConfigImage",
+        "type": "object"
+      },
+      "ConfigSettings": {
+        "description": "Application settings configuration",
+        "properties": {
+          "analyticsEnabled": {
+            "type": "boolean"
+          },
+          "platformSource": {
+            "format": "uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "analyticsEnabled"
+        ],
+        "title": "ConfigSettings",
+        "type": "object"
+      },
+      "EpisodeQuery": {
+        "description": "Query parameters for episode listing",
+        "properties": {
+          "after": {
+            "type": "string"
+          },
+          "before": {
+            "type": "string"
+          },
+          "end": {
+            "exclusiveMinimum": 0,
+            "type": "integer"
+          },
+          "includeOrphans": {
+            "type": "boolean"
+          },
+          "kind": {
+            "enum": [
+              "main",
+              "ova",
+              "ona",
+              "recap",
+              "filler",
+              "special"
+            ],
+            "type": "string"
+          },
+          "limit": {
+            "default": 25,
+            "maximum": 100,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "malId": {
+            "exclusiveMinimum": 0,
+            "type": "integer"
+          },
+          "specialsOnly": {
+            "type": "boolean"
+          },
+          "start": {
+            "exclusiveMinimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "malId"
+        ],
+        "title": "EpisodeQuery",
+        "type": "object"
+      },
+      "Episodes": {
+        "description": "Paginated episode listing with cursor navigation",
+        "properties": {
+          "count": {
+            "type": "number"
+          },
+          "data": {
+            "items": {
+              "description": "Canonical episode data from multiple sources",
+              "properties": {
+                "absoluteEpisodeNumber": {
+                  "nullable": true,
+                  "type": "number"
+                },
+                "aired": {
+                  "nullable": true,
+                  "type": "number"
+                },
+                "airedAfterEpisodeNumber": {
+                  "nullable": true,
+                  "type": "number"
+                },
+                "airedAfterSeasonNumber": {
+                  "nullable": true,
+                  "type": "number"
+                },
+                "airedBeforeEpisodeNumber": {
+                  "nullable": true,
+                  "type": "number"
+                },
+                "airedBeforeSeasonNumber": {
+                  "nullable": true,
+                  "type": "number"
+                },
+                "duration": {
+                  "nullable": true,
+                  "type": "number"
+                },
+                "episodeNumber": {
+                  "nullable": true,
+                  "type": "number"
+                },
+                "id": {
+                  "type": "number"
+                },
+                "image": {
+                  "nullable": true,
+                  "type": "string"
+                },
+                "kind": {
+                  "description": "Episode type classification",
+                  "enum": [
+                    "main",
+                    "ova",
+                    "ona",
+                    "recap",
+                    "filler",
+                    "special"
+                  ],
+                  "example": "main",
+                  "nullable": true,
+                  "title": "EpisodeKind",
+                  "type": "string"
+                },
+                "number": {
+                  "nullable": true,
+                  "type": "number"
+                },
+                "poster": {
+                  "nullable": true,
+                  "type": "string"
+                },
+                "score": {
+                  "nullable": true,
+                  "type": "number"
+                },
+                "seasonNumber": {
+                  "nullable": true,
+                  "type": "number"
+                },
+                "synopsis": {
+                  "nullable": true,
+                  "type": "string"
+                },
+                "themes": {
+                  "default": {
+                    "endings": [],
+                    "openings": []
+                  },
+                  "description": "Opening and ending theme songs",
+                  "properties": {
+                    "endings": {
+                      "default": [],
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "openings": {
+                      "default": [],
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "title": "EpisodeThemes",
+                  "type": "object"
+                },
+                "title": {
+                  "description": "Multi-language episode title",
+                  "nullable": true,
+                  "properties": {
+                    "english": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "native": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "romanji": {
+                      "nullable": true,
+                      "type": "string"
+                    }
+                  },
+                  "title": "EpisodeTitle",
+                  "type": "object"
+                },
+                "tmdbId": {
+                  "nullable": true,
+                  "type": "number"
+                },
+                "tvdbId": {
+                  "nullable": true,
+                  "type": "number"
+                },
+                "tvdbShowId": {
+                  "nullable": true,
+                  "type": "number"
+                },
+                "url": {
+                  "nullable": true,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "title": "Episode",
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "first": {
+            "nullable": true,
+            "type": "string"
+          },
+          "last": {
+            "nullable": true,
+            "type": "string"
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "data",
+          "count",
+          "total"
+        ],
+        "title": "Episodes",
+        "type": "object"
+      },
+      "News": {
+        "description": "Schema representing a news document.",
+        "properties": {
+          "area": {
+            "nullable": true,
+            "type": "string"
+          },
+          "category": {
+            "nullable": true,
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "genre": {
+            "nullable": true,
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "image": {
+            "format": "uri",
+            "nullable": true,
+            "type": "string"
+          },
+          "lang": {
+            "nullable": true,
+            "type": "string"
+          },
+          "link": {
+            "format": "uri",
+            "type": "string"
+          },
+          "publishedOn": {
+            "type": "number"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "link",
+          "description",
+          "content",
+          "publishedOn"
+        ],
+        "title": "News",
+        "type": "object"
+      },
+      "NewsConnection": {
+        "description": "Cursor-paged News connection",
+        "properties": {
+          "count": {
+            "minimum": 0,
+            "type": "number"
+          },
+          "data": {
+            "items": {
+              "description": "Schema representing a news document.",
+              "properties": {
+                "area": {
+                  "nullable": true,
+                  "type": "string"
+                },
+                "category": {
+                  "nullable": true,
+                  "type": "string"
+                },
+                "content": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "genre": {
+                  "nullable": true,
+                  "type": "string"
+                },
+                "id": {
+                  "type": "string"
+                },
+                "image": {
+                  "format": "uri",
+                  "nullable": true,
+                  "type": "string"
+                },
+                "lang": {
+                  "nullable": true,
+                  "type": "string"
+                },
+                "link": {
+                  "format": "uri",
+                  "type": "string"
+                },
+                "publishedOn": {
+                  "type": "number"
+                },
+                "title": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "title",
+                "link",
+                "description",
+                "content",
+                "publishedOn"
+              ],
+              "title": "News",
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "first": {
+            "nullable": true,
+            "type": "string"
+          },
+          "last": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "count",
+          "data"
+        ],
+        "title": "NewsConnection",
+        "type": "object"
+      },
+      "NewsPagingQuery": {
+        "description": "Query parameters for paged news listing",
+        "properties": {
+          "after": {
+            "type": "string"
+          },
+          "before": {
+            "type": "string"
+          },
+          "limit": {
+            "default": 15,
+            "minimum": 1,
+            "type": "number"
+          }
+        },
+        "title": "NewsPagingQuery",
+        "type": "object"
+      },
+      "NewsQuery": {
+        "additionalProperties": false,
+        "description": "Query parameters for news feed",
+        "properties": {
+          "locale": {
+            "default": "en-US",
+            "description": "Locale for the news feed, e.g., en-GB, de-DE, fr-FR.",
+            "maxLength": 5,
+            "minLength": 5,
+            "type": "string"
+          }
+        },
+        "title": "NewsQuery",
+        "type": "object"
+      },
+      "PeopleQuery": {
+        "description": "Query parameters for people lookup",
+        "properties": {
+          "malId": {
+            "exclusiveMinimum": 0,
+            "type": "integer"
+          },
+          "name": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "title": "PeopleQuery",
+        "type": "object"
+      },
+      "Person": {
+        "description": "Anime staff or voice actor metadata resolved from Jikan (MAL)",
+        "properties": {
+          "about": {
+            "nullable": true,
+            "type": "string"
+          },
+          "alternateNames": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "birthday": {
+            "nullable": true,
+            "type": "number"
+          },
+          "expiresAt": {
+            "type": "number"
+          },
+          "familyName": {
+            "nullable": true,
+            "type": "string"
+          },
+          "favorites": {
+            "default": 0,
+            "type": "number"
+          },
+          "fetchedAt": {
+            "type": "number"
+          },
+          "givenName": {
+            "nullable": true,
+            "type": "string"
+          },
+          "imageUrl": {
+            "nullable": true,
+            "type": "string"
+          },
+          "malId": {
+            "exclusiveMinimum": 0,
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "websiteUrl": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "malId",
+          "name",
+          "fetchedAt",
+          "expiresAt"
+        ],
+        "title": "Person",
+        "type": "object"
+      },
+      "PushAcknowledgment": {
+        "description": "Acknowledgment response for mutation operations",
+        "properties": {
+          "installationId": {
+            "description": "Installation identifier",
+            "type": "string"
+          },
+          "instance": {
+            "description": "UnifiedPush instance identifier",
+            "type": "string"
+          }
+        },
+        "required": [
+          "installationId",
+          "instance"
+        ],
+        "title": "PushAcknowledgment",
+        "type": "object"
+      },
+      "PushConfirmBody": {
+        "description": "Challenge confirmation request body",
+        "properties": {
+          "instance": {
+            "default": "default",
+            "minLength": 1,
+            "type": "string"
+          },
+          "token": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "token"
+        ],
+        "title": "PushConfirmBody",
+        "type": "object"
+      },
+      "PushDeleteBody": {
+        "description": "Installation deletion request body",
+        "properties": {
+          "instance": {
+            "default": "default",
+            "minLength": 1,
+            "type": "string"
+          },
+          "reason": {
+            "default": null,
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "title": "PushDeleteBody",
+        "type": "object"
+      },
+      "PushInstallation": {
+        "description": "Push installation registration state",
+        "properties": {
+          "installationId": {
+            "description": "Stable client-generated installation identifier",
+            "type": "string"
+          },
+          "instance": {
+            "description": "UnifiedPush instance identifier",
+            "type": "string"
+          },
+          "status": {
+            "description": "Lifecycle status of a push installation",
+            "enum": [
+              "pending",
+              "active",
+              "disabled",
+              "expired",
+              "revoked"
+            ],
+            "title": "PushInstallationStatus",
+            "type": "string"
+          }
+        },
+        "required": [
+          "installationId",
+          "instance",
+          "status"
+        ],
+        "title": "PushInstallation",
+        "type": "object"
+      },
+      "PushPreferencesBody": {
+        "description": "Topic preferences update request body",
+        "properties": {
+          "instance": {
+            "default": "default",
+            "minLength": 1,
+            "type": "string"
+          },
+          "topics": {
+            "properties": {
+              "airing": {
+                "default": null,
+                "nullable": true,
+                "type": "boolean"
+              },
+              "appAnnouncements": {
+                "default": null,
+                "nullable": true,
+                "type": "boolean"
+              },
+              "mediaUpdates": {
+                "default": null,
+                "nullable": true,
+                "type": "boolean"
+              },
+              "news": {
+                "default": null,
+                "nullable": true,
+                "type": "boolean"
+              },
+              "sync": {
+                "default": null,
+                "nullable": true,
+                "type": "boolean"
+              }
+            },
+            "type": "object"
+          }
+        },
+        "required": [
+          "topics"
+        ],
+        "title": "PushPreferencesBody",
+        "type": "object"
+      },
+      "PushProfileBody": {
+        "description": "Profile update request body",
+        "properties": {
+          "app": {
+            "default": null,
+            "nullable": true,
+            "properties": {
+              "build": {
+                "default": null,
+                "nullable": true,
+                "type": "string"
+              },
+              "code": {
+                "default": null,
+                "minimum": 0,
+                "nullable": true,
+                "type": "integer"
+              },
+              "source": {
+                "default": null,
+                "nullable": true,
+                "type": "string"
+              },
+              "version": {
+                "default": null,
+                "nullable": true,
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "capabilities": {
+            "default": null,
+            "nullable": true,
+            "properties": {
+              "notificationRuntimePermission": {
+                "default": null,
+                "nullable": true,
+                "type": "boolean"
+              },
+              "supportsRichNotifications": {
+                "default": null,
+                "nullable": true,
+                "type": "boolean"
+              },
+              "supportsSilentSync": {
+                "default": null,
+                "nullable": true,
+                "type": "boolean"
+              },
+              "unifiedPush": {
+                "default": null,
+                "nullable": true,
+                "type": "boolean"
+              }
+            },
+            "type": "object"
+          },
+          "device": {
+            "default": null,
+            "nullable": true,
+            "properties": {
+              "manufacturer": {
+                "default": null,
+                "nullable": true,
+                "type": "string"
+              },
+              "model": {
+                "default": null,
+                "nullable": true,
+                "type": "string"
+              },
+              "platform": {
+                "default": null,
+                "enum": [
+                  "android"
+                ],
+                "nullable": true,
+                "type": "string"
+              },
+              "sdk": {
+                "default": null,
+                "minimum": 0,
+                "nullable": true,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "identity": {
+            "default": null,
+            "nullable": true,
+            "properties": {
+              "anilistUserId": {
+                "default": null,
+                "exclusiveMinimum": 0,
+                "nullable": true,
+                "type": "integer"
+              },
+              "provider": {
+                "default": null,
+                "enum": [
+                  "anilist"
+                ],
+                "nullable": true,
+                "type": "string"
+              },
+              "state": {
+                "default": null,
+                "enum": [
+                  "client-declared"
+                ],
+                "nullable": true,
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "instance": {
+            "default": "default",
+            "minLength": 1,
+            "type": "string"
+          },
+          "locale": {
+            "default": null,
+            "nullable": true,
+            "properties": {
+              "language": {
+                "default": null,
+                "nullable": true,
+                "type": "string"
+              },
+              "region": {
+                "default": null,
+                "nullable": true,
+                "type": "string"
+              },
+              "timezone": {
+                "default": null,
+                "nullable": true,
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "topics": {
+            "default": null,
+            "nullable": true,
+            "properties": {
+              "airing": {
+                "default": null,
+                "nullable": true,
+                "type": "boolean"
+              },
+              "appAnnouncements": {
+                "default": null,
+                "nullable": true,
+                "type": "boolean"
+              },
+              "mediaUpdates": {
+                "default": null,
+                "nullable": true,
+                "type": "boolean"
+              },
+              "news": {
+                "default": null,
+                "nullable": true,
+                "type": "boolean"
+              },
+              "sync": {
+                "default": null,
+                "nullable": true,
+                "type": "boolean"
+              }
+            },
+            "type": "object"
+          },
+          "views": {
+            "default": null,
+            "nullable": true,
+            "properties": {
+              "lastSeen": {
+                "default": null,
+                "nullable": true,
+                "type": "string"
+              },
+              "lastSeenAt": {
+                "default": null,
+                "nullable": true,
+                "type": "number"
+              }
+            },
+            "type": "object"
+          }
+        },
+        "title": "PushProfileBody",
+        "type": "object"
+      },
+      "PushRegistrationBody": {
+        "description": "Installation registration request body",
+        "properties": {
+          "appBuild": {
+            "default": null,
+            "nullable": true,
+            "type": "string"
+          },
+          "appCode": {
+            "default": null,
+            "minimum": 0,
+            "nullable": true,
+            "type": "integer"
+          },
+          "appVersion": {
+            "default": null,
+            "nullable": true,
+            "type": "string"
+          },
+          "distributor": {
+            "default": null,
+            "nullable": true,
+            "type": "string"
+          },
+          "endpoint": {
+            "format": "uri",
+            "type": "string"
+          },
+          "installationId": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "instance": {
+            "default": "default",
+            "minLength": 1,
+            "type": "string"
+          },
+          "keys": {
+            "properties": {
+              "auth": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "p256dh": {
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": [
+              "p256dh",
+              "auth"
+            ],
+            "type": "object"
+          },
+          "locale": {
+            "default": null,
+            "nullable": true,
+            "type": "string"
+          },
+          "platform": {
+            "default": "android",
+            "enum": [
+              "android"
+            ],
+            "type": "string"
+          },
+          "timezone": {
+            "default": null,
+            "nullable": true,
+            "type": "string"
+          },
+          "topics": {
+            "default": [],
+            "items": {
+              "enum": [
+                "news",
+                "appAnnouncements",
+                "sync"
+              ],
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "installationId",
+          "endpoint",
+          "keys"
+        ],
+        "title": "PushRegistrationBody",
+        "type": "object"
+      },
+      "PushVapid": {
+        "description": "VAPID public key for Android Web Push subscription",
+        "properties": {
+          "applicationServerKey": {
+            "description": "Base64url-encoded VAPID public key for Web Push subscription",
+            "example": "BLbL...vFc",
+            "type": "string"
+          }
+        },
+        "required": [
+          "applicationServerKey"
+        ],
+        "title": "PushVapid",
+        "type": "object"
+      },
+      "Series": {
+        "description": "Aggregated media entity from multiple sources",
+        "properties": {
+          "ageRating": {
+            "nullable": true,
+            "type": "string"
+          },
+          "airedEpisodes": {
+            "nullable": true,
+            "type": "number"
+          },
+          "animethemes": {
+            "items": {
+              "description": "Opening or ending theme with entries and song metadata",
+              "properties": {
+                "animethemeentries": {
+                  "default": [],
+                  "items": {
+                    "description": "A single anime theme entry with version info and videos",
+                    "properties": {
+                      "episodes": {
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "id": {
+                        "type": "number"
+                      },
+                      "notes": {
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "nsfw": {
+                        "type": "boolean"
+                      },
+                      "spoiler": {
+                        "type": "boolean"
+                      },
+                      "version": {
+                        "nullable": true,
+                        "type": "number"
+                      },
+                      "videos": {
+                        "default": [],
+                        "items": {
+                          "description": "Video resource for an anime theme entry",
+                          "properties": {
+                            "audio": {
+                              "description": "Audio resource for an anime theme",
+                              "nullable": true,
+                              "properties": {
+                                "id": {
+                                  "type": "number"
+                                },
+                                "link": {
+                                  "format": "uri",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "link"
+                              ],
+                              "title": "AnimeThemesAudio",
+                              "type": "object"
+                            },
+                            "id": {
+                              "type": "number"
+                            },
+                            "link": {
+                              "format": "uri",
+                              "type": "string"
+                            },
+                            "lyrics": {
+                              "type": "boolean"
+                            },
+                            "nc": {
+                              "type": "boolean"
+                            },
+                            "overlap": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "resolution": {
+                              "nullable": true,
+                              "type": "number"
+                            },
+                            "source": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "subbed": {
+                              "type": "boolean"
+                            },
+                            "tags": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "uncen": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "link",
+                            "nc",
+                            "subbed",
+                            "lyrics",
+                            "uncen"
+                          ],
+                          "title": "AnimeThemesVideo",
+                          "type": "object"
+                        },
+                        "type": "array"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "nsfw",
+                      "spoiler"
+                    ],
+                    "title": "AnimeThemesEntry",
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "id": {
+                  "type": "number"
+                },
+                "sequence": {
+                  "nullable": true,
+                  "type": "number"
+                },
+                "slug": {
+                  "type": "string"
+                },
+                "song": {
+                  "description": "Song metadata for an anime theme",
+                  "nullable": true,
+                  "properties": {
+                    "id": {
+                      "type": "number"
+                    },
+                    "title": {
+                      "nullable": true,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ],
+                  "title": "AnimeThemesSong",
+                  "type": "object"
+                },
+                "type": {
+                  "enum": [
+                    "OP",
+                    "ED"
+                  ],
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "type",
+                "slug"
+              ],
+              "title": "AnimeThemes",
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "banner": {
+            "nullable": true,
+            "type": "string"
+          },
+          "broadcast": {
+            "nullable": true,
+            "type": "string"
+          },
+          "chapters": {
+            "nullable": true,
+            "type": "number"
+          },
+          "classification": {
+            "nullable": true,
+            "type": "string"
+          },
+          "cover": {
+            "$ref": "#/components/schemas/SeriesCoverImage"
+          },
+          "description": {
+            "nullable": true,
+            "type": "string"
+          },
+          "duration": {
+            "nullable": true,
+            "type": "number"
+          },
+          "fanart": {
+            "nullable": true,
+            "type": "string"
+          },
+          "format": {
+            "enum": [
+              "TV",
+              "MOVIE",
+              "SPECIAL",
+              "OVA",
+              "ONA"
+            ],
+            "nullable": true,
+            "type": "string"
+          },
+          "homepage": {
+            "nullable": true,
+            "type": "string"
+          },
+          "images": {
+            "items": {
+              "description": "Image metadata including dimensions and type",
+              "properties": {
+                "height": {
+                  "type": "number"
+                },
+                "locale": {
+                  "nullable": true,
+                  "type": "string"
+                },
+                "type": {
+                  "enum": [
+                    "BACKDROP",
+                    "POSTER",
+                    "LOGO"
+                  ],
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string"
+                },
+                "width": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "height",
+                "width",
+                "url",
+                "type"
+              ],
+              "title": "SeriesImageAttributes",
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "isAdult": {
+            "nullable": true,
+            "type": "boolean"
+          },
+          "kind": {
+            "enum": [
+              "ANIME",
+              "MANGA"
+            ],
+            "type": "string"
+          },
+          "mediaId": {
+            "$ref": "#/components/schemas/SeriesId"
+          },
+          "moreInfo": {
+            "nullable": true,
+            "type": "string"
+          },
+          "networks": {
+            "items": {
+              "description": "Network or streaming service associated with the series",
+              "properties": {
+                "category": {
+                  "enum": [
+                    "DISTRIBUTION",
+                    "PRODUCTION"
+                  ],
+                  "type": "string"
+                },
+                "id": {
+                  "type": "number"
+                },
+                "isPrimary": {
+                  "type": "boolean"
+                },
+                "logoPath": {
+                  "nullable": true,
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "originCountry": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "isPrimary",
+                "name",
+                "originCountry",
+                "category"
+              ],
+              "title": "SeriesNetwork",
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "publishedFrom": {
+            "nullable": true,
+            "type": "number"
+          },
+          "publishedTo": {
+            "nullable": true,
+            "type": "number"
+          },
+          "schedule": {
+            "$ref": "#/components/schemas/SeriesSchedule"
+          },
+          "source": {
+            "enum": [
+              "ORIGINAL",
+              "MANGA",
+              "LIGHT_NOVEL",
+              "VISUAL_NOVEL",
+              "VIDEO_GAME",
+              "OTHER"
+            ],
+            "nullable": true,
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "FINISHED",
+              "RELEASING",
+              "NOT_YET_RELEASED"
+            ],
+            "nullable": true,
+            "type": "string"
+          },
+          "title": {
+            "$ref": "#/components/schemas/SeriesTitle"
+          },
+          "trailers": {
+            "items": {
+              "description": "Trailer resource link",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "site": {
+                  "type": "string"
+                },
+                "thumbnail": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "site"
+              ],
+              "title": "SeriesTrailer",
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "updatedAt": {
+            "type": "number"
+          },
+          "volumes": {
+            "nullable": true,
+            "type": "number"
+          }
+        },
+        "required": [
+          "kind",
+          "mediaId",
+          "cover",
+          "title",
+          "images",
+          "updatedAt",
+          "animethemes",
+          "trailers",
+          "networks"
+        ],
+        "title": "Series",
+        "type": "object"
+      },
+      "SeriesCoverImage": {
+        "description": "Cover image URLs at multiple sizes with dominant color",
+        "properties": {
+          "color": {
+            "type": "string"
+          },
+          "extraLarge": {
+            "type": "string"
+          },
+          "large": {
+            "type": "string"
+          },
+          "medium": {
+            "type": "string"
+          }
+        },
+        "title": "SeriesCoverImage",
+        "type": "object"
+      },
+      "SeriesId": {
+        "description": "Provider identifiers for a media entity",
+        "properties": {
+          "anidb": {
+            "nullable": true,
+            "type": "number"
+          },
+          "anilist": {
+            "nullable": true,
+            "type": "number"
+          },
+          "animePlanet": {
+            "nullable": true,
+            "type": "string"
+          },
+          "anisearch": {
+            "nullable": true,
+            "type": "number"
+          },
+          "imdb": {
+            "nullable": true,
+            "type": "string"
+          },
+          "kitsu": {
+            "nullable": true,
+            "type": "number"
+          },
+          "livechart": {
+            "nullable": true,
+            "type": "number"
+          },
+          "myanimelist": {
+            "nullable": true,
+            "type": "number"
+          },
+          "notify": {
+            "nullable": true,
+            "type": "string"
+          },
+          "shoboi": {
+            "nullable": true,
+            "type": "number"
+          },
+          "slug": {
+            "nullable": true,
+            "type": "string"
+          },
+          "themoviedb": {
+            "nullable": true,
+            "type": "number"
+          },
+          "trakt": {
+            "nullable": true,
+            "type": "number"
+          },
+          "tvMazeId": {
+            "nullable": true,
+            "type": "number"
+          },
+          "tvdb": {
+            "nullable": true,
+            "type": "number"
+          },
+          "tvrage": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "title": "SeriesId",
+        "type": "object"
+      },
+      "SeriesQuery": {
+        "description": "Query parameters for series lookup",
+        "properties": {
+          "anilist": {
+            "exclusiveMinimum": 0,
+            "type": "integer"
+          },
+          "mal": {
+            "exclusiveMinimum": 0,
+            "type": "integer"
+          },
+          "notify": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "slug": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "tmdb": {
+            "exclusiveMinimum": 0,
+            "type": "integer"
+          },
+          "trakt": {
+            "exclusiveMinimum": 0,
+            "type": "integer"
+          },
+          "tvdb": {
+            "exclusiveMinimum": 0,
+            "type": "integer"
+          }
+        },
+        "title": "SeriesQuery",
+        "type": "object"
+      },
+      "SeriesSchedule": {
+        "description": "Air date schedule for the series",
+        "nullable": true,
+        "properties": {
+          "firstAirDate": {
+            "nullable": true,
+            "type": "number"
+          },
+          "lastAirDate": {
+            "nullable": true,
+            "type": "number"
+          },
+          "lastAiredEpisode": {
+            "description": "A scheduled episode in the series",
+            "nullable": true,
+            "properties": {
+              "airDate": {
+                "nullable": true,
+                "type": "number"
+              },
+              "episodeNumber": {
+                "nullable": true,
+                "type": "number"
+              },
+              "id": {
+                "type": "number"
+              },
+              "image": {
+                "nullable": true,
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "overview": {
+                "nullable": true,
+                "type": "string"
+              },
+              "productionCode": {
+                "nullable": true,
+                "type": "string"
+              },
+              "runtime": {
+                "nullable": true,
+                "type": "number"
+              },
+              "seasonNumber": {
+                "nullable": true,
+                "type": "number"
+              },
+              "tmdbId": {
+                "nullable": true,
+                "type": "number"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ],
+            "title": "SeriesScheduleEpisode",
+            "type": "object"
+          },
+          "nextEpisodeToAir": {
+            "description": "A scheduled episode in the series",
+            "nullable": true,
+            "properties": {
+              "airDate": {
+                "nullable": true,
+                "type": "number"
+              },
+              "episodeNumber": {
+                "nullable": true,
+                "type": "number"
+              },
+              "id": {
+                "type": "number"
+              },
+              "image": {
+                "nullable": true,
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "overview": {
+                "nullable": true,
+                "type": "string"
+              },
+              "productionCode": {
+                "nullable": true,
+                "type": "string"
+              },
+              "runtime": {
+                "nullable": true,
+                "type": "number"
+              },
+              "seasonNumber": {
+                "nullable": true,
+                "type": "number"
+              },
+              "tmdbId": {
+                "nullable": true,
+                "type": "number"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ],
+            "title": "SeriesScheduleEpisode",
+            "type": "object"
+          }
+        },
+        "title": "SeriesSchedule",
+        "type": "object"
+      },
+      "SeriesTitle": {
+        "description": "Multi-language titles for a media entity",
+        "properties": {
+          "canonical": {
+            "nullable": true,
+            "type": "string"
+          },
+          "english": {
+            "nullable": true,
+            "type": "string"
+          },
+          "harigana": {
+            "nullable": true,
+            "type": "string"
+          },
+          "japanese": {
+            "nullable": true,
+            "type": "string"
+          },
+          "romaji": {
+            "nullable": true,
+            "type": "string"
+          },
+          "synonyms": {
+            "items": {
+              "type": "string"
+            },
+            "nullable": true,
+            "type": "array"
+          }
+        },
+        "title": "SeriesTitle",
+        "type": "object"
+      },
+      "Studio": {
+        "description": "Animation studio metadata resolved from Jikan (MAL)",
+        "properties": {
+          "about": {
+            "nullable": true,
+            "type": "string"
+          },
+          "animeCount": {
+            "default": 0,
+            "type": "number"
+          },
+          "established": {
+            "nullable": true,
+            "type": "number"
+          },
+          "expiresAt": {
+            "type": "number"
+          },
+          "favorites": {
+            "default": 0,
+            "type": "number"
+          },
+          "fetchedAt": {
+            "type": "number"
+          },
+          "imageUrl": {
+            "nullable": true,
+            "type": "string"
+          },
+          "malId": {
+            "exclusiveMinimum": 0,
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "titles": {
+            "default": [],
+            "items": {
+              "description": "Studio alternate title",
+              "properties": {
+                "title": {
+                  "nullable": true,
+                  "type": "string"
+                },
+                "type": {
+                  "nullable": true,
+                  "type": "string"
+                }
+              },
+              "title": "StudioTitle",
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "malId",
+          "name",
+          "fetchedAt",
+          "expiresAt"
+        ],
+        "title": "Studio",
+        "type": "object"
+      },
+      "StudioQuery": {
+        "description": "Query parameters for studio lookup",
+        "properties": {
+          "malId": {
+            "exclusiveMinimum": 0,
+            "type": "integer"
+          },
+          "name": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "title": "StudioQuery",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "The edge API",
+    "title": "Edge API",
+    "version": "1.0"
+  },
+  "openapi": "3.0.3",
+  "paths": {
+    "/v1": {
+      "get": {
+        "operationId": "index",
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/v1/characters": {
+      "get": {
+        "operationId": "character",
+        "parameters": [
+          {
+            "description": "",
+            "in": "query",
+            "name": "malId",
+            "schema": {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "",
+            "in": "query",
+            "name": "name",
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Character"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/v1/config": {
+      "get": {
+        "operationId": "config",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Config"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/v1/episodes": {
+      "get": {
+        "operationId": "episodes",
+        "parameters": [
+          {
+            "description": "",
+            "in": "query",
+            "name": "malId",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "",
+            "in": "query",
+            "name": "after",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "",
+            "in": "query",
+            "name": "before",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "",
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "enum": [
+                "main",
+                "ova",
+                "ona",
+                "recap",
+                "filler",
+                "special"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "",
+            "in": "query",
+            "name": "specialsOnly",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "description": "",
+            "in": "query",
+            "name": "start",
+            "required": false,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "",
+            "in": "query",
+            "name": "end",
+            "required": false,
+            "schema": {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "",
+            "in": "query",
+            "name": "includeOrphans",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Episodes"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/v1/news": {
+      "get": {
+        "operationId": "news",
+        "parameters": [
+          {
+            "description": "",
+            "in": "query",
+            "name": "before",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "",
+            "in": "query",
+            "name": "after",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "",
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "default": 15,
+              "minimum": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NewsConnection"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/v1/news/feed": {
+      "get": {
+        "operationId": "newsFeed",
+        "parameters": [
+          {
+            "description": "",
+            "in": "query",
+            "name": "locale",
+            "schema": {
+              "default": "en-US",
+              "description": "Locale for the news feed, e.g., en-GB, de-DE, fr-FR.",
+              "maxLength": 5,
+              "minLength": 5,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/News"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/v1/people": {
+      "get": {
+        "operationId": "person",
+        "parameters": [
+          {
+            "description": "",
+            "in": "query",
+            "name": "malId",
+            "schema": {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "",
+            "in": "query",
+            "name": "name",
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Person"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/v1/push/installations": {
+      "post": {
+        "operationId": "registerInstallation",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PushRegistrationBody"
+              }
+            }
+          },
+          "description": "",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushInstallation"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/v1/push/installations/{installationId}": {
+      "delete": {
+        "operationId": "deleteInstallation",
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "installationId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PushDeleteBody"
+              }
+            }
+          },
+          "description": "",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushAcknowledgment"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/v1/push/installations/{installationId}/confirm": {
+      "post": {
+        "operationId": "confirmInstallation",
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "installationId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PushConfirmBody"
+              }
+            }
+          },
+          "description": "",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushInstallation"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/v1/push/installations/{installationId}/preferences": {
+      "patch": {
+        "operationId": "updatePreferences",
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "installationId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PushPreferencesBody"
+              }
+            }
+          },
+          "description": "",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushAcknowledgment"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/v1/push/installations/{installationId}/profile": {
+      "put": {
+        "operationId": "updateProfile",
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "installationId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PushProfileBody"
+              }
+            }
+          },
+          "description": "",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushAcknowledgment"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/v1/push/installations/{installationId}/test": {
+      "post": {
+        "operationId": "sendTestPush",
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "installationId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushAcknowledgment"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/v1/push/vapid": {
+      "get": {
+        "operationId": "vapid",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushVapid"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/v1/series": {
+      "get": {
+        "operationId": "series",
+        "parameters": [
+          {
+            "description": "",
+            "in": "query",
+            "name": "trakt",
+            "schema": {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "",
+            "in": "query",
+            "name": "slug",
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "description": "",
+            "in": "query",
+            "name": "tvdb",
+            "schema": {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "",
+            "in": "query",
+            "name": "tmdb",
+            "schema": {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "",
+            "in": "query",
+            "name": "notify",
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "description": "",
+            "in": "query",
+            "name": "anilist",
+            "schema": {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "",
+            "in": "query",
+            "name": "mal",
+            "schema": {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Series"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    },
+    "/v1/studios": {
+      "get": {
+        "operationId": "studio",
+        "parameters": [
+          {
+            "description": "",
+            "in": "query",
+            "name": "malId",
+            "schema": {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "",
+            "in": "query",
+            "name": "name",
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Studio"
+                }
+              }
+            },
+            "description": ""
+          }
+        }
+      }
+    }
+  },
+  "servers": [],
+  "tags": []
+}
