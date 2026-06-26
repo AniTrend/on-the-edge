@@ -355,6 +355,115 @@ export class PushService {
     );
   }
 
+  // --- Test Push ---
+
+  /**
+   * Send a test push notification to an active installation.
+   *
+   * Used for development and QA. The installation must be active.
+   */
+  async sendTestPush(
+    installationId: string,
+    instance: string,
+  ): Promise<{ success: boolean }> {
+    const installation = await this.repository.findById(
+      installationId,
+      instance,
+    );
+
+    if (!installation) {
+      throw new PushInstallationNotFoundError(installationId);
+    }
+
+    if (installation.status !== 'active') {
+      throw new BadRequestException();
+    }
+
+    const subscriber = this.pushSender.subscribe({
+      endpoint: installation.endpoint,
+      keys: installation.keys,
+    });
+
+    const result = await this.pushSender.send(
+      subscriber,
+      installation.endpoint,
+      {
+        type: 'push.test',
+        id: crypto.randomUUID(),
+        createdAt: Date.now(),
+      },
+      installationId,
+    );
+
+    if (result.gone) {
+      await this.repository.markExpired(installationId, instance);
+    }
+
+    return { success: result.success };
+  }
+
+  // --- Fan-Out (news) ---
+
+  /**
+   * Send a news.available push to all active installations
+   * subscribed to the news topic.
+   */
+  async fanOutToNewsSubscribers(): Promise<void> {
+    const installations = await this.repository.findActiveByTopic('news');
+
+    if (installations.length === 0) return;
+
+    const payload = {
+      type: 'news.available' as const,
+      id: crypto.randomUUID(),
+      sync: {
+        resource: 'news' as const,
+        since: Date.now(),
+      },
+    };
+
+    let sent = 0;
+    let failed = 0;
+
+    for (const installation of installations) {
+      try {
+        const subscriber = this.pushSender.subscribe({
+          endpoint: installation.endpoint,
+          keys: installation.keys,
+        });
+
+        const result = await this.pushSender.send(
+          subscriber,
+          installation.endpoint,
+          payload,
+          installation.installationId,
+        );
+
+        if (result.gone) {
+          await this.repository.markExpired(
+            installation.installationId,
+            installation.instance,
+          );
+        }
+
+        if (result.success) sent++;
+        else failed++;
+      } catch (error) {
+        failed++;
+        this.logger.instance.warn(
+          `News fan-out failed for ${installation.installationId}`,
+          { cause: error },
+        );
+      }
+    }
+
+    if (sent > 0 || failed > 0) {
+      this.logger.instance.debug(
+        `News fan-out complete: ${sent} sent, ${failed} failed`,
+      );
+    }
+  }
+
   // --- Helpers ---
 
   private generateChallengeToken(): string {

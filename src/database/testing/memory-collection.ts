@@ -57,6 +57,24 @@ export class InMemoryCollection<T extends Document> implements Collection<T> {
   }
 
   /**
+   * Resolve a dotted path (e.g., 'topics.news') against a document.
+   */
+  private getNestedValue(obj: unknown, path: string): unknown {
+    if (typeof obj !== 'object' || obj === null) return undefined;
+    const parts = path.split('.');
+    let current: unknown = obj;
+    for (const part of parts) {
+      if (
+        current === null || current === undefined || typeof current !== 'object'
+      ) {
+        return undefined;
+      }
+      current = (current as Record<string, unknown>)[part];
+    }
+    return current;
+  }
+
+  /**
    * Simple filter matching - handles basic equality checks
    */
   private matchesFilter(doc: WithId<T>, filter: Filter<T>): boolean {
@@ -67,8 +85,10 @@ export class InMemoryCollection<T extends Document> implements Collection<T> {
         continue;
       }
 
-      // Handle nested path matching (e.g., 'seriesKey')
-      const docValue = (doc as Record<string, unknown>)[key];
+      // Handle nested path matching (e.g., 'topics.news')
+      const docValue = key.includes('.')
+        ? this.getNestedValue(doc, key)
+        : (doc as Record<string, unknown>)[key];
 
       if (typeof value === 'object' && value !== null) {
         // Handle comparison operators like $lt, $gt, $gte, $lte, $exists

@@ -65,6 +65,20 @@ export const PushPreferencesContract = z.object({
   description: 'Topic preference update',
 });
 
+// --- Acknowledgment ---
+
+export const PushAcknowledgmentContract = z.object({
+  installationId: z.string().openapi({
+    description: 'Installation identifier',
+  }),
+  instance: z.string().openapi({
+    description: 'UnifiedPush instance identifier',
+  }),
+}).openapi({
+  title: 'PushAcknowledgment',
+  description: 'Acknowledgment response for mutation operations',
+});
+
 // --- Confirmation ---
 
 export const PushConfirmContract = PushInstallationContract;

@@ -1,4 +1,5 @@
 import {
+  PushAcknowledgmentContract,
   PushConfirmContract,
   PushInstallationContract,
   PushVapidContract,
@@ -14,6 +15,7 @@ import {
 export const PushVapidSwagger = PushVapidContract;
 export const PushInstallationSwagger = PushInstallationContract;
 export const PushConfirmSwagger = PushConfirmContract;
+export const PushAcknowledgmentSwagger = PushAcknowledgmentContract;
 
 export const PushRegistrationBodySwagger =
   // deno-lint-ignore no-explicit-any

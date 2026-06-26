@@ -48,6 +48,7 @@ export const EXPECTED_SCHEMA_NAMES = [
   // Push (currently shipped endpoints only)
   'PushVapid',
   'PushInstallation',
+  'PushAcknowledgment',
 ] as const;
 
 /**
@@ -66,6 +67,11 @@ export const EXPECTED_OPERATION_IDS = [
   'index',
   'vapid',
   'registerInstallation',
+  'confirmInstallation',
+  'updateProfile',
+  'updatePreferences',
+  'deleteInstallation',
+  'sendTestPush',
 ] as const;
 
 /**
