@@ -110,16 +110,29 @@ export class PushRepository {
 
   /**
    * Upsert an installation document by installationId + instance.
-   * Returns the document after upsert.
+   * Returns the document after upsert, plus whether it was newly created
+   * and the previous document (if it existed).
    */
   async upsert(
     doc: PushInstallationDocument,
-  ): Promise<PushInstallationWithId> {
+  ): Promise<{
+    doc: PushInstallationWithId;
+    wasCreated: boolean;
+    previous?: PushInstallationWithId;
+  }> {
     const now = this.nowSeconds();
     const replacement = {
       ...doc,
       updatedAt: now,
     };
+
+    // Check existence first to distinguish insert vs update.
+    // Race window exists between findOne and findOneAndReplace,
+    // but since wasCreated is only used for observability, an
+    // occasional miscategorization is acceptable.
+    const existed = await this.collection.findOne(
+      this.filterById(doc.installationId, doc.instance),
+    );
 
     const result = await this.collection.findOneAndReplace(
       this.filterById(doc.installationId, doc.instance),
@@ -132,7 +145,11 @@ export class PushRepository {
       { status: doc.status },
     );
 
-    return result!;
+    return {
+      doc: result!,
+      wasCreated: existed === null,
+      previous: existed ?? undefined,
+    };
   }
 
   /**

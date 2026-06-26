@@ -85,9 +85,14 @@ export class PushService {
     });
 
     if (!validation.valid) {
+      const endpointHash = await this.sha256(registration.endpoint);
+      this.logger.instance.info('Push endpoint rejected by SSRF validation', {
+        type: 'push.endpoint.rejected_ssrf',
+        endpoint: endpointHash,
+      });
       this.logger.instance.warn(
         `SSRF validation failed for endpoint: ${validation.reason}`,
-        { endpoint: registration.endpoint },
+        { endpoint: endpointHash },
       );
       throw new PushSsrfValidationError(
         registration.endpoint,
@@ -122,8 +127,31 @@ export class PushService {
       updatedAt: now,
     };
 
-    // Upsert
-    const result = await this.repository.upsert(doc);
+    // Upsert (also returns previous doc for observability)
+    const { doc: result, wasCreated, previous } = await this.repository.upsert(
+      doc,
+    );
+
+    if (wasCreated) {
+      this.logger.instance.info('Push registration created', {
+        type: 'push.registration.created',
+        installationId: result.installationId,
+        instance: result.instance,
+        platform: result.platform,
+        ...(result.distributor ? { distributor: result.distributor } : {}),
+        topics: result.topics ?? {},
+      });
+    }
+
+    if (!wasCreated) {
+      this.logger.instance.info('Push registration updated', {
+        type: 'push.registration.updated',
+        installationId: result.installationId,
+        instance: result.instance,
+        previousStatus: previous?.status ?? 'unknown',
+        newStatus: result.status,
+      });
+    }
 
     // Generate challenge token
     const token = this.generateChallenge();
@@ -157,7 +185,21 @@ export class PushService {
         result.instance,
         'push.challenge',
       );
+
+      this.logger.instance.info('Push challenge sent', {
+        type: 'push.registration.challenge_sent',
+        installationId: result.installationId,
+        instance: result.instance,
+        endpointHash: await this.sha256(registration.endpoint),
+      });
     } catch (error) {
+      this.logger.instance.info('Push challenge send failed', {
+        type: 'push.registration.challenge_failed',
+        installationId: result.installationId,
+        instance: result.instance,
+        endpointHash: await this.sha256(registration.endpoint),
+        error: (error as Error).message,
+      });
       // Log but don't fail registration — challenge can be retried
       this.logger.instance.warn(
         `Failed to send challenge push to ${result.installationId}`,
@@ -205,18 +247,33 @@ export class PushService {
     }
 
     if (!installation.challenge) {
+      this.logger.instance.info('Push challenge invalid - no challenge found', {
+        type: 'push.registration.challenge_invalid',
+        installationId,
+        instance: confirmation.instance,
+      });
       throw new PushChallengeInvalidError(installationId);
     }
 
     // Check expiry
     const now = this.nowSeconds();
     if (installation.challenge.expiresAt.getTime() < now * 1000) {
+      this.logger.instance.info('Push challenge expired', {
+        type: 'push.registration.challenge_expired',
+        installationId,
+        instance: confirmation.instance,
+      });
       throw new PushChallengeExpiredError(installationId);
     }
 
     // Verify token
     const submittedHash = await this.sha256(confirmation.token);
     if (submittedHash !== installation.challenge.tokenHash) {
+      this.logger.instance.info('Push challenge invalid - wrong token', {
+        type: 'push.registration.challenge_invalid',
+        installationId,
+        instance: confirmation.instance,
+      });
       this.logger.instance.warn(
         `Invalid challenge token for installation ${installationId}`,
       );
@@ -230,6 +287,12 @@ export class PushService {
       confirmation.instance,
       'active',
     );
+
+    this.logger.instance.info('Push registration confirmed', {
+      type: 'push.registration.confirmed',
+      installationId,
+      instance: confirmation.instance,
+    });
 
     return {
       installationId,
@@ -287,6 +350,12 @@ export class PushService {
     if (profile.identity?.anilistUserId) {
       updates.anilistUserId = profile.identity.anilistUserId;
       updates.identityState = 'client-declared';
+      this.logger.instance.info('Push identity client-declared', {
+        type: 'push.identity.client_declared',
+        installationId,
+        anilistUserId: profile.identity.anilistUserId,
+        state: 'client-declared',
+      });
       this.logger.instance.debug(
         `Client-declared AniList user ${profile.identity.anilistUserId} linked to ${installationId}`,
       );
@@ -294,6 +363,10 @@ export class PushService {
       // Explicit unlink: identity block present but no userId
       updates.anilistUserId = undefined;
       updates.identityState = 'anonymous';
+      this.logger.instance.info('Push identity unlinked', {
+        type: 'push.identity.unlinked',
+        installationId,
+      });
     }
 
     await this.repository.updateProfile(
@@ -301,6 +374,18 @@ export class PushService {
       profile.instance,
       updates,
     );
+
+    const updatedFields = Object.keys(updates).filter(
+      (k) => updates[k as keyof typeof updates] !== undefined,
+    );
+    if (updatedFields.length > 0) {
+      this.logger.instance.info('Push profile updated', {
+        type: 'push.profile.updated',
+        installationId,
+        instance: profile.instance,
+        fields: updatedFields,
+      });
+    }
 
     // Also update topics if present in profile
     if (profile.topics) {
@@ -335,6 +420,13 @@ export class PushService {
       preferences.instance,
       preferences.topics as PushInstallationDocument['topics'],
     );
+
+    this.logger.instance.info('Push preferences updated', {
+      type: 'push.preferences.updated',
+      installationId,
+      instance: preferences.instance,
+      topics: preferences.topics,
+    });
   }
 
   // --- Deletion ---
@@ -425,6 +517,12 @@ export class PushService {
 
     if (installations.length === 0) return;
 
+    this.logger.instance.info('Push fan-out started', {
+      type: 'push.fanout.started',
+      notificationType: 'news.available',
+      candidateCount: installations.length,
+    });
+
     const payload = {
       type: 'news.available' as const,
       id: crypto.randomUUID(),
@@ -436,6 +534,8 @@ export class PushService {
 
     let sent = 0;
     let failed = 0;
+    let goneCount = 0;
+    const startMs = Date.now();
 
     for (const installation of installations) {
       try {
@@ -459,10 +559,12 @@ export class PushService {
             installation.installationId,
             installation.instance,
           );
+          goneCount++;
+        } else if (success) {
+          sent++;
+        } else {
+          failed++;
         }
-
-        if (success) sent++;
-        else failed++;
       } catch (error) {
         failed++;
         this.logger.instance.warn(
@@ -471,6 +573,16 @@ export class PushService {
         );
       }
     }
+
+    const totalMs = Date.now() - startMs;
+    this.logger.instance.info('Push fan-out completed', {
+      type: 'push.fanout.completed',
+      notificationType: 'news.available',
+      sent,
+      failed,
+      gone: goneCount,
+      totalMs,
+    });
 
     if (sent > 0 || failed > 0) {
       this.logger.instance.debug(
@@ -503,11 +615,52 @@ export class PushService {
       installationId,
     );
 
+    const endpointHash = await this.sha256(endpoint);
+
+    const deliveryMeta = {
+      installationId,
+      instance,
+      notificationType: type,
+      latencyMs: result.latencyMs,
+      attempt: 0, // initial delivery always attempt 0
+    };
+
+    if (result.success && !result.gone) {
+      this.logger.instance.info('Push delivery sent', {
+        type: 'push.delivery.sent',
+        ...deliveryMeta,
+      });
+    } else if (result.gone) {
+      this.logger.instance.info('Push delivery endpoint gone', {
+        type: 'push.delivery.gone',
+        ...deliveryMeta,
+      });
+    } else if (
+      result.statusCode === 400 ||
+      result.statusCode === 401 ||
+      result.statusCode === 403
+    ) {
+      this.logger.instance.info('Push delivery failed', {
+        type: 'push.delivery.failed',
+        ...deliveryMeta,
+        statusCode: result.statusCode,
+        error: result.error,
+      });
+    } else {
+      // 429, 5xx, or no status code — retryable
+      this.logger.instance.info('Push delivery retryable failure', {
+        type: 'push.delivery.retryable',
+        ...deliveryMeta,
+        statusCode: result.statusCode,
+        error: result.error,
+      });
+    }
+
     // Fire-and-forget: record the delivery attempt
     this.deliveryRepo.insert({
       installationId,
       instance,
-      endpointHash: await this.sha256(endpoint),
+      endpointHash,
       type,
       id: (payload as { id: string }).id ?? '',
       success: result.success,
