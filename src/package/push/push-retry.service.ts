@@ -70,6 +70,14 @@ export class PushRetryService implements OnAppBootstrap, OnAppClose {
       (job.payload as { id: string }).id ?? '0'
     }`;
     await this.redis.hset(REDIS_KEY, jobId, JSON.stringify(retryJob));
+
+    this.logger.instance.info('Push retry enqueued', {
+      type: 'push.retry.enqueued',
+      installationId: job.installationId,
+      instance: job.instance,
+      notificationType: job.type,
+      attempt: 1,
+    });
   }
 
   /** Poll for due retry jobs and attempt delivery. Runs every minute. */
@@ -97,6 +105,44 @@ export class PushRetryService implements OnAppBootstrap, OnAppClose {
             job.installationId,
           );
 
+          const deliveryMeta = {
+            installationId: job.installationId,
+            instance: job.instance,
+            notificationType: job.type,
+            latencyMs: result.latencyMs,
+            attempt: job.attempt,
+          };
+
+          if (result.success && !result.gone) {
+            this.logger.instance.info('Push delivery sent', {
+              type: 'push.delivery.sent',
+              ...deliveryMeta,
+            });
+          } else if (result.gone) {
+            this.logger.instance.info('Push delivery endpoint gone', {
+              type: 'push.delivery.gone',
+              ...deliveryMeta,
+            });
+          } else if (
+            result.statusCode === 400 ||
+            result.statusCode === 401 ||
+            result.statusCode === 403
+          ) {
+            this.logger.instance.info('Push delivery failed', {
+              type: 'push.delivery.failed',
+              ...deliveryMeta,
+              statusCode: result.statusCode,
+              error: result.error,
+            });
+          } else {
+            this.logger.instance.info('Push delivery retryable failure', {
+              type: 'push.delivery.retryable',
+              ...deliveryMeta,
+              statusCode: result.statusCode,
+              error: result.error,
+            });
+          }
+
           if (result.gone) {
             await this.pushRepo.markExpired(
               job.installationId,
@@ -114,6 +160,13 @@ export class PushRetryService implements OnAppBootstrap, OnAppClose {
             await this.redis.hset(REDIS_KEY, jobId, JSON.stringify(job));
           } else {
             // Max retries reached — give up
+            this.logger.instance.info('Push retry exhausted', {
+              type: 'push.retry.exhausted',
+              installationId: job.installationId,
+              instance: job.instance,
+              notificationType: job.type,
+              totalAttempts: job.attempt,
+            });
             await this.redis.hdel(REDIS_KEY, jobId);
             this.logger.instance.warn(
               `Retry exhausted for ${jobId} after ${MAX_RETRIES} attempts`,

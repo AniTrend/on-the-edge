@@ -131,9 +131,10 @@ describe('PushRepository', () => {
         instance: 'default',
       });
 
-      const result = await repo.upsert(doc);
+      const { doc: result, wasCreated } = await repo.upsert(doc);
 
       assertExists(result);
+      assertEquals(wasCreated, true);
       assertEquals(result.installationId, 'inst-1');
       assertEquals(result.instance, 'default');
       assertEquals(result.status, 'pending');
@@ -157,7 +158,7 @@ describe('PushRepository', () => {
       );
 
       // Then upsert with same composite key
-      const updated = await repo.upsert(
+      const { doc: updated, wasCreated } = await repo.upsert(
         createPushDocument({
           installationId: 'inst-2',
           instance: 'default',
@@ -167,6 +168,7 @@ describe('PushRepository', () => {
       );
 
       assertExists(updated);
+      assertEquals(wasCreated, false);
       assertEquals(updated.endpoint, 'https://new.example.com');
       assertEquals(updated.status, 'active');
 
