@@ -137,6 +137,9 @@ export class InMemoryCollection<T extends Document> implements Collection<T> {
         } else if (typeof aVal === 'string' && typeof bVal === 'string') {
           if (aVal < bVal) return ascending ? -1 : 1;
           if (aVal > bVal) return ascending ? 1 : -1;
+        } else if (aVal instanceof Date && bVal instanceof Date) {
+          if (aVal.getTime() < bVal.getTime()) return ascending ? -1 : 1;
+          if (aVal.getTime() > bVal.getTime()) return ascending ? 1 : -1;
         }
       }
       return 0;

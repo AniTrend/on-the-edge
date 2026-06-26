@@ -1,5 +1,5 @@
 import {
-  Body,
+  Body as CoreBody,
   Controller,
   Delete,
   Get,
@@ -9,14 +9,20 @@ import {
   Put,
   UseGuard,
 } from '@danet/core';
+import { Body } from '@danet/zod';
 import { ReturnedSchema } from '@danet/zod';
 import { LoggerService } from '@scope/logger';
 import { RateLimitGuard } from '@scope/guard/rate-limit';
 import { PushService } from './push.service.ts';
 import {
   PushAcknowledgmentSwagger,
+  PushConfirmBodySwagger,
   PushConfirmSwagger,
+  PushDeleteBodySwagger,
   PushInstallationSwagger,
+  PushPreferencesBodySwagger,
+  PushProfileBodySwagger,
+  PushRegistrationBodySwagger,
   PushVapidSwagger,
 } from './push.swagger.ts';
 import type {
@@ -56,7 +62,8 @@ export class PushController {
   @Post('installations')
   @ReturnedSchema(PushInstallationSwagger)
   async registerInstallation(
-    @Body() registration: PushInstallationRegistration,
+    @Body(PushRegistrationBodySwagger) registration:
+      PushInstallationRegistration,
   ): Promise<{
     installationId: string;
     instance: string;
@@ -69,7 +76,7 @@ export class PushController {
   @ReturnedSchema(PushConfirmSwagger)
   async confirmInstallation(
     @Param('installationId') installationId: string,
-    @Body() confirmation: PushChallengeConfirm,
+    @Body(PushConfirmBodySwagger) confirmation: PushChallengeConfirm,
   ): Promise<{
     installationId: string;
     instance: string;
@@ -85,7 +92,7 @@ export class PushController {
   @ReturnedSchema(PushAcknowledgmentSwagger)
   async updateProfile(
     @Param('installationId') installationId: string,
-    @Body() profile: PushProfile,
+    @Body(PushProfileBodySwagger) profile: PushProfile,
   ): Promise<{ installationId: string; instance: string }> {
     await this.pushService.updateProfile(installationId, profile);
     return {
@@ -98,7 +105,7 @@ export class PushController {
   @ReturnedSchema(PushAcknowledgmentSwagger)
   async updatePreferences(
     @Param('installationId') installationId: string,
-    @Body() preferences: PushPreferences,
+    @Body(PushPreferencesBodySwagger) preferences: PushPreferences,
   ): Promise<{ installationId: string; instance: string }> {
     await this.pushService.updatePreferences(installationId, preferences);
     return {
@@ -111,7 +118,7 @@ export class PushController {
   @ReturnedSchema(PushAcknowledgmentSwagger)
   async deleteInstallation(
     @Param('installationId') installationId: string,
-    @Body() deletion: PushDelete,
+    @Body(PushDeleteBodySwagger) deletion: PushDelete,
   ): Promise<{ installationId: string; instance: string }> {
     await this.pushService.deleteInstallation(installationId, deletion);
     return {
@@ -124,7 +131,7 @@ export class PushController {
   @ReturnedSchema(PushAcknowledgmentSwagger)
   async sendTestPush(
     @Param('installationId') installationId: string,
-    @Body('instance') instance: string = 'default',
+    @CoreBody('instance') instance: string = 'default',
   ): Promise<{ installationId: string; instance: string }> {
     await this.pushService.sendTestPush(installationId, instance);
     return { installationId, instance };

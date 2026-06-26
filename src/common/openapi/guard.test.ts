@@ -31,6 +31,11 @@ function makeValidDoc(
     'PushVapid',
     'PushInstallation',
     'PushAcknowledgment',
+    'PushRegistrationBody',
+    'PushConfirmBody',
+    'PushProfileBody',
+    'PushPreferencesBody',
+    'PushDeleteBody',
   ];
   for (const name of expectedNames) {
     schemas[name] = { type: 'object', properties: {} };
@@ -136,12 +141,26 @@ function makeValidDoc(
       '/v1/push/installations': {
         post: {
           operationId: 'registerInstallation',
+          requestBody: {
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/PushRegistrationBody' },
+              },
+            },
+          },
           responses: {},
         },
       },
       '/v1/push/installations/:installationId/confirm': {
         post: {
           operationId: 'confirmInstallation',
+          requestBody: {
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/PushConfirmBody' },
+              },
+            },
+          },
           responses: {
             200: {
               description: 'OK',
@@ -157,6 +176,13 @@ function makeValidDoc(
       '/v1/push/installations/:installationId/profile': {
         put: {
           operationId: 'updateProfile',
+          requestBody: {
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/PushProfileBody' },
+              },
+            },
+          },
           responses: {
             200: {
               description: 'OK',
@@ -172,6 +198,13 @@ function makeValidDoc(
       '/v1/push/installations/:installationId/preferences': {
         patch: {
           operationId: 'updatePreferences',
+          requestBody: {
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/PushPreferencesBody' },
+              },
+            },
+          },
           responses: {
             200: {
               description: 'OK',
@@ -187,6 +220,13 @@ function makeValidDoc(
       '/v1/push/installations/:installationId': {
         delete: {
           operationId: 'deleteInstallation',
+          requestBody: {
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/PushDeleteBody' },
+              },
+            },
+          },
           responses: {
             200: {
               description: 'OK',

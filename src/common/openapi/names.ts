@@ -49,6 +49,11 @@ export const EXPECTED_SCHEMA_NAMES = [
   'PushVapid',
   'PushInstallation',
   'PushAcknowledgment',
+  'PushRegistrationBody',
+  'PushConfirmBody',
+  'PushProfileBody',
+  'PushPreferencesBody',
+  'PushDeleteBody',
 ] as const;
 
 /**
