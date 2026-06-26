@@ -1,5 +1,4 @@
 import { Injectable, SCOPE } from '@danet/core';
-import { Interval } from '@danet/core';
 import { OnAppBootstrap, OnAppClose } from '@danet/core/hook';
 import { createLazyClient, type Redis } from '@db/redis';
 import { SecretService } from '@scope/secret';
@@ -28,6 +27,7 @@ const REDIS_KEY = 'edge:push:retry';
 export class PushRetryService implements OnAppBootstrap, OnAppClose {
   private redis!: Redis;
   private polling = false;
+  private pollTimer: ReturnType<typeof setInterval> | undefined;
 
   constructor(
     secret: SecretService,
@@ -73,7 +73,6 @@ export class PushRetryService implements OnAppBootstrap, OnAppClose {
   }
 
   /** Poll for due retry jobs and attempt delivery. Runs every minute. */
-  @Interval(RETRY_POLL_INTERVAL_MS)
   async poll(): Promise<void> {
     if (this.polling || !this.redis.isConnected) return;
     this.polling = true;
@@ -139,6 +138,12 @@ export class PushRetryService implements OnAppBootstrap, OnAppClose {
       this.logger.instance.debug(
         `Push-retry Redis connection validated: ${pong}`,
       );
+      // Start polling interval (manual setInterval avoids
+      // ScheduleModule + @Interval crash during Swagger generation)
+      this.pollTimer = setInterval(
+        () => this.poll().catch(() => {}),
+        RETRY_POLL_INTERVAL_MS,
+      );
     } catch (err) {
       this.logger.instance.warn(
         'Push-retry Redis connection failed during bootstrap. Push retries will be unavailable until Redis is configured.',
@@ -148,6 +153,9 @@ export class PushRetryService implements OnAppBootstrap, OnAppClose {
   }
 
   async onAppClose(): Promise<void> {
+    if (this.pollTimer !== undefined) {
+      clearInterval(this.pollTimer);
+    }
     if (this.redis.isConnected) {
       this.redis.close();
     }

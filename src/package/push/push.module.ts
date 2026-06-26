@@ -1,4 +1,4 @@
-import { Module, ScheduleModule } from '@danet/core';
+import { Module } from '@danet/core';
 import { LoggerModule } from '@scope/logger';
 import { DatabaseModule } from '@scope/database';
 import { ExperimentModule } from '@scope/experiment';
@@ -17,7 +17,6 @@ import { PushRetryService } from './push-retry.service.ts';
     ExperimentModule,
     RateLimitModule,
     PushSenderModule,
-    ScheduleModule,
   ],
   controllers: [PushController],
   injectables: [
