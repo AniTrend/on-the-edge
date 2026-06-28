@@ -9,6 +9,7 @@ import {
 } from '@scope/middleware';
 import {
   assertOpenApiContract,
+  extractInlineSchemas,
   normalizeOpenApiDocument,
 } from '@scope/common/openapi';
 import { trace } from '@opentelemetry/api';
@@ -35,12 +36,13 @@ export const setup = async (
     const normalized = normalizeOpenApiDocument(
       rawDocument as unknown as Record<string, unknown>,
     );
-    assertOpenApiContract(normalized);
-    const document = normalized as unknown as Spec;
+    const extracted = extractInlineSchemas(normalized);
+    assertOpenApiContract(extracted);
+    const document = extracted as unknown as Spec;
     await SwaggerModule.setup('docs', application, document);
     Deno.writeTextFileSync(
       '.github/swagger-spec.json',
-      JSON.stringify(normalized, null, 2),
+      JSON.stringify(extracted, null, 2),
     );
   }
 

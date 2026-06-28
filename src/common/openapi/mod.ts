@@ -33,6 +33,7 @@ export const createPagingContract = <T>(
 
 export { z } from './zod.ts';
 export { normalizeOpenApiDocument } from './document.ts';
+export { extractInlineSchemas } from './extract.ts';
 export { assertOpenApiContract, OpenApiContractError } from './guard.ts';
 export {
   EXPECTED_OPERATION_IDS,

@@ -1,8 +1,13 @@
-import { NewsConnectionContract, NewsContract } from './news.contract.ts';
+import {
+  NewsConnectionContract,
+  NewsContract,
+  NewsFeedLocaleContract,
+} from './news.contract.ts';
 import { NewsPagingQuerySchema, NewsQuerySchema } from './news.schema.ts';
 
 export const NewsSwagger = NewsContract;
 export const NewsPagingSwagger = NewsConnectionContract;
+export const NewsFeedLocaleSwagger = NewsFeedLocaleContract;
 
 // deno-lint-ignore no-explicit-any
 export const NewsQuerySwagger = (NewsQuerySchema as any).openapi({

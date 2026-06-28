@@ -54,6 +54,15 @@ export const EXPECTED_SCHEMA_NAMES = [
   'PushProfileBody',
   'PushPreferencesBody',
   'PushDeleteBody',
+
+  // Input / enum schemas (extracted by extractInlineSchemas)
+  'EpisodeKind',
+  'NewsFeedLocale',
+  'SeriesFormat',
+  'SeriesStatus',
+  'SeriesSource',
+  'SeriesKind',
+  'SeriesNetworkCategory',
 ] as const;
 
 /**

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { EpisodeKindContract } from './episodes.contract.ts';
 
 /**
  * Episode kind taxonomy
@@ -40,7 +41,7 @@ export const EpisodeCanonicalSchema = z.object({
   synopsis: z.string().nullish(),
   aired: z.number().nullish(), // Instant (epoch seconds)
   score: z.number().nullish(),
-  kind: EpisodeKindSchema.nullish(),
+  kind: EpisodeKindContract.nullish(),
   duration: z.number().nullish(), // minutes
   url: z.string().nullish(),
   // Provider IDs (populated during merge)
@@ -91,7 +92,7 @@ export const MergedEpisodeSchema = EpisodeCanonicalSchema.extend({
   alignmentKey: z.object({
     num: z.number(),
     day: z.number().optional(),
-    kind: EpisodeKindSchema.optional(),
+    kind: EpisodeKindContract.optional(),
     season: z.number().optional(),
   }).optional(),
 });
@@ -104,7 +105,7 @@ export const EpisodeQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(25).optional(),
   after: z.string().optional(), // EntityCursor (opaque)
   before: z.string().optional(), // EntityCursor (opaque)
-  kind: EpisodeKindSchema.optional(),
+  kind: EpisodeKindContract.optional(),
   specialsOnly: z.coerce.boolean().optional(),
   start: z.coerce.number().int().positive().optional(),
   end: z.coerce.number().int().positive().optional(),

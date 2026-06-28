@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { NewsFeedLocaleContract } from './news.contract.ts';
 import { createPagingSchema } from '@scope/common/utils';
 
 export const NewsSchema = z.object({
@@ -16,8 +17,7 @@ export const NewsSchema = z.object({
 });
 
 export const NewsQuerySchema = z.object({
-  locale: z
-    .string().length(5).default('en-US')
+  locale: NewsFeedLocaleContract.default('en-US')
     .describe('Locale for the news feed, e.g., en-GB, de-DE, fr-FR.'),
 }).strict();
 
