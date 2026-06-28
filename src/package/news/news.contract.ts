@@ -26,6 +26,11 @@ export const NewsContract = z.object({
   description: 'Schema representing a news document.',
 });
 
+export const NewsFeedLocaleContract = z.string().length(5).openapi({
+  title: 'NewsFeedLocale',
+  description: 'ISO 3166-1 locale code, e.g., en-US, de-DE, fr-FR',
+});
+
 export const NewsConnectionContract = createPagingContract(
   'News',
   NewsContract,

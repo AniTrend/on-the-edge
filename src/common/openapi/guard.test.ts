@@ -36,6 +36,14 @@ function makeValidDoc(
     'PushProfileBody',
     'PushPreferencesBody',
     'PushDeleteBody',
+    // Input / enum schemas (extracted by extractInlineSchemas)
+    'EpisodeKind',
+    'NewsFeedLocale',
+    'SeriesFormat',
+    'SeriesStatus',
+    'SeriesSource',
+    'SeriesKind',
+    'SeriesNetworkCategory',
   ];
   for (const name of expectedNames) {
     schemas[name] = { type: 'object', properties: {} };

@@ -78,20 +78,35 @@ export const AnimeThemesContract = z.object({
 
 // ─── Notify enums (stable, mirrored from @scope/service/notify) ───
 
-const FormatContract = z.enum(['TV', 'MOVIE', 'SPECIAL', 'OVA', 'ONA']);
-const StatusContract = z.enum([
+export const FormatContract = z.enum([
+  'TV',
+  'MOVIE',
+  'SPECIAL',
+  'OVA',
+  'ONA',
+]).openapi({
+  title: 'SeriesFormat',
+  description: 'Media format classification',
+});
+export const StatusContract = z.enum([
   'FINISHED',
   'RELEASING',
   'NOT_YET_RELEASED',
-]);
-const SourceContract = z.enum([
+]).openapi({
+  title: 'SeriesStatus',
+  description: 'Current release status of the media',
+});
+export const SourceContract = z.enum([
   'ORIGINAL',
   'MANGA',
   'LIGHT_NOVEL',
   'VISUAL_NOVEL',
   'VIDEO_GAME',
   'OTHER',
-]);
+]).openapi({
+  title: 'SeriesSource',
+  description: 'Original source material for the media',
+});
 
 // ─── Series nested schemas ────────────────────────────────────────
 
@@ -158,7 +173,10 @@ export const SeriesScheduleContract = z.object({
 export const NetworkCategoryContract = z.enum([
   'DISTRIBUTION',
   'PRODUCTION',
-]);
+]).openapi({
+  title: 'SeriesNetworkCategory',
+  description: 'Network role classification',
+});
 
 export const SeriesNetworkContract = z.object({
   id: z.number(),
@@ -202,7 +220,10 @@ export const SeriesCoverImageContract = z.object({
   description: 'Cover image URLs at multiple sizes with dominant color',
 });
 
-export const MediaKindContract = z.enum(['ANIME', 'MANGA']);
+export const MediaKindContract = z.enum(['ANIME', 'MANGA']).openapi({
+  title: 'SeriesKind',
+  description: 'Media type classification (anime or manga)',
+});
 
 export const MediaContract = z.object({
   kind: MediaKindContract,
