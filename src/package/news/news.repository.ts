@@ -140,7 +140,8 @@ export class NewsRepository {
       const documents = transform(model);
       if (documents.length !== model.length) {
         this.logger.instance.warn(
-          `Dropped ${model.length - documents.length
+          `Dropped ${
+            model.length - documents.length
           } RSS news items with invalid publishedOn values`,
         );
       }
