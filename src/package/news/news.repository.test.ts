@@ -214,4 +214,51 @@ describe('NewsRepository', () => {
     assertEquals(result[0].id, 'valid-news');
     assertEquals(await collection.countDocuments({}), 1);
   });
+
+  it('bypasses cache and fetches RSS when last updatedAt is older than 12 hours', async () => {
+    const thirteenHoursAgo = Date.now() - 13 * 60 * 60 * 1000;
+
+    const repository = new NewsRepository(
+      new MockMongoService(
+        new MockMongoCollection(collection),
+      ) as unknown as MongoService,
+      new MockOtakumodeService([
+        {
+          title: 'Fresh RSS News',
+          link: 'https://example.com/news/fresh',
+          description: 'Fresh RSS description',
+          'content:encoded': 'Fresh RSS content',
+          pubDate: 1_740_000_000,
+          guid: 'fresh-rss',
+          mainId: 'fresh-rss',
+          category: null,
+          genre: null,
+          area: null,
+          lang: null,
+        },
+      ]) as unknown as OtakumodeService,
+      logger,
+    );
+
+    // Insert a stale cached document from 13 hours ago to
+    // ensure the 12-hour cache threshold is exceeded.
+    await collection.insertMany([
+      createNewsDocument({
+        id: 'stale-cached',
+        title: 'Stale Cached News',
+        link: 'https://example.com/news/stale',
+        description: 'Stale cached description',
+        content: 'Stale cached content',
+        publishedOn: 1_730_000_000,
+        updatedAt: thirteenHoursAgo,
+      }),
+    ]);
+
+    const result = await repository.feed({ locale: 'en-US' });
+
+    // Should return the fresh RSS item, not the stale cached one.
+    assertEquals(result.length, 1);
+    assertEquals(result[0].id, 'fresh-rss');
+    assertEquals(result[0].title, 'Fresh RSS News');
+  });
 });
