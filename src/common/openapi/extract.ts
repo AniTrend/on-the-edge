@@ -101,9 +101,15 @@ export function extractInlineSchemas(
     ?.schemas as Record<string, unknown> | undefined;
   if (!schemas) return doc;
 
-  // 1. Walk existing component properties
-  for (const schema of Object.values(schemas)) {
-    extractFromProperties(schema as Record<string, unknown>, schemas, 0);
+  // 1. Walk component properties, repeating until no new schemas
+  //    are promoted (newly extracted components may themselves contain
+  //    nested inline schemas that need extraction).
+  let previousCount = 0;
+  while (Object.keys(schemas).length !== previousCount) {
+    previousCount = Object.keys(schemas).length;
+    for (const schema of Object.values(schemas)) {
+      extractFromProperties(schema as Record<string, unknown>, schemas, 0);
+    }
   }
 
   // 2. Walk path-level query parameters
