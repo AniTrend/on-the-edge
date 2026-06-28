@@ -186,3 +186,4 @@ seed.sql
 
 # Deepwork progress files
 .slim/deepwork/
+.omg/

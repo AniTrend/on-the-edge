@@ -106,14 +106,14 @@ export class NewsRepository {
       const publishedInstant = Temporal.Instant.fromEpochMilliseconds(
         updatedAt,
       );
-      const result = Temporal.Now.instant().until(publishedInstant, {
+      const elapsed = publishedInstant.until(Temporal.Now.instant(), {
         largestUnit: 'hours',
       });
       this.logger.instance.debug(
-        `Time elapsed result: ${result.hours} hours (12h threshold)`,
+        `Time elapsed since last update: ${elapsed.hours}h (12h threshold)`,
       );
 
-      if (result.hours < 12) {
+      if (elapsed.hours < 12) {
         this.logger.instance.debug('Using cached feed from database');
         const sort: Sorting<NewsDocumentWithId> = { updatedAt: 'desc' };
         const options: FindOptions<NewsDocumentWithId> = {
@@ -140,8 +140,7 @@ export class NewsRepository {
       const documents = transform(model);
       if (documents.length !== model.length) {
         this.logger.instance.warn(
-          `Dropped ${
-            model.length - documents.length
+          `Dropped ${model.length - documents.length
           } RSS news items with invalid publishedOn values`,
         );
       }
