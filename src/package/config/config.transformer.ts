@@ -1,5 +1,5 @@
 import { Transform } from '@scope/common/transformer';
-import { ConfigDocument } from './config.document.ts';
+import { ConfigDocument, NavigationItemInput } from './config.document.ts';
 import { Config } from './config.types.ts';
 import { PlatformSource } from '@scope/experiment';
 
@@ -17,6 +17,27 @@ const toImageUrl = (image: string, source: PlatformSource): string => {
  */
 const keyFromDestination = (destination: string): string =>
   destination.replace(/^\/+/, '').replace(/\//g, '-') || 'unknown';
+
+/**
+ * Sort navigation items by group.rank ascending, then by item rank
+ * ascending. Items with undefined ranks sort last. The item key is
+ * used as a tiebreaker for deterministic ordering.
+ */
+export function sortNavigation(
+  navigation: NavigationItemInput[],
+): NavigationItemInput[] {
+  const sorted = [...navigation];
+  sorted.sort((a, b) => {
+    const groupRankA = a.group?.rank ?? Number.MAX_SAFE_INTEGER;
+    const groupRankB = b.group?.rank ?? Number.MAX_SAFE_INTEGER;
+    if (groupRankA !== groupRankB) return groupRankA - groupRankB;
+    const rankA = a.rank ?? Number.MAX_SAFE_INTEGER;
+    const rankB = b.rank ?? Number.MAX_SAFE_INTEGER;
+    if (rankA !== rankB) return rankA - rankB;
+    return (a.key ?? '').localeCompare(b.key ?? '');
+  });
+  return sorted;
+}
 
 export const transform: Transform<
   {
@@ -42,8 +63,15 @@ export const transform: Transform<
       info: toImageUrl(image.info, platformSource),
       default: toImageUrl(image.default, platformSource),
     },
-    navigation: navigation.map((item) => ({
-      ...item,
+    navigation: sortNavigation(navigation).map((item) => ({
+      criteria: item.criteria,
+      destination: item.destination,
+      i18n: item.i18n,
+      icon: item.icon,
+      group: {
+        authenticated: item.group?.authenticated ?? false,
+        i18n: item.group?.i18n ?? '',
+      },
       key: item.key || keyFromDestination(item.destination),
     })),
   };
