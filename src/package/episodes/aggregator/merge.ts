@@ -125,8 +125,8 @@ function canMatchSeasons(
   if (secondarySeason == null) return true;
 
   // Special episodes (season 0) should only match other specials
-  const secIsSpecial = secondarySeason === 0 || secondaryKind === 'special';
-  const primIsSpecial = primarySeason === 0 || primaryKind === 'special';
+  const secIsSpecial = secondarySeason === 0 || secondaryKind === 'SPECIAL';
+  const primIsSpecial = primarySeason === 0 || primaryKind === 'SPECIAL';
 
   if (secIsSpecial !== primIsSpecial) {
     return false; // Don't match specials with regular episodes

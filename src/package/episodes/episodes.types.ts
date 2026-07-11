@@ -51,7 +51,7 @@ export interface EpisodeCursorPayload {
  * Episode filters for narrowing results
  */
 export interface EpisodeFilters {
-  /** Filter by episode kind (main, ova, special, etc.) */
+  /** Filter by episode kind (MAIN, OVA, SPECIAL, etc.) */
   kind?: EpisodeKind;
 
   /** Show only special episodes (ova, ona, special) */

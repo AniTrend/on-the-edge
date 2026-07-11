@@ -4,16 +4,16 @@ import { z } from '@scope/common/openapi';
  * Episode kind taxonomy
  */
 export const EpisodeKindContract = z.enum([
-  'main',
-  'ova',
-  'ona',
-  'recap',
-  'filler',
-  'special',
+  'MAIN',
+  'OVA',
+  'ONA',
+  'RECAP',
+  'FILLER',
+  'SPECIAL',
 ]).openapi({
   title: 'EpisodeKind',
   description: 'Episode type classification',
-  example: 'main',
+  example: 'MAIN',
 });
 
 /**

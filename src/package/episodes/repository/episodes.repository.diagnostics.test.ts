@@ -31,7 +31,7 @@ function createTestEpisode(
     filler: partial.filler ?? false,
     recap: partial.recap ?? false,
     synopsis: partial.synopsis ?? null,
-    kind: (partial as { kind?: EpisodeKind }).kind ?? 'main',
+    kind: (partial as { kind?: EpisodeKind }).kind ?? 'MAIN',
   };
 }
 

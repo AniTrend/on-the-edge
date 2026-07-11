@@ -15,10 +15,10 @@ export interface PushInstallationDocument {
     p256dh: string;
     auth: string;
   };
-  status: 'pending' | 'active' | 'disabled' | 'expired' | 'revoked';
+  status: 'PENDING' | 'ACTIVE' | 'DISABLED' | 'EXPIRED' | 'REVOKED';
   anilistUserId?: number;
-  identityState?: 'anonymous' | 'client-declared';
-  platform: 'android';
+  identityState?: 'ANONYMOUS' | 'CLIENT_DECLARED';
+  platform: 'ANDROID';
   distributor?: string;
   app?: {
     version?: string;
@@ -180,7 +180,7 @@ export class PushRepository {
     topic: PushTopic,
   ): Promise<PushInstallationWithId[]> {
     const filter: Filter<PushInstallationDocument> = {
-      status: 'active',
+      status: 'ACTIVE',
       [`topics.${topic}`]: true,
     };
     return this.collection.find(filter);
@@ -193,9 +193,9 @@ export class PushRepository {
     userId: number,
   ): Promise<PushInstallationWithId[]> {
     const filter: Filter<PushInstallationDocument> = {
-      status: 'active',
+      status: 'ACTIVE',
       anilistUserId: userId,
-      identityState: 'client-declared',
+      identityState: 'CLIENT_DECLARED',
     };
     return this.collection.find(filter);
   }
@@ -216,7 +216,7 @@ export class PushRepository {
         $set: {
           status,
           updatedAt: this.nowSeconds(),
-          ...(status === 'active'
+          ...(status === 'ACTIVE'
             ? { lastConfirmedAt: this.nowSeconds() }
             : {}),
         },
@@ -231,7 +231,7 @@ export class PushRepository {
     installationId: string,
     instance: string,
   ): Promise<void> {
-    await this.updateStatus(installationId, instance, 'disabled');
+    await this.updateStatus(installationId, instance, 'DISABLED');
   }
 
   /**
@@ -241,7 +241,7 @@ export class PushRepository {
     installationId: string,
     instance: string,
   ): Promise<void> {
-    await this.updateStatus(installationId, instance, 'expired');
+    await this.updateStatus(installationId, instance, 'EXPIRED');
   }
 
   // --- Challenge management ---
@@ -261,7 +261,7 @@ export class PushRepository {
             expiresAt: new Date(expiresAt * 1000),
             attempts: 0,
           },
-          status: 'pending',
+          status: 'PENDING',
           updatedAt: this.nowSeconds(),
         },
       },

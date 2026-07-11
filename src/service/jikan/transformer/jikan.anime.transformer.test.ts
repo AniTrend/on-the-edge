@@ -18,7 +18,7 @@ describe('jikan anime transformer', () => {
       recap: false,
       synopsis: 'Pilot',
       score: null,
-      kind: 'main',
+      kind: 'MAIN',
     },
   ];
   const resource: AnimeResource = {

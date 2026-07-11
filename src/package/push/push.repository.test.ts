@@ -95,8 +95,8 @@ const createPushDocument = (
   instance: 'default',
   endpoint: 'https://push.example.com/test',
   keys: { p256dh: 'key1', auth: 'auth1' },
-  status: 'pending',
-  platform: 'android',
+  status: 'PENDING',
+  platform: 'ANDROID',
   topics: { news: true },
   failureCount: 0,
   createdAt: 1700000000,
@@ -137,7 +137,7 @@ describe('PushRepository', () => {
       assertEquals(wasCreated, true);
       assertEquals(result.installationId, 'inst-1');
       assertEquals(result.instance, 'default');
-      assertEquals(result.status, 'pending');
+      assertEquals(result.status, 'PENDING');
 
       const found = await repo.findById('inst-1', 'default');
       assertExists(found);
@@ -153,7 +153,7 @@ describe('PushRepository', () => {
           installationId: 'inst-2',
           instance: 'default',
           endpoint: 'https://old.example.com',
-          status: 'pending',
+          status: 'PENDING',
         }),
       );
 
@@ -163,14 +163,14 @@ describe('PushRepository', () => {
           installationId: 'inst-2',
           instance: 'default',
           endpoint: 'https://new.example.com',
-          status: 'active',
+          status: 'ACTIVE',
         }),
       );
 
       assertExists(updated);
       assertEquals(wasCreated, false);
       assertEquals(updated.endpoint, 'https://new.example.com');
-      assertEquals(updated.status, 'active');
+      assertEquals(updated.status, 'ACTIVE');
 
       // Verify only one document exists for this key
       const found = await repo.findById('inst-2', 'default');
@@ -272,7 +272,7 @@ describe('PushRepository', () => {
         createPushDocument({
           installationId: 'active-news',
           instance: 'default',
-          status: 'active',
+          status: 'ACTIVE',
           topics: { news: true },
         }),
       );
@@ -282,7 +282,7 @@ describe('PushRepository', () => {
         createPushDocument({
           installationId: 'active-no-news',
           instance: 'default',
-          status: 'active',
+          status: 'ACTIVE',
           topics: { news: false },
         }),
       );
@@ -292,7 +292,7 @@ describe('PushRepository', () => {
         createPushDocument({
           installationId: 'pending-news',
           instance: 'default',
-          status: 'pending',
+          status: 'PENDING',
           topics: { news: true },
         }),
       );
@@ -302,7 +302,7 @@ describe('PushRepository', () => {
         createPushDocument({
           installationId: 'disabled-news',
           instance: 'default',
-          status: 'disabled',
+          status: 'DISABLED',
           topics: { news: true },
         }),
       );
@@ -319,7 +319,7 @@ describe('PushRepository', () => {
         createPushDocument({
           installationId: 'pending-only',
           instance: 'default',
-          status: 'pending',
+          status: 'PENDING',
           topics: { news: true },
         }),
       );
@@ -338,9 +338,9 @@ describe('PushRepository', () => {
         createPushDocument({
           installationId: 'match-1',
           instance: 'default',
-          status: 'active',
+          status: 'ACTIVE',
           anilistUserId: 12345,
-          identityState: 'client-declared',
+          identityState: 'CLIENT_DECLARED',
         }),
       );
 
@@ -349,9 +349,9 @@ describe('PushRepository', () => {
         createPushDocument({
           installationId: 'anon-1',
           instance: 'default',
-          status: 'active',
+          status: 'ACTIVE',
           anilistUserId: 12345,
-          identityState: 'anonymous',
+          identityState: 'ANONYMOUS',
         }),
       );
 
@@ -360,9 +360,9 @@ describe('PushRepository', () => {
         createPushDocument({
           installationId: 'disabled-1',
           instance: 'default',
-          status: 'disabled',
+          status: 'DISABLED',
           anilistUserId: 12345,
-          identityState: 'client-declared',
+          identityState: 'CLIENT_DECLARED',
         }),
       );
 
@@ -371,9 +371,9 @@ describe('PushRepository', () => {
         createPushDocument({
           installationId: 'other-user',
           instance: 'default',
-          status: 'active',
+          status: 'ACTIVE',
           anilistUserId: 99999,
-          identityState: 'client-declared',
+          identityState: 'CLIENT_DECLARED',
         }),
       );
 
@@ -398,15 +398,15 @@ describe('PushRepository', () => {
         createPushDocument({
           installationId: 'status-1',
           instance: 'default',
-          status: 'pending',
+          status: 'PENDING',
         }),
       );
 
-      await repo.updateStatus('status-1', 'default', 'active');
+      await repo.updateStatus('status-1', 'default', 'ACTIVE');
 
       const updated = await repo.findById('status-1', 'default');
       assertExists(updated);
-      assertEquals(updated.status, 'active');
+      assertEquals(updated.status, 'ACTIVE');
       assert(updated.lastConfirmedAt !== undefined);
       assert(updated.lastConfirmedAt! > 0);
     });
@@ -418,15 +418,15 @@ describe('PushRepository', () => {
         createPushDocument({
           installationId: 'status-2',
           instance: 'default',
-          status: 'active',
+          status: 'ACTIVE',
         }),
       );
 
-      await repo.updateStatus('status-2', 'default', 'disabled');
+      await repo.updateStatus('status-2', 'default', 'DISABLED');
 
       const updated = await repo.findById('status-2', 'default');
       assertExists(updated);
-      assertEquals(updated.status, 'disabled');
+      assertEquals(updated.status, 'DISABLED');
       // lastConfirmedAt should NOT be set for non-active transitions
       assertEquals(updated.lastConfirmedAt ?? null, null);
     });
@@ -444,7 +444,7 @@ describe('PushRepository', () => {
       const original = await repo.findById('status-3', 'default');
       assertExists(original);
 
-      await repo.updateStatus('status-3', 'default', 'expired');
+      await repo.updateStatus('status-3', 'default', 'EXPIRED');
 
       const updated = await repo.findById('status-3', 'default');
       assertExists(updated);
@@ -462,7 +462,7 @@ describe('PushRepository', () => {
         createPushDocument({
           installationId: 'del-1',
           instance: 'default',
-          status: 'active',
+          status: 'ACTIVE',
         }),
       );
 
@@ -470,7 +470,7 @@ describe('PushRepository', () => {
 
       const updated = await repo.findById('del-1', 'default');
       assertExists(updated);
-      assertEquals(updated.status, 'disabled');
+      assertEquals(updated.status, 'DISABLED');
     });
   });
 
@@ -482,7 +482,7 @@ describe('PushRepository', () => {
         createPushDocument({
           installationId: 'exp-1',
           instance: 'default',
-          status: 'active',
+          status: 'ACTIVE',
         }),
       );
 
@@ -490,7 +490,7 @@ describe('PushRepository', () => {
 
       const updated = await repo.findById('exp-1', 'default');
       assertExists(updated);
-      assertEquals(updated.status, 'expired');
+      assertEquals(updated.status, 'EXPIRED');
     });
   });
 
@@ -502,7 +502,7 @@ describe('PushRepository', () => {
         createPushDocument({
           installationId: 'ch-1',
           instance: 'default',
-          status: 'active',
+          status: 'ACTIVE',
         }),
       );
 
@@ -515,7 +515,7 @@ describe('PushRepository', () => {
 
       const updated = await repo.findById('ch-1', 'default');
       assertExists(updated);
-      assertEquals(updated.status, 'pending');
+      assertEquals(updated.status, 'PENDING');
       assertExists(updated.challenge);
       assertEquals(updated.challenge!.tokenHash, 'hash-abc123');
       assertEquals(
@@ -532,7 +532,7 @@ describe('PushRepository', () => {
         createPushDocument({
           installationId: 'ch-2',
           instance: 'default',
-          status: 'pending',
+          status: 'PENDING',
           challenge: {
             tokenHash: 'old-hash',
             expiresAt: new Date(1700000000 * 1000),

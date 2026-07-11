@@ -32,8 +32,8 @@ function makeDoc(
     instance: 'default',
     endpoint: 'https://push.test/fcm/endpoint',
     keys: { p256dh: 'p256dh-test-key', auth: 'auth-test-key' },
-    status: 'pending',
-    platform: 'android',
+    status: 'PENDING',
+    platform: 'ANDROID',
     failureCount: 0,
     createdAt: now - 3600,
     updatedAt: now,
@@ -116,7 +116,7 @@ describe('PushService', () => {
   it(
     'confirmInstallation throws BadRequestException when installation is not pending',
     async () => {
-      const doc = makeDoc({ status: 'active' });
+      const doc = makeDoc({ status: 'ACTIVE' });
       const repository = {
         findById: spy(async () => doc),
       } as unknown as PushRepository;
@@ -136,7 +136,7 @@ describe('PushService', () => {
   it(
     'confirmInstallation throws PushChallengeInvalidError when challenge is missing',
     async () => {
-      const doc = makeDoc({ status: 'pending', challenge: undefined });
+      const doc = makeDoc({ status: 'PENDING', challenge: undefined });
       const repository = {
         findById: spy(async () => doc),
       } as unknown as PushRepository;
@@ -157,7 +157,7 @@ describe('PushService', () => {
     'confirmInstallation throws PushChallengeExpiredError when challenge is expired',
     async () => {
       const doc = makeDoc({
-        status: 'pending',
+        status: 'PENDING',
         challenge: {
           tokenHash: 'old-hash',
           expiresAt: new Date(1 * 1000),
@@ -215,7 +215,7 @@ describe('PushService', () => {
       instance: 'default',
       app: { version: '1.0.0', code: 42, build: '123', source: null },
       device: {
-        platform: 'android',
+        platform: 'ANDROID',
         sdk: 30,
         manufacturer: 'Samsung',
         model: 'S20',
@@ -234,9 +234,9 @@ describe('PushService', () => {
       views: null,
       topics: null,
       identity: {
-        provider: 'anilist',
+        provider: 'ANILIST',
         anilistUserId: 123,
-        state: 'client-declared',
+        state: 'CLIENT_DECLARED',
       },
     } as PushProfile;
 
@@ -251,7 +251,7 @@ describe('PushService', () => {
     assertEquals(updates.locale, profile.locale);
     assertEquals(updates.capabilities, profile.capabilities);
     assertEquals(updates.anilistUserId, 123);
-    assertEquals(updates.identityState, 'client-declared');
+    assertEquals(updates.identityState, 'CLIENT_DECLARED');
   });
 
   it(
@@ -299,8 +299,8 @@ describe('PushService', () => {
       await service.updateProfile('inst-1', {
         instance: 'default',
         identity: {
-          provider: 'anilist' as const,
-          state: 'client-declared' as const,
+          provider: 'ANILIST' as const,
+          state: 'CLIENT_DECLARED' as const,
         },
       } as PushProfile);
 
@@ -309,7 +309,7 @@ describe('PushService', () => {
       const updates = calls[0].args[2] as Record<string, unknown>;
 
       assertEquals(updates.anilistUserId, undefined);
-      assertEquals(updates.identityState, 'anonymous');
+      assertEquals(updates.identityState, 'ANONYMOUS');
     },
   );
 
@@ -440,7 +440,7 @@ describe('PushService', () => {
   it(
     'sendTestPush throws BadRequestException for non-active installation',
     async () => {
-      const doc = makeDoc({ status: 'pending' });
+      const doc = makeDoc({ status: 'PENDING' });
       const repository = {
         findById: spy(async () => doc),
       } as unknown as PushRepository;
@@ -454,7 +454,7 @@ describe('PushService', () => {
   );
 
   it('sendTestPush returns success when push is delivered', async () => {
-    const doc = makeDoc({ status: 'active' });
+    const doc = makeDoc({ status: 'ACTIVE' });
     const repository = {
       findById: spy(async () => doc),
       markExpired: spy(async () => {}),
@@ -475,7 +475,7 @@ describe('PushService', () => {
   });
 
   it('sendTestPush marks expired when push endpoint returns gone', async () => {
-    const doc = makeDoc({ status: 'active' });
+    const doc = makeDoc({ status: 'ACTIVE' });
     const markExpiredSpy = spy(async () => {});
     const repository = {
       findById: spy(async () => doc),
