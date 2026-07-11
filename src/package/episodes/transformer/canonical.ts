@@ -16,16 +16,16 @@ export function toCanonicalEpisode(source: AnimeEpisode): EpisodeCanonical {
 
   // Check explicit kind field first (used in tests and some sources)
   if ((source as { kind?: string }).kind) {
-    const k = (source as { kind?: string }).kind!.toLowerCase();
-    if (['main', 'ova', 'ona', 'recap', 'filler', 'special'].includes(k)) {
+    const k = (source as { kind?: string }).kind!.toUpperCase();
+    if (['MAIN', 'OVA', 'ONA', 'RECAP', 'FILLER', 'SPECIAL'].includes(k)) {
       kind = k as EpisodeKind;
     }
   }
 
   // Fallback to Jikan boolean flags
-  if (!kind && source.filler === true) kind = 'filler';
-  if (!kind && source.recap === true) kind = 'recap';
-  if (!kind) kind = 'main'; // Default fallback
+  if (!kind && source.filler === true) kind = 'FILLER';
+  if (!kind && source.recap === true) kind = 'RECAP';
+  if (!kind) kind = 'MAIN'; // Default fallback
 
   return {
     id: source.mal_id,

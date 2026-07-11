@@ -42,22 +42,22 @@ export const applyEpisodeLimit = (
 /**
  * Classify episode into a coarse kind category.
  * Heuristics (can refine later with TheXEM + provider data):
- *  - recap => 'recap'
- *  - filler => 'filler'
- *  - if title contains 'OVA' => 'ova'
- *  - if title contains 'ONA' => 'ona'
- *  - else 'main'
+ *  - recap => 'RECAP'
+ *  - filler => 'FILLER'
+ *  - if title contains 'OVA' => 'OVA'
+ *  - if title contains 'ONA' => 'ONA'
+ *  - else 'MAIN'
  */
 export const classifyEpisodeKind = (
   ep: { title?: string; recap?: boolean; filler?: boolean },
-): 'recap' | 'filler' | 'ova' | 'ona' | 'main' | 'special' => {
+): 'RECAP' | 'FILLER' | 'OVA' | 'ONA' | 'MAIN' | 'SPECIAL' => {
   const t = (ep.title ?? '').toLowerCase();
-  if (ep.recap) return 'recap';
-  if (ep.filler) return 'filler';
-  if (t.includes('ova')) return 'ova';
-  if (t.includes('ona')) return 'ona';
-  if (t.includes('special')) return 'special';
-  return 'main';
+  if (ep.recap) return 'RECAP';
+  if (ep.filler) return 'FILLER';
+  if (t.includes('ova')) return 'OVA';
+  if (t.includes('ona')) return 'ONA';
+  if (t.includes('special')) return 'SPECIAL';
+  return 'MAIN';
 };
 
 /** Convenience to apply truncation flags onto resource object. */

@@ -17,7 +17,7 @@ export const PushInstallationRegistrationSchema = z.object({
     p256dh: z.string().min(1),
     auth: z.string().min(1),
   }),
-  platform: z.enum(['android']).default('android'),
+  platform: z.enum(['ANDROID']).default('ANDROID'),
   appVersion: z.string().nullish().default(null),
   appCode: z.number().int().nonnegative().nullish().default(null),
   appBuild: z.string().nullish().default(null),
@@ -25,7 +25,7 @@ export const PushInstallationRegistrationSchema = z.object({
   timezone: z.string().nullish().default(null),
   distributor: z.string().nullish().default(null),
   topics: z
-    .array(z.enum(['news', 'appAnnouncements', 'sync']))
+    .array(z.enum(['NEWS', 'APP_ANNOUNCEMENTS', 'SYNC']))
     .default([]),
 });
 
@@ -51,7 +51,7 @@ export const PushProfileSchema = z.object({
     .default(null),
   device: z
     .object({
-      platform: z.enum(['android']).nullish().default(null),
+      platform: z.enum(['ANDROID']).nullish().default(null),
       sdk: z.number().int().nonnegative().nullish().default(null),
       manufacturer: z.string().nullish().default(null),
       model: z.string().nullish().default(null),
@@ -94,9 +94,9 @@ export const PushProfileSchema = z.object({
     .default(null),
   identity: z
     .object({
-      provider: z.enum(['anilist']).nullish().default(null),
+      provider: z.enum(['ANILIST']).nullish().default(null),
       anilistUserId: z.number().int().positive().nullish().default(null),
-      state: z.enum(['client-declared']).nullish().default(null),
+      state: z.enum(['CLIENT_DECLARED']).nullish().default(null),
     })
     .nullish()
     .default(null),

@@ -110,8 +110,8 @@ export class PushService {
         p256dh: registration.keys.p256dh,
         auth: registration.keys.auth,
       },
-      status: 'pending',
-      platform: registration.platform ?? 'android',
+      status: 'PENDING',
+      platform: registration.platform ?? 'ANDROID',
       distributor: registration.distributor ?? undefined,
       app: {
         version: registration.appVersion ?? undefined,
@@ -242,7 +242,7 @@ export class PushService {
       throw new PushInstallationNotFoundError(installationId);
     }
 
-    if (installation.status !== 'pending') {
+    if (installation.status !== 'PENDING') {
       throw new BadRequestException();
     }
 
@@ -285,7 +285,7 @@ export class PushService {
     await this.repository.updateStatus(
       installationId,
       confirmation.instance,
-      'active',
+      'ACTIVE',
     );
 
     this.logger.instance.info('Push registration confirmed', {
@@ -297,7 +297,7 @@ export class PushService {
     return {
       installationId,
       instance: confirmation.instance,
-      status: 'active',
+      status: 'ACTIVE',
     };
   }
 
@@ -349,12 +349,12 @@ export class PushService {
     // Client-declared AniList identity
     if (profile.identity?.anilistUserId) {
       updates.anilistUserId = profile.identity.anilistUserId;
-      updates.identityState = 'client-declared';
+      updates.identityState = 'CLIENT_DECLARED';
       this.logger.instance.info('Push identity client-declared', {
         type: 'push.identity.client_declared',
         installationId,
         anilistUserId: profile.identity.anilistUserId,
-        state: 'client-declared',
+        state: 'CLIENT_DECLARED',
       });
       this.logger.instance.debug(
         `Client-declared AniList user ${profile.identity.anilistUserId} linked to ${installationId}`,
@@ -362,7 +362,7 @@ export class PushService {
     } else if (profile.identity && !profile.identity.anilistUserId) {
       // Explicit unlink: identity block present but no userId
       updates.anilistUserId = undefined;
-      updates.identityState = 'anonymous';
+      updates.identityState = 'ANONYMOUS';
       this.logger.instance.info('Push identity unlinked', {
         type: 'push.identity.unlinked',
         installationId,
@@ -476,7 +476,7 @@ export class PushService {
       throw new PushInstallationNotFoundError(installationId);
     }
 
-    if (installation.status !== 'active') {
+    if (installation.status !== 'ACTIVE') {
       throw new BadRequestException();
     }
 
@@ -724,12 +724,19 @@ export class PushService {
   private topicsFromArray(
     arr: string[],
   ): PushInstallationDocument['topics'] {
+    const enumToKey: Record<
+      string,
+      keyof NonNullable<PushInstallationDocument['topics']>
+    > = {
+      'NEWS': 'news',
+      'APP_ANNOUNCEMENTS': 'appAnnouncements',
+      'SYNC': 'sync',
+    };
     const topics: PushInstallationDocument['topics'] = {};
     for (const t of arr) {
-      if (
-        t === 'news' || t === 'appAnnouncements' || t === 'sync'
-      ) {
-        (topics as Record<string, boolean>)[t] = true;
+      const key = enumToKey[t];
+      if (key) {
+        topics[key] = true;
       }
     }
     return topics;

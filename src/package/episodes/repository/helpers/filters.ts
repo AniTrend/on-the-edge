@@ -19,11 +19,11 @@ export function applyFilters<T extends EpisodeCanonical>(
 
   if (f.specialsOnly) {
     merged = merged.filter((e) =>
-      e.kind === 'ova' ||
-      e.kind === 'ona' ||
-      e.kind === 'recap' ||
-      e.kind === 'filler' ||
-      e.kind === 'special'
+      e.kind === 'OVA' ||
+      e.kind === 'ONA' ||
+      e.kind === 'RECAP' ||
+      e.kind === 'FILLER' ||
+      e.kind === 'SPECIAL'
     );
   }
 

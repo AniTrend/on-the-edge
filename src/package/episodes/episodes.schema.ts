@@ -5,12 +5,12 @@ import { EpisodeKindContract } from './episodes.contract.ts';
  * Episode kind taxonomy
  */
 export const EpisodeKindSchema = z.enum([
-  'main',
-  'ova',
-  'ona',
-  'recap',
-  'filler',
-  'special',
+  'MAIN',
+  'OVA',
+  'ONA',
+  'RECAP',
+  'FILLER',
+  'SPECIAL',
 ]);
 
 /**

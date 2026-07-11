@@ -14,7 +14,7 @@ const sample = (overrides: Partial<AnimeEpisode> = {}): AnimeEpisode => ({
   recap: overrides.recap ?? false,
   synopsis: null,
   score: overrides.score ?? null,
-  kind: overrides.kind ?? 'main',
+  kind: overrides.kind ?? 'MAIN',
 });
 
 Deno.test('applyEpisodeLimit returns truncated slice when over max', () => {
@@ -42,9 +42,9 @@ Deno.test('applyEpisodeLimit applies window bounds', () => {
 });
 
 Deno.test('classifyEpisodeKind identifies filler and recap', () => {
-  assertEquals(classifyEpisodeKind(sample({ filler: true })), 'filler');
-  assertEquals(classifyEpisodeKind(sample({ recap: true })), 'recap');
-  assertEquals(classifyEpisodeKind(sample({ title: 'OVA Special' })), 'ova');
-  assertEquals(classifyEpisodeKind(sample({ title: 'ONA Feature' })), 'ona');
-  assertEquals(classifyEpisodeKind(sample({})), 'main');
+  assertEquals(classifyEpisodeKind(sample({ filler: true })), 'FILLER');
+  assertEquals(classifyEpisodeKind(sample({ recap: true })), 'RECAP');
+  assertEquals(classifyEpisodeKind(sample({ title: 'OVA Special' })), 'OVA');
+  assertEquals(classifyEpisodeKind(sample({ title: 'ONA Feature' })), 'ONA');
+  assertEquals(classifyEpisodeKind(sample({})), 'MAIN');
 });

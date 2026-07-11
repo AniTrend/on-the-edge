@@ -39,7 +39,7 @@ function createTestEpisode(
     filler: partial.filler ?? false,
     recap: partial.recap ?? false,
     synopsis: partial.synopsis ?? null,
-    kind: (partial as { kind?: EpisodeKind }).kind ?? 'main',
+    kind: (partial as { kind?: EpisodeKind }).kind ?? 'MAIN',
   };
 }
 
@@ -272,23 +272,23 @@ describe('EpisodesRepository', () => {
       const episodes = [
         toCanonicalEpisode(createTestEpisode({
           mal_id: 1,
-          kind: 'main',
+          kind: 'MAIN',
         })),
         toCanonicalEpisode(createTestEpisode({
           mal_id: 2,
-          kind: 'ova',
+          kind: 'OVA',
         })),
         toCanonicalEpisode(createTestEpisode({
           mal_id: 3,
-          kind: 'main',
+          kind: 'MAIN',
         })),
         toCanonicalEpisode(createTestEpisode({
           mal_id: 4,
-          kind: 'ova',
+          kind: 'OVA',
         })),
         toCanonicalEpisode(createTestEpisode({
           mal_id: 5,
-          kind: 'main',
+          kind: 'MAIN',
         })),
       ];
 
@@ -296,7 +296,7 @@ describe('EpisodesRepository', () => {
 
       const result = await repository.invoke(malId, {
         limit: 10,
-        filters: { kind: 'ova' },
+        filters: { kind: 'OVA' },
       });
 
       assertEquals(result.data?.map((e) => e.id), [2, 4]);
@@ -310,31 +310,31 @@ describe('EpisodesRepository', () => {
       const episodes = [
         toCanonicalEpisode(createTestEpisode({
           mal_id: 1,
-          kind: 'main',
+          kind: 'MAIN',
         })),
         toCanonicalEpisode(createTestEpisode({
           mal_id: 2,
-          kind: 'ova',
+          kind: 'OVA',
         })),
         toCanonicalEpisode(createTestEpisode({
           mal_id: 3,
-          kind: 'ona',
+          kind: 'ONA',
         })),
         toCanonicalEpisode(createTestEpisode({
           mal_id: 4,
-          kind: 'recap',
+          kind: 'RECAP',
         })),
         toCanonicalEpisode(createTestEpisode({
           mal_id: 5,
-          kind: 'filler',
+          kind: 'FILLER',
         })),
         toCanonicalEpisode(createTestEpisode({
           mal_id: 7,
-          kind: 'special',
+          kind: 'SPECIAL',
         })),
         toCanonicalEpisode(createTestEpisode({
           mal_id: 6,
-          kind: 'main',
+          kind: 'MAIN',
         })),
       ];
 
@@ -359,7 +359,7 @@ describe('EpisodesRepository', () => {
         (_, i) =>
           toCanonicalEpisode(createTestEpisode({
             mal_id: i + 1,
-            kind: 'main',
+            kind: 'MAIN',
           })),
       );
 
@@ -398,7 +398,7 @@ describe('EpisodesRepository', () => {
         (_, i) =>
           toCanonicalEpisode(createTestEpisode({
             mal_id: i + 1,
-            kind: i % 2 === 0 ? 'main' : 'ova',
+            kind: i % 2 === 0 ? 'MAIN' : 'OVA',
           })),
       );
 
@@ -407,13 +407,13 @@ describe('EpisodesRepository', () => {
       // Get cursor using kind=main
       const mainPage = await repository.invoke(malId, {
         limit: 2,
-        filters: { kind: 'main' },
+        filters: { kind: 'MAIN' },
       });
 
       // Try to use that cursor with different filters (kind=ova)
       const ovaPage = await repository.invoke(malId, {
         limit: 2,
-        filters: { kind: 'ova' },
+        filters: { kind: 'OVA' },
         after: mainPage.last ?? undefined,
       });
 

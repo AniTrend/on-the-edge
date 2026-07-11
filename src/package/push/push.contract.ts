@@ -22,11 +22,11 @@ export const PushVapidContract = z.object({
 // --- Installation Status ---
 
 export const PushInstallationStatusContract = z.enum([
-  'pending',
-  'active',
-  'disabled',
-  'expired',
-  'revoked',
+  'PENDING',
+  'ACTIVE',
+  'DISABLED',
+  'EXPIRED',
+  'REVOKED',
 ]).openapi({
   title: 'PushInstallationStatus',
   description: 'Lifecycle status of a push installation',
