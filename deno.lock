@@ -18,7 +18,7 @@
     "jsr:@dx/reflect@0.2.14": "0.2.14",
     "jsr:@growthbook/growthbook@^1.2.2": "1.2.2",
     "jsr:@hono/hono@4.6.3": "4.6.3",
-    "jsr:@libs/xml@^7.0.3": "7.0.3",
+    "jsr:@libs/xml@8": "8.0.0",
     "jsr:@negrel/http-ece@0.7.0": "0.7.0",
     "jsr:@negrel/webpush@0.5": "0.5.0",
     "jsr:@onjara/optic@^2.0.3": "2.0.3",
@@ -53,6 +53,7 @@
     "jsr:@std/random@0.1.0": "0.1.0",
     "jsr:@std/streams@^1.1.1": "1.1.1",
     "jsr:@std/testing@^1.0.17": "1.0.19",
+    "jsr:@std/xml@~0.1.3": "0.1.3",
     "npm:@anatine/zod-openapi@2.2.6": "2.2.6_openapi3-ts@4.6.0_zod@3.25.76",
     "npm:@anatine/zod-openapi@^2.2.8": "2.2.8_openapi3-ts@4.6.0_zod@3.25.76",
     "npm:@opentelemetry/api-logs@0.219": "0.219.0",
@@ -157,8 +158,11 @@
     "@hono/hono@4.6.3": {
       "integrity": "a1f5a18cd12a0db54755b0461dd5a4e2d93a6f85403073eb710103eacc42daf3"
     },
-    "@libs/xml@7.0.3": {
-      "integrity": "4caad75dfec0a4dd4ad5dc87dc559d9aa25ac53f17373923a9cd006f6c8d42e6"
+    "@libs/xml@8.0.0": {
+      "integrity": "bd902ce433aba8f0c892ac16966f8949174097f0de6293eaf4bc125dcdd4362d",
+      "dependencies": [
+        "jsr:@std/xml"
+      ]
     },
     "@negrel/http-ece@0.7.0": {
       "integrity": "068e61ba6f52da5454051a283cc19621607f8dd6e74d55c01bb365b8c6644076",
@@ -281,6 +285,9 @@
         "jsr:@std/internal@^1.0.14",
         "jsr:@std/path@^1.1.5"
       ]
+    },
+    "@std/xml@0.1.3": {
+      "integrity": "afb7750d09f9f521046b27119d0e63f7aaad6eeb3d74e5f41fc04a9958014811"
     }
   },
   "npm": {
@@ -932,7 +939,7 @@
       "jsr:@danet/zod@^0.0.9",
       "jsr:@db/redis@0.40",
       "jsr:@growthbook/growthbook@^1.2.2",
-      "jsr:@libs/xml@^7.0.3",
+      "jsr:@libs/xml@8",
       "jsr:@negrel/webpush@0.5",
       "jsr:@onjara/optic@^2.0.3",
       "jsr:@std/assert@^1.0.18",
