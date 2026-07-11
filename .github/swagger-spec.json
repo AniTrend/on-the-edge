@@ -11,7 +11,34 @@
           "anime": {
             "default": [],
             "items": {
-              "$ref": "#/components/schemas/CharacterMediaRelation"
+              "description": "Media entity related to a character",
+              "properties": {
+                "imageUrl": {
+                  "nullable": true,
+                  "type": "string"
+                },
+                "malId": {
+                  "exclusiveMinimum": 0,
+                  "type": "integer"
+                },
+                "role": {
+                  "nullable": true,
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "malId",
+                "title",
+                "url"
+              ],
+              "title": "CharacterMediaRelation",
+              "type": "object"
             },
             "type": "array"
           },
@@ -36,7 +63,34 @@
           "manga": {
             "default": [],
             "items": {
-              "$ref": "#/components/schemas/CharacterMediaRelation"
+              "description": "Media entity related to a character",
+              "properties": {
+                "imageUrl": {
+                  "nullable": true,
+                  "type": "string"
+                },
+                "malId": {
+                  "exclusiveMinimum": 0,
+                  "type": "integer"
+                },
+                "role": {
+                  "nullable": true,
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "malId",
+                "title",
+                "url"
+              ],
+              "title": "CharacterMediaRelation",
+              "type": "object"
             },
             "type": "array"
           },
@@ -57,7 +111,34 @@
           "voices": {
             "default": [],
             "items": {
-              "$ref": "#/components/schemas/CharacterVoiceRelation"
+              "description": "Voice actor relation for a character",
+              "properties": {
+                "imageUrl": {
+                  "nullable": true,
+                  "type": "string"
+                },
+                "language": {
+                  "nullable": true,
+                  "type": "string"
+                },
+                "malId": {
+                  "exclusiveMinimum": 0,
+                  "type": "integer"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "malId",
+                "name",
+                "url"
+              ],
+              "title": "CharacterVoiceRelation",
+              "type": "object"
             },
             "type": "array"
           }
@@ -92,7 +173,22 @@
           "genres": {
             "default": [],
             "items": {
-              "$ref": "#/components/schemas/ConfigGenre"
+              "description": "Genre entry linked to a media entity",
+              "properties": {
+                "mediaId": {
+                  "minimum": 1,
+                  "type": "number"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "name",
+                "mediaId"
+              ],
+              "title": "ConfigGenre",
+              "type": "object"
             },
             "type": "array"
           },
@@ -105,7 +201,53 @@
           "navigation": {
             "default": [],
             "items": {
-              "$ref": "#/components/schemas/ConfigNavigationItem"
+              "description": "A single navigation entry",
+              "properties": {
+                "criteria": {
+                  "type": "string"
+                },
+                "destination": {
+                  "type": "string"
+                },
+                "group": {
+                  "description": "Navigation item group classification",
+                  "properties": {
+                    "authenticated": {
+                      "type": "boolean"
+                    },
+                    "i18n": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "authenticated",
+                    "i18n"
+                  ],
+                  "title": "ConfigNavigationGroup",
+                  "type": "object"
+                },
+                "i18n": {
+                  "type": "string"
+                },
+                "icon": {
+                  "type": "string"
+                },
+                "key": {
+                  "description": "Stable identity for persistence, dedupe, and diffing. Must not change unless a deliberate migration is intended.",
+                  "minLength": 1,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "key",
+                "criteria",
+                "destination",
+                "i18n",
+                "icon",
+                "group"
+              ],
+              "title": "ConfigNavigationItem",
+              "type": "object"
             },
             "type": "array"
           },
@@ -194,7 +336,15 @@
             "type": "boolean"
           },
           "kind": {
-            "$ref": "#/components/schemas/EpisodeKind"
+            "enum": [
+              "main",
+              "ova",
+              "ona",
+              "recap",
+              "filler",
+              "special"
+            ],
+            "type": "string"
           },
           "limit": {
             "default": 25,
@@ -228,7 +378,149 @@
           },
           "data": {
             "items": {
-              "$ref": "#/components/schemas/Episode"
+              "description": "Canonical episode data from multiple sources",
+              "properties": {
+                "absoluteEpisodeNumber": {
+                  "nullable": true,
+                  "type": "number"
+                },
+                "aired": {
+                  "nullable": true,
+                  "type": "number"
+                },
+                "airedAfterEpisodeNumber": {
+                  "nullable": true,
+                  "type": "number"
+                },
+                "airedAfterSeasonNumber": {
+                  "nullable": true,
+                  "type": "number"
+                },
+                "airedBeforeEpisodeNumber": {
+                  "nullable": true,
+                  "type": "number"
+                },
+                "airedBeforeSeasonNumber": {
+                  "nullable": true,
+                  "type": "number"
+                },
+                "duration": {
+                  "nullable": true,
+                  "type": "number"
+                },
+                "episodeNumber": {
+                  "nullable": true,
+                  "type": "number"
+                },
+                "id": {
+                  "type": "number"
+                },
+                "image": {
+                  "nullable": true,
+                  "type": "string"
+                },
+                "kind": {
+                  "description": "Episode type classification",
+                  "enum": [
+                    "main",
+                    "ova",
+                    "ona",
+                    "recap",
+                    "filler",
+                    "special"
+                  ],
+                  "example": "main",
+                  "nullable": true,
+                  "title": "EpisodeKind",
+                  "type": "string"
+                },
+                "number": {
+                  "nullable": true,
+                  "type": "number"
+                },
+                "poster": {
+                  "nullable": true,
+                  "type": "string"
+                },
+                "score": {
+                  "nullable": true,
+                  "type": "number"
+                },
+                "seasonNumber": {
+                  "nullable": true,
+                  "type": "number"
+                },
+                "synopsis": {
+                  "nullable": true,
+                  "type": "string"
+                },
+                "themes": {
+                  "default": {
+                    "endings": [],
+                    "openings": []
+                  },
+                  "description": "Opening and ending theme songs",
+                  "properties": {
+                    "endings": {
+                      "default": [],
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "openings": {
+                      "default": [],
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "title": "EpisodeThemes",
+                  "type": "object"
+                },
+                "title": {
+                  "description": "Multi-language episode title",
+                  "nullable": true,
+                  "properties": {
+                    "english": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "native": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "romanji": {
+                      "nullable": true,
+                      "type": "string"
+                    }
+                  },
+                  "title": "EpisodeTitle",
+                  "type": "object"
+                },
+                "tmdbId": {
+                  "nullable": true,
+                  "type": "number"
+                },
+                "tvdbId": {
+                  "nullable": true,
+                  "type": "number"
+                },
+                "tvdbShowId": {
+                  "nullable": true,
+                  "type": "number"
+                },
+                "url": {
+                  "nullable": true,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "title": "Episode",
+              "type": "object"
             },
             "type": "array"
           },
@@ -316,7 +608,59 @@
           },
           "data": {
             "items": {
-              "$ref": "#/components/schemas/News"
+              "description": "Schema representing a news document.",
+              "properties": {
+                "area": {
+                  "nullable": true,
+                  "type": "string"
+                },
+                "category": {
+                  "nullable": true,
+                  "type": "string"
+                },
+                "content": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "genre": {
+                  "nullable": true,
+                  "type": "string"
+                },
+                "id": {
+                  "type": "string"
+                },
+                "image": {
+                  "format": "uri",
+                  "nullable": true,
+                  "type": "string"
+                },
+                "lang": {
+                  "nullable": true,
+                  "type": "string"
+                },
+                "link": {
+                  "format": "uri",
+                  "type": "string"
+                },
+                "publishedOn": {
+                  "type": "number"
+                },
+                "title": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "title",
+                "link",
+                "description",
+                "content",
+                "publishedOn"
+              ],
+              "title": "News",
+              "type": "object"
             },
             "type": "array"
           },
@@ -359,7 +703,11 @@
         "description": "Query parameters for news feed",
         "properties": {
           "locale": {
-            "$ref": "#/components/schemas/NewsFeedLocale"
+            "default": "en-US",
+            "description": "Locale for the news feed, e.g., en-GB, de-DE, fr-FR.",
+            "maxLength": 5,
+            "minLength": 5,
+            "type": "string"
           }
         },
         "title": "NewsQuery",
@@ -508,7 +856,16 @@
             "type": "string"
           },
           "status": {
-            "$ref": "#/components/schemas/PushInstallationStatus"
+            "description": "Lifecycle status of a push installation",
+            "enum": [
+              "pending",
+              "active",
+              "disabled",
+              "expired",
+              "revoked"
+            ],
+            "title": "PushInstallationStatus",
+            "type": "string"
           }
         },
         "required": [
@@ -639,7 +996,7 @@
               "platform": {
                 "default": null,
                 "enum": [
-                  "ANDROID"
+                  "android"
                 ],
                 "nullable": true,
                 "type": "string"
@@ -666,7 +1023,7 @@
               "provider": {
                 "default": null,
                 "enum": [
-                  "ANILIST"
+                  "anilist"
                 ],
                 "nullable": true,
                 "type": "string"
@@ -674,7 +1031,7 @@
               "state": {
                 "default": null,
                 "enum": [
-                  "CLIENT_DECLARED"
+                  "client-declared"
                 ],
                 "nullable": true,
                 "type": "string"
@@ -822,9 +1179,9 @@
             "type": "string"
           },
           "platform": {
-            "default": "ANDROID",
+            "default": "android",
             "enum": [
-              "ANDROID"
+              "android"
             ],
             "type": "string"
           },
@@ -837,9 +1194,9 @@
             "default": [],
             "items": {
               "enum": [
-                "NEWS",
-                "APP_ANNOUNCEMENTS",
-                "SYNC"
+                "news",
+                "appAnnouncements",
+                "sync"
               ],
               "type": "string"
             },
@@ -882,7 +1239,161 @@
           },
           "animethemes": {
             "items": {
-              "$ref": "#/components/schemas/AnimeThemes"
+              "description": "Opening or ending theme with entries and song metadata",
+              "properties": {
+                "animethemeentries": {
+                  "default": [],
+                  "items": {
+                    "description": "A single anime theme entry with version info and videos",
+                    "properties": {
+                      "episodes": {
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "id": {
+                        "type": "number"
+                      },
+                      "notes": {
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "nsfw": {
+                        "type": "boolean"
+                      },
+                      "spoiler": {
+                        "type": "boolean"
+                      },
+                      "version": {
+                        "nullable": true,
+                        "type": "number"
+                      },
+                      "videos": {
+                        "default": [],
+                        "items": {
+                          "description": "Video resource for an anime theme entry",
+                          "properties": {
+                            "audio": {
+                              "description": "Audio resource for an anime theme",
+                              "nullable": true,
+                              "properties": {
+                                "id": {
+                                  "type": "number"
+                                },
+                                "link": {
+                                  "format": "uri",
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "link"
+                              ],
+                              "title": "AnimeThemesAudio",
+                              "type": "object"
+                            },
+                            "id": {
+                              "type": "number"
+                            },
+                            "link": {
+                              "format": "uri",
+                              "type": "string"
+                            },
+                            "lyrics": {
+                              "type": "boolean"
+                            },
+                            "nc": {
+                              "type": "boolean"
+                            },
+                            "overlap": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "resolution": {
+                              "nullable": true,
+                              "type": "number"
+                            },
+                            "source": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "subbed": {
+                              "type": "boolean"
+                            },
+                            "tags": {
+                              "nullable": true,
+                              "type": "string"
+                            },
+                            "uncen": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "link",
+                            "nc",
+                            "subbed",
+                            "lyrics",
+                            "uncen"
+                          ],
+                          "title": "AnimeThemesVideo",
+                          "type": "object"
+                        },
+                        "type": "array"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "nsfw",
+                      "spoiler"
+                    ],
+                    "title": "AnimeThemesEntry",
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "id": {
+                  "type": "number"
+                },
+                "sequence": {
+                  "nullable": true,
+                  "type": "number"
+                },
+                "slug": {
+                  "type": "string"
+                },
+                "song": {
+                  "description": "Song metadata for an anime theme",
+                  "nullable": true,
+                  "properties": {
+                    "id": {
+                      "type": "number"
+                    },
+                    "title": {
+                      "nullable": true,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ],
+                  "title": "AnimeThemesSong",
+                  "type": "object"
+                },
+                "type": {
+                  "enum": [
+                    "OP",
+                    "ED"
+                  ],
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "type",
+                "slug"
+              ],
+              "title": "AnimeThemes",
+              "type": "object"
             },
             "type": "array"
           },
@@ -918,7 +1429,15 @@
             "type": "string"
           },
           "format": {
-            "$ref": "#/components/schemas/SeriesFormat"
+            "enum": [
+              "TV",
+              "MOVIE",
+              "SPECIAL",
+              "OVA",
+              "ONA"
+            ],
+            "nullable": true,
+            "type": "string"
           },
           "homepage": {
             "nullable": true,
@@ -926,7 +1445,38 @@
           },
           "images": {
             "items": {
-              "$ref": "#/components/schemas/SeriesImageAttributes"
+              "description": "Image metadata including dimensions and type",
+              "properties": {
+                "height": {
+                  "type": "number"
+                },
+                "locale": {
+                  "nullable": true,
+                  "type": "string"
+                },
+                "type": {
+                  "enum": [
+                    "BACKDROP",
+                    "POSTER",
+                    "LOGO"
+                  ],
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string"
+                },
+                "width": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "height",
+                "width",
+                "url",
+                "type"
+              ],
+              "title": "SeriesImageAttributes",
+              "type": "object"
             },
             "type": "array"
           },
@@ -935,7 +1485,11 @@
             "type": "boolean"
           },
           "kind": {
-            "$ref": "#/components/schemas/SeriesKind"
+            "enum": [
+              "ANIME",
+              "MANGA"
+            ],
+            "type": "string"
           },
           "mediaId": {
             "$ref": "#/components/schemas/SeriesId"
@@ -946,7 +1500,41 @@
           },
           "networks": {
             "items": {
-              "$ref": "#/components/schemas/SeriesNetwork"
+              "description": "Network or streaming service associated with the series",
+              "properties": {
+                "category": {
+                  "enum": [
+                    "DISTRIBUTION",
+                    "PRODUCTION"
+                  ],
+                  "type": "string"
+                },
+                "id": {
+                  "type": "number"
+                },
+                "isPrimary": {
+                  "type": "boolean"
+                },
+                "logoPath": {
+                  "nullable": true,
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "originCountry": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "isPrimary",
+                "name",
+                "originCountry",
+                "category"
+              ],
+              "title": "SeriesNetwork",
+              "type": "object"
             },
             "type": "array"
           },
@@ -962,17 +1550,49 @@
             "$ref": "#/components/schemas/SeriesSchedule"
           },
           "source": {
-            "$ref": "#/components/schemas/SeriesSource"
+            "enum": [
+              "ORIGINAL",
+              "MANGA",
+              "LIGHT_NOVEL",
+              "VISUAL_NOVEL",
+              "VIDEO_GAME",
+              "OTHER"
+            ],
+            "nullable": true,
+            "type": "string"
           },
           "status": {
-            "$ref": "#/components/schemas/SeriesStatus"
+            "enum": [
+              "FINISHED",
+              "RELEASING",
+              "NOT_YET_RELEASED"
+            ],
+            "nullable": true,
+            "type": "string"
           },
           "title": {
             "$ref": "#/components/schemas/SeriesTitle"
           },
           "trailers": {
             "items": {
-              "$ref": "#/components/schemas/SeriesTrailer"
+              "description": "Trailer resource link",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "site": {
+                  "type": "string"
+                },
+                "thumbnail": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "site"
+              ],
+              "title": "SeriesTrailer",
+              "type": "object"
             },
             "type": "array"
           },
@@ -1136,10 +1756,104 @@
             "type": "number"
           },
           "lastAiredEpisode": {
-            "$ref": "#/components/schemas/SeriesScheduleEpisode"
+            "description": "A scheduled episode in the series",
+            "nullable": true,
+            "properties": {
+              "airDate": {
+                "nullable": true,
+                "type": "number"
+              },
+              "episodeNumber": {
+                "nullable": true,
+                "type": "number"
+              },
+              "id": {
+                "type": "number"
+              },
+              "image": {
+                "nullable": true,
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "overview": {
+                "nullable": true,
+                "type": "string"
+              },
+              "productionCode": {
+                "nullable": true,
+                "type": "string"
+              },
+              "runtime": {
+                "nullable": true,
+                "type": "number"
+              },
+              "seasonNumber": {
+                "nullable": true,
+                "type": "number"
+              },
+              "tmdbId": {
+                "nullable": true,
+                "type": "number"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ],
+            "title": "SeriesScheduleEpisode",
+            "type": "object"
           },
           "nextEpisodeToAir": {
-            "$ref": "#/components/schemas/SeriesScheduleEpisode"
+            "description": "A scheduled episode in the series",
+            "nullable": true,
+            "properties": {
+              "airDate": {
+                "nullable": true,
+                "type": "number"
+              },
+              "episodeNumber": {
+                "nullable": true,
+                "type": "number"
+              },
+              "id": {
+                "type": "number"
+              },
+              "image": {
+                "nullable": true,
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "overview": {
+                "nullable": true,
+                "type": "string"
+              },
+              "productionCode": {
+                "nullable": true,
+                "type": "string"
+              },
+              "runtime": {
+                "nullable": true,
+                "type": "number"
+              },
+              "seasonNumber": {
+                "nullable": true,
+                "type": "number"
+              },
+              "tmdbId": {
+                "nullable": true,
+                "type": "number"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ],
+            "title": "SeriesScheduleEpisode",
+            "type": "object"
           }
         },
         "title": "SeriesSchedule",
@@ -1218,7 +1932,19 @@
           "titles": {
             "default": [],
             "items": {
-              "$ref": "#/components/schemas/StudioTitle"
+              "description": "Studio alternate title",
+              "properties": {
+                "title": {
+                  "nullable": true,
+                  "type": "string"
+                },
+                "type": {
+                  "nullable": true,
+                  "type": "string"
+                }
+              },
+              "title": "StudioTitle",
+              "type": "object"
             },
             "type": "array"
           }
@@ -1245,686 +1971,6 @@
           }
         },
         "title": "StudioQuery",
-        "type": "object"
-      },
-      "CharacterMediaRelation": {
-        "description": "Media entity related to a character",
-        "properties": {
-          "imageUrl": {
-            "nullable": true,
-            "type": "string"
-          },
-          "malId": {
-            "exclusiveMinimum": 0,
-            "type": "integer"
-          },
-          "role": {
-            "nullable": true,
-            "type": "string"
-          },
-          "title": {
-            "type": "string"
-          },
-          "url": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "malId",
-          "title",
-          "url"
-        ],
-        "title": "CharacterMediaRelation",
-        "type": "object"
-      },
-      "CharacterVoiceRelation": {
-        "description": "Voice actor relation for a character",
-        "properties": {
-          "imageUrl": {
-            "nullable": true,
-            "type": "string"
-          },
-          "language": {
-            "nullable": true,
-            "type": "string"
-          },
-          "malId": {
-            "exclusiveMinimum": 0,
-            "type": "integer"
-          },
-          "name": {
-            "type": "string"
-          },
-          "url": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "malId",
-          "name",
-          "url"
-        ],
-        "title": "CharacterVoiceRelation",
-        "type": "object"
-      },
-      "ConfigGenre": {
-        "description": "Genre entry linked to a media entity",
-        "properties": {
-          "mediaId": {
-            "minimum": 1,
-            "type": "number"
-          },
-          "name": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "name",
-          "mediaId"
-        ],
-        "title": "ConfigGenre",
-        "type": "object"
-      },
-      "ConfigNavigationItem": {
-        "description": "A single navigation entry",
-        "properties": {
-          "criteria": {
-            "type": "string"
-          },
-          "destination": {
-            "type": "string"
-          },
-          "group": {
-            "$ref": "#/components/schemas/ConfigNavigationGroup"
-          },
-          "i18n": {
-            "type": "string"
-          },
-          "icon": {
-            "type": "string"
-          },
-          "key": {
-            "description": "Stable identity for persistence, dedupe, and diffing. Must not change unless a deliberate migration is intended.",
-            "minLength": 1,
-            "type": "string"
-          }
-        },
-        "required": [
-          "key",
-          "criteria",
-          "destination",
-          "i18n",
-          "icon",
-          "group"
-        ],
-        "title": "ConfigNavigationItem",
-        "type": "object"
-      },
-      "EpisodeKind": {
-        "description": "Episode type classification",
-        "enum": [
-          "MAIN",
-          "OVA",
-          "ONA",
-          "RECAP",
-          "FILLER",
-          "SPECIAL"
-        ],
-        "example": "MAIN",
-        "title": "EpisodeKind",
-        "type": "string"
-      },
-      "Episode": {
-        "description": "Canonical episode data from multiple sources",
-        "properties": {
-          "absoluteEpisodeNumber": {
-            "nullable": true,
-            "type": "number"
-          },
-          "aired": {
-            "nullable": true,
-            "type": "number"
-          },
-          "airedAfterEpisodeNumber": {
-            "nullable": true,
-            "type": "number"
-          },
-          "airedAfterSeasonNumber": {
-            "nullable": true,
-            "type": "number"
-          },
-          "airedBeforeEpisodeNumber": {
-            "nullable": true,
-            "type": "number"
-          },
-          "airedBeforeSeasonNumber": {
-            "nullable": true,
-            "type": "number"
-          },
-          "duration": {
-            "nullable": true,
-            "type": "number"
-          },
-          "episodeNumber": {
-            "nullable": true,
-            "type": "number"
-          },
-          "id": {
-            "type": "number"
-          },
-          "image": {
-            "nullable": true,
-            "type": "string"
-          },
-          "kind": {
-            "$ref": "#/components/schemas/EpisodeKind"
-          },
-          "number": {
-            "nullable": true,
-            "type": "number"
-          },
-          "poster": {
-            "nullable": true,
-            "type": "string"
-          },
-          "score": {
-            "nullable": true,
-            "type": "number"
-          },
-          "seasonNumber": {
-            "nullable": true,
-            "type": "number"
-          },
-          "synopsis": {
-            "nullable": true,
-            "type": "string"
-          },
-          "themes": {
-            "$ref": "#/components/schemas/EpisodeThemes"
-          },
-          "title": {
-            "$ref": "#/components/schemas/EpisodeTitle"
-          },
-          "tmdbId": {
-            "nullable": true,
-            "type": "number"
-          },
-          "tvdbId": {
-            "nullable": true,
-            "type": "number"
-          },
-          "tvdbShowId": {
-            "nullable": true,
-            "type": "number"
-          },
-          "url": {
-            "nullable": true,
-            "type": "string"
-          }
-        },
-        "required": [
-          "id"
-        ],
-        "title": "Episode",
-        "type": "object"
-      },
-      "NewsFeedLocale": {
-        "default": "en-US",
-        "description": "Locale for the news feed, e.g., en-GB, de-DE, fr-FR.",
-        "maxLength": 5,
-        "minLength": 5,
-        "title": "NewsFeedLocale",
-        "type": "string"
-      },
-      "PushInstallationStatus": {
-        "description": "Lifecycle status of a push installation",
-        "enum": [
-          "PENDING",
-          "ACTIVE",
-          "DISABLED",
-          "EXPIRED",
-          "REVOKED"
-        ],
-        "title": "PushInstallationStatus",
-        "type": "string"
-      },
-      "AnimeThemes": {
-        "description": "Opening or ending theme with entries and song metadata",
-        "properties": {
-          "animethemeentries": {
-            "default": [],
-            "items": {
-              "$ref": "#/components/schemas/AnimeThemesEntry"
-            },
-            "type": "array"
-          },
-          "id": {
-            "type": "number"
-          },
-          "sequence": {
-            "nullable": true,
-            "type": "number"
-          },
-          "slug": {
-            "type": "string"
-          },
-          "song": {
-            "$ref": "#/components/schemas/AnimeThemesSong"
-          },
-          "type": {
-            "enum": [
-              "OP",
-              "ED"
-            ],
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "type",
-          "slug"
-        ],
-        "title": "AnimeThemes",
-        "type": "object"
-      },
-      "SeriesFormat": {
-        "description": "Media format classification",
-        "enum": [
-          "TV",
-          "MOVIE",
-          "SPECIAL",
-          "OVA",
-          "ONA"
-        ],
-        "nullable": true,
-        "title": "SeriesFormat",
-        "type": "string"
-      },
-      "SeriesImageAttributes": {
-        "description": "Image metadata including dimensions and type",
-        "properties": {
-          "height": {
-            "type": "number"
-          },
-          "locale": {
-            "nullable": true,
-            "type": "string"
-          },
-          "type": {
-            "enum": [
-              "BACKDROP",
-              "POSTER",
-              "LOGO"
-            ],
-            "type": "string"
-          },
-          "url": {
-            "type": "string"
-          },
-          "width": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "height",
-          "width",
-          "url",
-          "type"
-        ],
-        "title": "SeriesImageAttributes",
-        "type": "object"
-      },
-      "SeriesKind": {
-        "description": "Media type classification (anime or manga)",
-        "enum": [
-          "ANIME",
-          "MANGA"
-        ],
-        "title": "SeriesKind",
-        "type": "string"
-      },
-      "SeriesNetwork": {
-        "description": "Network or streaming service associated with the series",
-        "properties": {
-          "category": {
-            "$ref": "#/components/schemas/SeriesNetworkCategory"
-          },
-          "id": {
-            "type": "number"
-          },
-          "isPrimary": {
-            "type": "boolean"
-          },
-          "logoPath": {
-            "nullable": true,
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "originCountry": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "isPrimary",
-          "name",
-          "originCountry",
-          "category"
-        ],
-        "title": "SeriesNetwork",
-        "type": "object"
-      },
-      "SeriesSource": {
-        "description": "Original source material for the media",
-        "enum": [
-          "ORIGINAL",
-          "MANGA",
-          "LIGHT_NOVEL",
-          "VISUAL_NOVEL",
-          "VIDEO_GAME",
-          "OTHER"
-        ],
-        "nullable": true,
-        "title": "SeriesSource",
-        "type": "string"
-      },
-      "SeriesStatus": {
-        "description": "Current release status of the media",
-        "enum": [
-          "FINISHED",
-          "RELEASING",
-          "NOT_YET_RELEASED"
-        ],
-        "nullable": true,
-        "title": "SeriesStatus",
-        "type": "string"
-      },
-      "SeriesTrailer": {
-        "description": "Trailer resource link",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "site": {
-            "type": "string"
-          },
-          "thumbnail": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "site"
-        ],
-        "title": "SeriesTrailer",
-        "type": "object"
-      },
-      "SeriesScheduleEpisode": {
-        "description": "A scheduled episode in the series",
-        "nullable": true,
-        "properties": {
-          "airDate": {
-            "nullable": true,
-            "type": "number"
-          },
-          "episodeNumber": {
-            "nullable": true,
-            "type": "number"
-          },
-          "id": {
-            "type": "number"
-          },
-          "image": {
-            "nullable": true,
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "overview": {
-            "nullable": true,
-            "type": "string"
-          },
-          "productionCode": {
-            "nullable": true,
-            "type": "string"
-          },
-          "runtime": {
-            "nullable": true,
-            "type": "number"
-          },
-          "seasonNumber": {
-            "nullable": true,
-            "type": "number"
-          },
-          "tmdbId": {
-            "nullable": true,
-            "type": "number"
-          }
-        },
-        "required": [
-          "id",
-          "name"
-        ],
-        "title": "SeriesScheduleEpisode",
-        "type": "object"
-      },
-      "StudioTitle": {
-        "description": "Studio alternate title",
-        "properties": {
-          "title": {
-            "nullable": true,
-            "type": "string"
-          },
-          "type": {
-            "nullable": true,
-            "type": "string"
-          }
-        },
-        "title": "StudioTitle",
-        "type": "object"
-      },
-      "ConfigNavigationGroup": {
-        "description": "Navigation item group classification",
-        "properties": {
-          "authenticated": {
-            "type": "boolean"
-          },
-          "i18n": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "authenticated",
-          "i18n"
-        ],
-        "title": "ConfigNavigationGroup",
-        "type": "object"
-      },
-      "EpisodeThemes": {
-        "default": {
-          "endings": [],
-          "openings": []
-        },
-        "description": "Opening and ending theme songs",
-        "properties": {
-          "endings": {
-            "default": [],
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
-          "openings": {
-            "default": [],
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          }
-        },
-        "title": "EpisodeThemes",
-        "type": "object"
-      },
-      "EpisodeTitle": {
-        "description": "Multi-language episode title",
-        "nullable": true,
-        "properties": {
-          "english": {
-            "nullable": true,
-            "type": "string"
-          },
-          "native": {
-            "nullable": true,
-            "type": "string"
-          },
-          "romanji": {
-            "nullable": true,
-            "type": "string"
-          }
-        },
-        "title": "EpisodeTitle",
-        "type": "object"
-      },
-      "AnimeThemesEntry": {
-        "description": "A single anime theme entry with version info and videos",
-        "properties": {
-          "episodes": {
-            "nullable": true,
-            "type": "string"
-          },
-          "id": {
-            "type": "number"
-          },
-          "notes": {
-            "nullable": true,
-            "type": "string"
-          },
-          "nsfw": {
-            "type": "boolean"
-          },
-          "spoiler": {
-            "type": "boolean"
-          },
-          "version": {
-            "nullable": true,
-            "type": "number"
-          },
-          "videos": {
-            "default": [],
-            "items": {
-              "$ref": "#/components/schemas/AnimeThemesVideo"
-            },
-            "type": "array"
-          }
-        },
-        "required": [
-          "id",
-          "nsfw",
-          "spoiler"
-        ],
-        "title": "AnimeThemesEntry",
-        "type": "object"
-      },
-      "AnimeThemesSong": {
-        "description": "Song metadata for an anime theme",
-        "nullable": true,
-        "properties": {
-          "id": {
-            "type": "number"
-          },
-          "title": {
-            "nullable": true,
-            "type": "string"
-          }
-        },
-        "required": [
-          "id"
-        ],
-        "title": "AnimeThemesSong",
-        "type": "object"
-      },
-      "SeriesNetworkCategory": {
-        "description": "Network role classification",
-        "enum": [
-          "DISTRIBUTION",
-          "PRODUCTION"
-        ],
-        "title": "SeriesNetworkCategory",
-        "type": "string"
-      },
-      "AnimeThemesVideo": {
-        "description": "Video resource for an anime theme entry",
-        "properties": {
-          "audio": {
-            "$ref": "#/components/schemas/AnimeThemesAudio"
-          },
-          "id": {
-            "type": "number"
-          },
-          "link": {
-            "format": "uri",
-            "type": "string"
-          },
-          "lyrics": {
-            "type": "boolean"
-          },
-          "nc": {
-            "type": "boolean"
-          },
-          "overlap": {
-            "nullable": true,
-            "type": "string"
-          },
-          "resolution": {
-            "nullable": true,
-            "type": "number"
-          },
-          "source": {
-            "nullable": true,
-            "type": "string"
-          },
-          "subbed": {
-            "type": "boolean"
-          },
-          "tags": {
-            "nullable": true,
-            "type": "string"
-          },
-          "uncen": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "id",
-          "link",
-          "nc",
-          "subbed",
-          "lyrics",
-          "uncen"
-        ],
-        "title": "AnimeThemesVideo",
-        "type": "object"
-      },
-      "AnimeThemesAudio": {
-        "description": "Audio resource for an anime theme",
-        "nullable": true,
-        "properties": {
-          "id": {
-            "type": "number"
-          },
-          "link": {
-            "format": "uri",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "link"
-        ],
-        "title": "AnimeThemesAudio",
         "type": "object"
       }
     }
@@ -2050,7 +2096,15 @@
             "name": "kind",
             "required": false,
             "schema": {
-              "$ref": "#/components/schemas/EpisodeKind"
+              "enum": [
+                "main",
+                "ova",
+                "ona",
+                "recap",
+                "filler",
+                "special"
+              ],
+              "type": "string"
             }
           },
           {
@@ -2160,7 +2214,11 @@
             "in": "query",
             "name": "locale",
             "schema": {
-              "$ref": "#/components/schemas/NewsFeedLocale"
+              "default": "en-US",
+              "description": "Locale for the news feed, e.g., en-GB, de-DE, fr-FR.",
+              "maxLength": 5,
+              "minLength": 5,
+              "type": "string"
             }
           }
         ],
