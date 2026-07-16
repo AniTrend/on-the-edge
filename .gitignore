@@ -187,3 +187,6 @@ seed.sql
 # Deepwork progress files
 .slim/deepwork/
 .omg/
+
+# Generated swagger spec
+.github/swagger-spec.json

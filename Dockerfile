@@ -5,7 +5,7 @@ COPY . /usr/app
 FROM base AS scaffold
 RUN apt-get update
 RUN apt-get upgrade -y
-RUN apt-get install unzip
+RUN apt-get install curl unzip
 
 FROM scaffold AS cache
 RUN deno task cache
