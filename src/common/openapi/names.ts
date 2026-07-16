@@ -63,6 +63,9 @@ export const EXPECTED_SCHEMA_NAMES = [
   'SeriesSource',
   'SeriesKind',
   'SeriesNetworkCategory',
+
+  // Health (direct response)
+  'Health',
 ] as const;
 
 /**
@@ -86,6 +89,7 @@ export const EXPECTED_OPERATION_IDS = [
   'updatePreferences',
   'deleteInstallation',
   'sendTestPush',
+  'health',
 ] as const;
 
 /**
