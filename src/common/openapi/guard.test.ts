@@ -44,6 +44,8 @@ function makeValidDoc(
     'SeriesSource',
     'SeriesKind',
     'SeriesNetworkCategory',
+    // Health
+    'Health',
   ];
   for (const name of expectedNames) {
     schemas[name] = { type: 'object', properties: {} };
@@ -266,6 +268,21 @@ function makeValidDoc(
         get: {
           operationId: 'index',
           responses: {},
+        },
+      },
+      '/v1/health': {
+        get: {
+          operationId: 'health',
+          responses: {
+            200: {
+              description: 'OK',
+              content: {
+                'application/json': {
+                  schema: { $ref: '#/components/schemas/Health' },
+                },
+              },
+            },
+          },
         },
       },
     },
