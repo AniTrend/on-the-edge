@@ -3,9 +3,11 @@ WORKDIR /usr/app
 COPY . /usr/app
 
 FROM base AS scaffold
-RUN apt-get update
-RUN apt-get upgrade -y
-RUN apt-get install curl unzip
+RUN apt-get update \
+    && apt-get upgrade -y \
+    && apt-get install -y --no-install-recommends curl unzip \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 FROM scaffold AS cache
 RUN deno task cache
