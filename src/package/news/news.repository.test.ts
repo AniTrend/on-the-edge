@@ -1,5 +1,6 @@
 import { beforeEach, describe, it } from '@std/testing/bdd';
 import { assertEquals, assertExists } from '@std/assert';
+import { assertSpyCalls } from '@std/testing/mock';
 import { createMockLogger } from '@scope/common/testing';
 import { type MongoService } from '@scope/database';
 import { InMemoryCollection } from '@scope/database/testing';
@@ -85,12 +86,17 @@ class MockMongoService {
 }
 
 class MockOtakumodeService {
-  constructor(private readonly payload: OtakumodeFeed = []) {}
+  constructor(private readonly payload: OtakumodeFeed) {}
 
   async rss(): Promise<OtakumodeFeed> {
     return this.payload;
   }
 }
+
+const createMockOtakumodeService = (...args: [OtakumodeFeed?]) => {
+  const payload = args.length === 0 ? [] : args[0];
+  return new MockOtakumodeService(payload) as unknown as OtakumodeService;
+};
 
 const createNewsDocument = (
   overrides: Partial<NewsDocument> = {},
@@ -115,10 +121,13 @@ const createNewsDocument = (
 describe('NewsRepository', () => {
   let collection: InMemoryCollection<NewsDocument>;
   let logger: ReturnType<typeof createMockLogger>['logger'];
+  let loggerSpies: ReturnType<typeof createMockLogger>['spies'];
 
   beforeEach(() => {
     collection = new InMemoryCollection<NewsDocument>();
-    logger = createMockLogger().logger;
+    const loggerStub = createMockLogger();
+    logger = loggerStub.logger;
+    loggerSpies = loggerStub.spies;
   });
 
   it('drops cached documents that violate the public news schema', async () => {
@@ -126,7 +135,7 @@ describe('NewsRepository', () => {
       new MockMongoService(
         new MockMongoCollection(collection),
       ) as unknown as MongoService,
-      new MockOtakumodeService() as unknown as OtakumodeService,
+      createMockOtakumodeService(),
       logger,
     );
 
@@ -152,7 +161,7 @@ describe('NewsRepository', () => {
       new MockMongoService(
         new MockMongoCollection(collection),
       ) as unknown as MongoService,
-      new MockOtakumodeService() as unknown as OtakumodeService,
+      createMockOtakumodeService(),
       logger,
     );
 
@@ -177,7 +186,7 @@ describe('NewsRepository', () => {
       new MockMongoService(
         new MockMongoCollection(collection),
       ) as unknown as MongoService,
-      new MockOtakumodeService([
+      createMockOtakumodeService([
         {
           title: 'Valid News',
           link: 'https://example.com/news/valid',
@@ -204,7 +213,7 @@ describe('NewsRepository', () => {
           area: null,
           lang: null,
         },
-      ]) as unknown as OtakumodeService,
+      ]),
       logger,
     );
 
@@ -222,7 +231,7 @@ describe('NewsRepository', () => {
       new MockMongoService(
         new MockMongoCollection(collection),
       ) as unknown as MongoService,
-      new MockOtakumodeService([
+      createMockOtakumodeService([
         {
           title: 'Fresh RSS News',
           link: 'https://example.com/news/fresh',
@@ -236,7 +245,7 @@ describe('NewsRepository', () => {
           area: null,
           lang: null,
         },
-      ]) as unknown as OtakumodeService,
+      ]),
       logger,
     );
 
@@ -260,5 +269,79 @@ describe('NewsRepository', () => {
     assertEquals(result.length, 1);
     assertEquals(result[0].id, 'fresh-rss');
     assertEquals(result[0].title, 'Fresh RSS News');
+  });
+
+  it('returns an empty array when RSS returns no items and logs the empty path', async () => {
+    const repository = new NewsRepository(
+      new MockMongoService(
+        new MockMongoCollection(collection),
+      ) as unknown as MongoService,
+      createMockOtakumodeService([]),
+      logger,
+    );
+
+    const result = await repository.feed({ locale: 'en-US' });
+
+    assertEquals(result, []);
+    assertEquals(await collection.countDocuments({}), 0);
+    assertSpyCalls(loggerSpies.info, 4);
+    assertEquals(
+      loggerSpies.info.calls[2].args[0],
+      'RSS fetch returned news items',
+    );
+    assertEquals(
+      loggerSpies.info.calls[3].args[0],
+      'No transformed news items available for insert',
+    );
+  });
+
+  it('returns an empty array when RSS returns undefined and logs the warning path', async () => {
+    const repository = new NewsRepository(
+      new MockMongoService(
+        new MockMongoCollection(collection),
+      ) as unknown as MongoService,
+      createMockOtakumodeService(undefined),
+      logger,
+    );
+
+    const result = await repository.feed({ locale: 'en-US' });
+
+    assertEquals(result, []);
+    assertSpyCalls(loggerSpies.warn, 1);
+    assertEquals(
+      loggerSpies.warn.calls[0].args[0],
+      'RSS fetch returned undefined',
+    );
+  });
+
+  it('warns when cache validation falls through and RSS also fails', async () => {
+    const repository = new NewsRepository(
+      new MockMongoService(
+        new MockMongoCollection(collection),
+      ) as unknown as MongoService,
+      createMockOtakumodeService(undefined),
+      logger,
+    );
+
+    await collection.insertMany([
+      createNewsDocument({ id: 'invalid-news', publishedOn: null as never }),
+    ]);
+
+    const result = await repository.feed({ locale: 'en-US' });
+
+    assertEquals(result, []);
+    assertSpyCalls(loggerSpies.warn, 4);
+    assertEquals(
+      loggerSpies.warn.calls[1].args[0],
+      'Cached news payload failed schema validation; falling through to RSS',
+    );
+    assertEquals(
+      loggerSpies.warn.calls[2].args[0],
+      'RSS fetch returned undefined',
+    );
+    assertEquals(
+      loggerSpies.warn.calls[3].args[0],
+      'Cached news payload validation fell through to RSS, and RSS fetch also failed',
+    );
   });
 });

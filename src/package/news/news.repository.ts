@@ -12,6 +12,7 @@ import { Collection, MongoCollectionAdapter } from '@scope/database/collection';
 @Injectable()
 export class NewsRepository {
   private readonly COLLECTION_NAME = 'news';
+  private readonly CACHE_THRESHOLD_HOURS = 12;
   private readonly collection: Collection<NewsDocument>;
   constructor(
     private readonly mongo: MongoService,
@@ -93,68 +94,127 @@ export class NewsRepository {
       { _id: { $exists: true } },
       { projection, sort, limit: 1 },
     )?.then((doc) => doc ?? { updatedAt: undefined });
-    this.logger.instance.debug(
-      `Last updatedAt timestamp: ${updatedAt}`,
-    );
     return updatedAt;
   }
 
   async feed(query: NewsQuery): Promise<News[]> {
-    const updatedAt = await this.lastUpdatedAt();
-
-    if (updatedAt) {
-      const publishedInstant = Temporal.Instant.fromEpochMilliseconds(
-        updatedAt,
-      );
-      const elapsed = publishedInstant.until(Temporal.Now.instant(), {
-        largestUnit: 'hours',
-      });
-      this.logger.instance.debug(
-        `Time elapsed since last update: ${elapsed.hours}h (12h threshold)`,
-      );
-
-      if (elapsed.hours < 12) {
-        this.logger.instance.debug('Using cached feed from database');
-        const sort: Sorting<NewsDocumentWithId> = { updatedAt: 'desc' };
-        const options: FindOptions<NewsDocumentWithId> = {
-          sort,
-          limit: 15,
-        };
-        const results = await this.collection.find({}, options);
-        const payload = (await this.toPublicNewsBatch(results)).map((
-          { item },
-        ) => item);
-        if (payload.length > 0 || results.length === 0) {
-          return payload;
-        }
-
-        this.logger.instance.warn(
-          'Cached news payload failed schema validation; fetching fresh RSS feed',
-        );
-      }
+    const cacheDecision = await this.readCachedFeed();
+    if (cacheDecision.kind === 'cached') {
+      return cacheDecision.payload;
     }
 
-    this.logger.instance.debug('Fetching new RSS feed from remote source');
+    this.logger.instance.info('Fetching news feed from RSS source');
     const model = await this.service.rss(query.locale);
-    if (model) {
-      const documents = transform(model);
-      if (documents.length !== model.length) {
+    if (model === undefined) {
+      this.logger.instance.warn('RSS fetch returned undefined', {
+        locale: query.locale,
+      });
+      if (cacheDecision.kind === 'validation-fallthrough') {
         this.logger.instance.warn(
-          `Dropped ${
-            model.length - documents.length
-          } RSS news items with invalid publishedOn values`,
+          'Cached news payload validation fell through to RSS, and RSS fetch also failed',
+          { locale: query.locale },
         );
       }
-      const { insertedCount } = await this.collection.insertMany(documents);
-      this.logger.instance.debug(
-        `Inserted ${insertedCount} news items`,
-      );
-      return documents.map((doc) => {
-        return doc;
-      });
+      return [];
     }
-    this.logger.instance.warn('No news items fetched from RSS');
-    return [];
+
+    this.logger.instance.info('RSS fetch returned news items', {
+      locale: query.locale,
+      itemCount: model.length,
+    });
+
+    const documents = transform(model);
+    if (documents.length !== model.length) {
+      this.logger.instance.warn(
+        `Dropped ${
+          model.length - documents.length
+        } RSS news items with invalid publishedOn values`,
+      );
+    }
+
+    if (documents.length === 0) {
+      this.logger.instance.info(
+        'No transformed news items available for insert',
+        {
+          locale: query.locale,
+          sourceItemCount: model.length,
+          insertedCount: 0,
+        },
+      );
+      return [];
+    }
+
+    const { insertedCount } = await this.collection.insertMany(documents);
+    this.logger.instance.info('Inserted news items from RSS', {
+      locale: query.locale,
+      sourceItemCount: model.length,
+      insertedCount,
+    });
+    return [...documents];
+  }
+
+  private async readCachedFeed(): Promise<
+    | { kind: 'missing' | 'stale' | 'validation-fallthrough' }
+    | { kind: 'cached'; payload: News[] }
+  > {
+    const updatedAt = await this.lastUpdatedAt();
+    if (!updatedAt) {
+      this.logger.instance.info(
+        'News feed cache has no latest timestamp; using RSS',
+      );
+      return { kind: 'missing' };
+    }
+
+    const publishedInstant = Temporal.Instant.fromEpochMilliseconds(updatedAt);
+    const elapsed = publishedInstant.until(Temporal.Now.instant(), {
+      largestUnit: 'hours',
+    });
+    const cacheAgeHours = elapsed.hours;
+    this.logger.instance.info('Evaluated cached news feed timestamp', {
+      updatedAt,
+      cacheAgeHours,
+      thresholdHours: this.CACHE_THRESHOLD_HOURS,
+    });
+
+    if (cacheAgeHours >= this.CACHE_THRESHOLD_HOURS) {
+      this.logger.instance.info('Cached news feed is stale; using RSS', {
+        updatedAt,
+        cacheAgeHours,
+        thresholdHours: this.CACHE_THRESHOLD_HOURS,
+      });
+      return { kind: 'stale' };
+    }
+
+    const sort: Sorting<NewsDocumentWithId> = { updatedAt: 'desc' };
+    const options: FindOptions<NewsDocumentWithId> = {
+      sort,
+      limit: 15,
+    };
+    const results = await this.collection.find({}, options);
+    const payload = (await this.toPublicNewsBatch(results)).map(({ item }) =>
+      item
+    );
+
+    if (payload.length > 0 || results.length === 0) {
+      this.logger.instance.info('Returning cached news feed from database', {
+        updatedAt,
+        cacheAgeHours,
+        cachedDocumentCount: results.length,
+        returnedItemCount: payload.length,
+      });
+      return { kind: 'cached', payload };
+    }
+
+    this.logger.instance.warn(
+      'Cached news payload failed schema validation; falling through to RSS',
+      {
+        updatedAt,
+        cacheAgeHours,
+        cachedDocumentCount: results.length,
+        returnedItemCount: payload.length,
+      },
+    );
+    return { kind: 'validation-fallthrough' };
   }
 
   async paging(query: NewsPagingQuery): Promise<NewsPaging> {
