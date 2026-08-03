@@ -1,7 +1,9 @@
 import { z } from '@scope/common/openapi';
 
 export const HealthContract = z.object({
-  status: z.enum(['healthy', 'unhealthy']),
+  status: z.enum(['healthy', 'unhealthy']).openapi({
+    title: 'HealthStatus',
+  }),
   uptime: z.number().openapi({ description: 'Uptime in milliseconds' }),
   timestamp: z.string().openapi({ description: 'ISO 8601 timestamp' }),
 }).openapi({
