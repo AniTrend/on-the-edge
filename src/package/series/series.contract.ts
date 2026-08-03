@@ -66,7 +66,10 @@ const AnimeThemesSongContract = z.object({
 
 export const AnimeThemesContract = z.object({
   id: z.number(),
-  type: z.enum(['OP', 'ED']),
+  type: z.enum(['OP', 'ED']).openapi({
+    title: 'AnimeThemeType',
+    description: 'Theme type classification (opening or ending)',
+  }),
   sequence: z.number().nullable().optional(),
   slug: z.string(),
   animethemeentries: z.array(AnimeThemesEntryContract).default([]),
@@ -195,7 +198,10 @@ export const SeriesImageAttributesContract = z.object({
   height: z.number(),
   width: z.number(),
   url: z.string(),
-  type: z.enum(['BACKDROP', 'POSTER', 'LOGO']),
+  type: z.enum(['BACKDROP', 'POSTER', 'LOGO']).openapi({
+    title: 'SeriesImageType',
+    description: 'Image type classification (backdrop, poster, or logo)',
+  }),
 }).openapi({
   title: 'SeriesImageAttributes',
   description: 'Image metadata including dimensions and type',
