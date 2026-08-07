@@ -1,53 +1,37 @@
 import {
   PushAcknowledgmentContract,
+  PushConfirmBodyContract,
   PushConfirmContract,
+  PushDeleteBodyContract,
   PushInstallationContract,
+  PushPreferencesBodyContract,
+  PushProfileBodyContract,
+  PushRegistrationBodyContract,
   PushVapidContract,
 } from './push.contract.ts';
-import {
-  PushChallengeConfirmSchema,
-  PushDeleteSchema,
-  PushInstallationRegistrationSchema,
-  PushPreferencesSchema,
-  PushProfileSchema,
-} from './push.schema.ts';
 
 export const PushVapidSwagger = PushVapidContract;
 export const PushInstallationSwagger = PushInstallationContract;
 export const PushConfirmSwagger = PushConfirmContract;
 export const PushAcknowledgmentSwagger = PushAcknowledgmentContract;
 
+/**
+ * Request body schemas are re-exported as `any` so the `@Body()`
+ * decorator generic does not instantiate the full nested schema
+ * type (TS2589: excessively deep type instantiation).
+ */
 export const PushRegistrationBodySwagger =
   // deno-lint-ignore no-explicit-any
-  (PushInstallationRegistrationSchema as any).openapi({
-    title: 'PushRegistrationBody',
-    description: 'Installation registration request body',
-  });
-
+  PushRegistrationBodyContract as any;
 export const PushConfirmBodySwagger =
   // deno-lint-ignore no-explicit-any
-  (PushChallengeConfirmSchema as any).openapi({
-    title: 'PushConfirmBody',
-    description: 'Challenge confirmation request body',
-  });
-
+  PushConfirmBodyContract as any;
 export const PushProfileBodySwagger =
   // deno-lint-ignore no-explicit-any
-  (PushProfileSchema as any).openapi({
-    title: 'PushProfileBody',
-    description: 'Profile update request body',
-  });
-
+  PushProfileBodyContract as any;
 export const PushPreferencesBodySwagger =
   // deno-lint-ignore no-explicit-any
-  (PushPreferencesSchema as any).openapi({
-    title: 'PushPreferencesBody',
-    description: 'Topic preferences update request body',
-  });
-
+  PushPreferencesBodyContract as any;
 export const PushDeleteBodySwagger =
   // deno-lint-ignore no-explicit-any
-  (PushDeleteSchema as any).openapi({
-    title: 'PushDeleteBody',
-    description: 'Installation deletion request body',
-  });
+  PushDeleteBodyContract as any;

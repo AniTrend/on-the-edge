@@ -1,5 +1,8 @@
 /**
- * Inferred TypeScript types from Push runtime schemas.
+ * Inferred TypeScript types from Push schemas.
+ *
+ * Input types are inferred from the schema exports in push.schema.ts,
+ * which alias the canonical public contracts in push.contract.ts.
  */
 
 import type {
