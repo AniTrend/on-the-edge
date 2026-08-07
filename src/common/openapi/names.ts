@@ -5,10 +5,12 @@
  * the generated spec must contain. The validator uses these to detect
  * accidental removal or renaming of public contract entries.
  *
- * EXPECTED_SCHEMA_NAMES only includes schemas that the
- * @anatine/zod-openapi library registers as top-level components.
- * Deeply nested schemas (more than 1 level) may be inlined by the
- * library and should not be listed here.
+ * EXPECTED_SCHEMA_NAMES covers every public component the generated
+ * document must contain:
+ * - Top-level components registered by the danet/@anatine generator
+ * - Nested request/enum schemas promoted by extractInlineSchemas
+ *   (deeply nested schemas are inlined by the generator with their
+ *   `.openapi({ title })` intact, then promoted by the extractor)
  */
 
 /**
@@ -48,12 +50,30 @@ export const EXPECTED_SCHEMA_NAMES = [
   // Push (currently shipped endpoints only)
   'PushVapid',
   'PushInstallation',
+  'PushInstallationStatus',
   'PushAcknowledgment',
   'PushRegistrationBody',
   'PushConfirmBody',
   'PushProfileBody',
   'PushPreferencesBody',
   'PushDeleteBody',
+
+  // Push nested request components (promoted by danet generator /
+  // extractInlineSchemas from canonical push.contract.ts)
+  'PushRegistrationKeys',
+  'PushRegistrationPlatform',
+  'PushRegistrationTopic',
+  'PushProfileApp',
+  'PushProfileDevice',
+  'PushProfileDevicePlatform',
+  'PushProfileLocale',
+  'PushProfileCapabilities',
+  'PushProfileViews',
+  'PushProfileTopics',
+  'PushProfileIdentity',
+  'PushProfileIdentityProvider',
+  'PushProfileIdentityState',
+  'PushPreferencesTopics',
 
   // Input / enum schemas (extracted by extractInlineSchemas)
   'EpisodeKind',
@@ -63,6 +83,9 @@ export const EXPECTED_SCHEMA_NAMES = [
   'SeriesSource',
   'SeriesKind',
   'SeriesNetworkCategory',
+  'HealthStatus',
+  'AnimeThemeType',
+  'SeriesImageType',
 
   // Health (direct response)
   'Health',

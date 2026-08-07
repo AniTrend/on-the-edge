@@ -30,12 +30,28 @@ function makeValidDoc(
     'Character',
     'PushVapid',
     'PushInstallation',
+    'PushInstallationStatus',
     'PushAcknowledgment',
     'PushRegistrationBody',
     'PushConfirmBody',
     'PushProfileBody',
     'PushPreferencesBody',
     'PushDeleteBody',
+    // Push nested request components (promoted by extractInlineSchemas)
+    'PushRegistrationKeys',
+    'PushRegistrationPlatform',
+    'PushRegistrationTopic',
+    'PushProfileApp',
+    'PushProfileDevice',
+    'PushProfileDevicePlatform',
+    'PushProfileLocale',
+    'PushProfileCapabilities',
+    'PushProfileViews',
+    'PushProfileTopics',
+    'PushProfileIdentity',
+    'PushProfileIdentityProvider',
+    'PushProfileIdentityState',
+    'PushPreferencesTopics',
     // Input / enum schemas (extracted by extractInlineSchemas)
     'EpisodeKind',
     'NewsFeedLocale',
@@ -44,6 +60,9 @@ function makeValidDoc(
     'SeriesSource',
     'SeriesKind',
     'SeriesNetworkCategory',
+    'HealthStatus',
+    'AnimeThemeType',
+    'SeriesImageType',
     // Health
     'Health',
   ];
@@ -381,6 +400,19 @@ Deno.test('assertOpenApiContract rejects missing expected schema names', () => {
     () => assertOpenApiContract(doc),
     OpenApiContractError,
     '"News"',
+  );
+});
+
+Deno.test('assertOpenApiContract rejects a missing push nested component', () => {
+  const doc = makeValidDoc();
+  const schemas = (doc.components as Record<string, unknown>)
+    .schemas as Record<string, unknown>;
+  delete schemas.PushProfileDevice;
+
+  assertThrows(
+    () => assertOpenApiContract(doc),
+    OpenApiContractError,
+    '"PushProfileDevice"',
   );
 });
 

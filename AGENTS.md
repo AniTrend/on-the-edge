@@ -53,8 +53,12 @@ src/package/<domain>/
 
 ### Public Contract Schemas (`*.contract.ts`)
 - Every public nested model must have an explicit `.openapi({ title: 'PascalCase', description: '...' })` call.
+- **Every public nested request object and enum must carry a globally unique, semantic PascalCase `.openapi({ title })`** (e.g. `PushProfileDevice`, `PushRegistrationTopic`). Without it the schema stays inline and GraphQL Mesh derives unstable, path-based names such as `mutationInput_updateProfile_input_*`.
+- Nested titles must be unique across the whole document (not just the domain) and read as `DomainName + Role` (e.g. `PushProfileIdentityProvider`), never generic names like `Platform` or `Topics`.
 - Use `.nullable().optional()` instead of `.nullish()` for OpenAPI 3.0 compatibility.
 - Replace `z.custom<T>()` with explicit `z.enum([...])` or `z.string()` in contracts.
+- Contract files own all public metadata (titles, descriptions, examples). `*.swagger.ts` files are thin re-exports/wrappers and must not redefine or extend public schemas.
+- Enum values are changed only at the source schema (`*.schema.ts` / `*.contract.ts`). Never rewrite enum values in the normalizer, extractor, guard, or generated artifacts (`swagger-spec.json` is generated, never hand-edited).
 
 ### Query Schemas
 - **Every `@Query()` schema must have `.openapi()` metadata.** Otherwise the generator produces `undefined` component names.
@@ -77,9 +81,10 @@ src/package/<domain>/
 
 ### Contract Validation Pipeline
 ```
-SwaggerModule.createDocument() → normalizeOpenApiDocument() → assertOpenApiContract() → write spec
+SwaggerModule.createDocument() → normalizeOpenApiDocument() → extractInlineSchemas() → assertOpenApiContract() → write spec
 ```
 The normalizer converts JSON Schema `type` arrays to OpenAPI 3.0 `nullable`.
+The extractor promotes any inline schema carrying a `title` (enums, constrained scalars, array items, query parameters, and nested objects the danet generator did not promote) to a named `components.schemas` entry and replaces inline occurrences with `$ref`. First occurrence by title wins (deduplication). It is not a generic deep request-body walker; it relies on every public nested schema being explicitly titled in `*.contract.ts`.
 The guard rejects: `undefined` schema names, inline 200 response objects without `$ref`, remaining `type` arrays, missing expected schemas/operation IDs, missing `components.schemas` or `paths`.
 
 ### CI Enforcement
