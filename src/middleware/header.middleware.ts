@@ -10,6 +10,7 @@ import {
 import { ClientAttributes, RequestAttributes } from '@scope/common/types';
 import { setClientAttributes, setRequestAttributes } from '@scope/common/utils';
 import { SecretService } from '@scope/secret';
+import { isHealthCheck } from './health-check.ts';
 
 @Injectable()
 export class HeaderMiddleware implements DanetMiddleware {
@@ -81,6 +82,10 @@ export class HeaderMiddleware implements DanetMiddleware {
   };
 
   async action(context: HttpContext, next: NextFunction) {
+    if (isHealthCheck(context)) {
+      await next();
+      return;
+    }
     const request = context.req.raw;
     for (const header of this.REQUIRED_HEADERS) {
       if (!request.headers.has(header)) {

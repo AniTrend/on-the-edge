@@ -4,13 +4,14 @@ import { MongoService } from './mongo.service.ts';
 import { LoggerService } from '@scope/logger';
 
 /**
- * Creates and ensures MongoDB indexes for push-related collections.
+ * Creates and ensures MongoDB indexes for push-related collections and
+ * the cached update records collection.
  *
  * Indexes are created on application bootstrap. MongoDB's createIndex
  * is idempotent — calling it on an already-indexed field is a no-op.
  *
- * Collection names here MUST match the names used in PushRepository
- * and related services.
+ * Collection names here MUST match the names used in PushRepository,
+ * UpdatesRepository, and related services.
  *
  * TODO(#378): generalise to a collection-level index descriptor pattern
  * if more collections need programmatic indexing.
@@ -18,6 +19,7 @@ import { LoggerService } from '@scope/logger';
 
 const PUSH_INSTALLATIONS = 'push_installations';
 const PUSH_DELIVERY_ATTEMPTS = 'push_delivery_attempts';
+const UPDATES = 'updates';
 
 @Injectable()
 export class DatabaseIndexService implements OnAppBootstrap {
@@ -30,6 +32,7 @@ export class DatabaseIndexService implements OnAppBootstrap {
     try {
       await this.createPushInstallationIndexes();
       await this.createPushDeliveryAttemptIndexes();
+      await this.createUpdatesIndexes();
     } catch (error) {
       this.logger.instance.warn(
         'Failed to create database indexes during bootstrap',
@@ -119,6 +122,27 @@ export class DatabaseIndexService implements OnAppBootstrap {
     } catch (error) {
       this.logger.instance.warn(
         `Failed to create indexes on ${PUSH_DELIVERY_ATTEMPTS}`,
+        { cause: error },
+      );
+    }
+  }
+
+  private async createUpdatesIndexes(): Promise<void> {
+    const collection = this.mongo.collection(UPDATES);
+
+    try {
+      // Unique index enforcing one cached update record per channel
+      await collection.createIndex(
+        { channel: 1 },
+        { unique: true, name: 'idx_channel_unique' },
+      );
+
+      this.logger.instance.debug(
+        `Created indexes on ${UPDATES}`,
+      );
+    } catch (error) {
+      this.logger.instance.warn(
+        `Failed to create indexes on ${UPDATES}`,
         { cause: error },
       );
     }

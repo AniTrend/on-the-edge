@@ -9,6 +9,7 @@ import { LoggerService } from '@scope/logger';
 import { ExperimentService } from '@scope/experiment';
 import { SecretService } from '@scope/secret';
 import { getClientAttributes } from '@scope/common/utils';
+import { isHealthCheck } from './health-check.ts';
 
 @Injectable()
 export class GrowthBookMiddleware implements DanetMiddleware {
@@ -19,6 +20,12 @@ export class GrowthBookMiddleware implements DanetMiddleware {
   ) {}
 
   async action(context: HttpContext, next: NextFunction) {
+    // Headerless health probes must not require client attributes or
+    // trigger a GrowthBook feature fetch on every health check.
+    if (isHealthCheck(context)) {
+      await next();
+      return;
+    }
     this.logger.instance.mark('load-features-start');
     const { error, source } = await this.service.init({
       timeout: this.secret.get<number>('GROWTH_TIME_OUT'),

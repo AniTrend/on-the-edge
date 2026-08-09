@@ -6,6 +6,7 @@
     ".": "./index.ts",
     "./arm": "./arm/index.ts",
     "./animethemes": "./animethemes/index.ts",
+    "./github": "./github/index.ts",
     "./jikan": "./jikan/index.ts",
     "./otakumode": "./otakumode/index.ts",
     "./notify": "./notify/index.ts",
