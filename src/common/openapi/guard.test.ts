@@ -65,6 +65,9 @@ function makeValidDoc(
     'SeriesImageType',
     // Health
     'Health',
+    // Updates
+    'UpdateChannel',
+    'UpdateRelease',
   ];
   for (const name of expectedNames) {
     schemas[name] = { type: 'object', properties: {} };
@@ -298,6 +301,21 @@ function makeValidDoc(
               content: {
                 'application/json': {
                   schema: { $ref: '#/components/schemas/Health' },
+                },
+              },
+            },
+          },
+        },
+      },
+      '/v1/update': {
+        get: {
+          operationId: 'update',
+          responses: {
+            200: {
+              description: 'OK',
+              content: {
+                'application/json': {
+                  schema: { $ref: '#/components/schemas/UpdateRelease' },
                 },
               },
             },

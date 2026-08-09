@@ -89,6 +89,10 @@ export const EXPECTED_SCHEMA_NAMES = [
 
   // Health (direct response)
   'Health',
+
+  // Updates (direct response + enum)
+  'UpdateChannel',
+  'UpdateRelease',
 ] as const;
 
 /**
@@ -113,6 +117,7 @@ export const EXPECTED_OPERATION_IDS = [
   'deleteInstallation',
   'sendTestPush',
   'health',
+  'update',
 ] as const;
 
 /**
