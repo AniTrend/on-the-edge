@@ -2,53 +2,73 @@ import { describe, it } from '@std/testing/bdd';
 import { assertEquals } from '@std/assert';
 import {
   UpdateChannelContract,
+  UpdateProductContract,
+  UpdateReleaseAssetContract,
   UpdateReleaseContract,
 } from './updates.contract.ts';
 import { UpdateQuerySchema } from './updates.schema.ts';
-import { UpdateQuerySwagger, UpdateReleaseSwagger } from './updates.swagger.ts';
+import {
+  UpdateProductSwagger,
+  UpdateQuerySwagger,
+  UpdateReleaseSwagger,
+} from './updates.swagger.ts';
 
 // deno-lint-ignore no-explicit-any
 const titleOf = (schema: any): string | undefined => schema?.metaOpenApi?.title;
 
 describe('Update contract schemas', () => {
-  it('exposes the release contract with explicit title metadata', () => {
+  it('exposes release-backed contract schemas with explicit title metadata', () => {
     assertEquals(titleOf(UpdateReleaseContract), 'UpdateRelease');
+    assertEquals(titleOf(UpdateProductContract), 'UpdateProduct');
     assertEquals(titleOf(UpdateChannelContract), 'UpdateChannel');
+    assertEquals(titleOf(UpdateReleaseAssetContract), 'UpdateReleaseAsset');
   });
 
-  it('carries the observed AniTrend manifest fields only', () => {
+  it('carries the release-backed fields only', () => {
     const keys = Object.keys(UpdateReleaseContract.shape).sort();
     assertEquals(keys, [
-      'appId',
+      'assets',
       'channel',
       'code',
-      'migration',
-      'minSdk',
+      'htmlUrl',
+      'name',
+      'prerelease',
+      'product',
+      'publishedAt',
       'releaseNotes',
+      'tag',
       'updatedAt',
       'version',
     ]);
   });
 
-  it('does not invent download or publication fields', () => {
+  it('does not expose legacy version.json fields', () => {
     const shape = UpdateReleaseContract.shape as Record<string, unknown>;
-    assertEquals('url' in shape, false);
-    assertEquals('publishedAt' in shape, false);
+    assertEquals('migration' in shape, false);
+    assertEquals('minSdk' in shape, false);
+    assertEquals('appId' in shape, false);
+  });
+
+  it('does not invent a single download URL field', () => {
+    const shape = UpdateReleaseContract.shape as Record<string, unknown>;
     assertEquals('downloadUrl' in shape, false);
+    assertEquals('url' in shape, false);
   });
 
   it('uses nullable and optional rather than nullish for optional fields', () => {
     const shape = UpdateReleaseContract.shape;
-    // The migration union cannot carry nullable: anatine's generator
-    // emits a null-only type array for nullable unions, which the
-    // contract normalizer rejects. It is optional instead.
-    assertEquals(shape.migration.isNullable(), false);
-    assertEquals(shape.migration.isOptional(), true);
     assertEquals(shape.releaseNotes.isNullable(), true);
     assertEquals(shape.releaseNotes.isOptional(), true);
+    const assetShape = UpdateReleaseAssetContract.shape;
+    assertEquals(assetShape.size.isNullable(), true);
+    assertEquals(assetShape.size.isOptional(), true);
   });
 
-  it('exposes the channel enum with the v2 release channels', () => {
+  it('exposes the product and channel enums', () => {
+    assertEquals(UpdateProductContract.options, [
+      'ANITREND_APP',
+      'ANITREND_V2',
+    ]);
     assertEquals(UpdateChannelContract.options, [
       'STABLE',
       'BETA',
@@ -63,24 +83,31 @@ describe('Update contract schemas', () => {
 });
 
 describe('UpdateQuerySchema', () => {
-  it('defaults to STABLE when channel is absent', () => {
+  it('defaults to the ANITREND_V2 product and STABLE channel', () => {
     const parsed = UpdateQuerySchema.safeParse({});
     assertEquals(parsed.success, true);
     if (parsed.success) {
+      assertEquals(parsed.data.product, 'ANITREND_V2');
       assertEquals(parsed.data.channel, 'STABLE');
     }
   });
 
-  it('accepts every channel value', () => {
-    for (const channel of ['STABLE', 'BETA', 'EXPERIMENTAL']) {
-      assertEquals(
-        UpdateQuerySchema.safeParse({ channel }).success,
-        true,
-      );
+  it('accepts every product and channel combination', () => {
+    for (const product of ['ANITREND_APP', 'ANITREND_V2']) {
+      for (const channel of ['STABLE', 'BETA', 'EXPERIMENTAL']) {
+        assertEquals(
+          UpdateQuerySchema.safeParse({ product, channel }).success,
+          true,
+        );
+      }
     }
   });
 
-  it('rejects unknown channel values', () => {
+  it('rejects unknown product and channel values', () => {
+    assertEquals(
+      UpdateQuerySchema.safeParse({ product: 'OTHER_APP' }).success,
+      false,
+    );
     assertEquals(
       UpdateQuerySchema.safeParse({ channel: 'FOO' }).success,
       false,
@@ -89,7 +116,11 @@ describe('UpdateQuerySchema', () => {
 
   it('rejects unknown query parameters', () => {
     assertEquals(
-      UpdateQuerySchema.safeParse({ channel: 'STABLE', limit: '5' }).success,
+      UpdateQuerySchema.safeParse({
+        product: 'ANITREND_APP',
+        channel: 'STABLE',
+        limit: '5',
+      }).success,
       false,
     );
   });
@@ -98,6 +129,7 @@ describe('UpdateQuerySchema', () => {
 describe('Update swagger exports', () => {
   it('re-exports the contract as the response swagger schema', () => {
     assertEquals(UpdateReleaseSwagger, UpdateReleaseContract);
+    assertEquals(UpdateProductSwagger, UpdateProductContract);
   });
 
   it('wraps the query schema with a named title', () => {

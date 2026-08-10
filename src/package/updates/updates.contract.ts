@@ -2,14 +2,23 @@
  * Public OpenAPI contract schemas for the Updates domain.
  *
  * These schemas define the stable, named OpenAPI components that
- * GraphQL Mesh consumes. They mirror the observed AniTrend app
- * version.json manifest fields (code, version, migration, minSdk,
- * releaseNotes, appId) plus the edge-assigned channel and the
- * `updatedAt` cache freshness metadata. No invented download or
- * publication fields are exposed.
+ * GraphQL Mesh consumes. They mirror the internal release-backed
+ * record: product, channel, tag, name, version, code, releaseNotes,
+ * publishedAt, prerelease, htmlUrl, assets, and the `updatedAt` cache
+ * freshness metadata. The version.json-shaped fields (migration,
+ * minSdk, appId) are intentionally absent; download URLs live on the
+ * asset list, not on a single invented downloadUrl field.
  */
 
 import { z } from '@scope/common/openapi';
+
+export const UpdateProductContract = z.enum([
+  'ANITREND_APP',
+  'ANITREND_V2',
+]).openapi({
+  title: 'UpdateProduct',
+  description: 'Product the cached update belongs to',
+});
 
 export const UpdateChannelContract = z.enum([
   'STABLE',
@@ -20,27 +29,53 @@ export const UpdateChannelContract = z.enum([
   description: 'Release channel of the cached update record',
 });
 
+export const UpdateReleaseAssetContract = z.object({
+  name: z.string().min(1).openapi({
+    description: 'File name of the release asset',
+  }),
+  url: z.string().url().openapi({
+    description: 'Direct download URL of the release asset',
+  }),
+  size: z.number().int().nonnegative().nullable().optional().openapi({
+    description: 'Asset size in bytes when reported by GitHub',
+  }),
+}).openapi({
+  title: 'UpdateReleaseAsset',
+  description: 'Downloadable asset of a release',
+});
+
 export const UpdateReleaseContract = z.object({
+  product: UpdateProductContract,
   channel: UpdateChannelContract,
-  code: z.number().int().positive().openapi({
-    description: 'App version code from the AniTrend version.json manifest',
+  tag: z.string().min(1).openapi({
+    description: 'GitHub release tag',
+  }),
+  name: z.string().min(1).openapi({
+    description: 'Release name, falling back to the tag',
   }),
   version: z.string().min(1).openapi({
-    description: 'App version name from the AniTrend version.json manifest',
-  }),
-  migration: z.union([z.boolean(), z.string().min(1)]).optional().openapi({
     description:
-      'Migration marker declared by the manifest, boolean or version string; absent when the manifest omits it',
+      'Version resolved from tagged version.properties or the semver tag',
   }),
-  minSdk: z.number().int().nonnegative().openapi({
-    description: 'Minimum Android SDK level required by this release',
+  code: z.number().int().positive().openapi({
+    description:
+      'Version code resolved from tagged version.properties or the semver tag',
   }),
   releaseNotes: z.string().nullable().optional().openapi({
-    description: 'Release notes from the AniTrend version.json manifest',
+    description: 'Release body from GitHub',
   }),
-  appId: z.string().min(1).openapi({
+  publishedAt: z.number().finite().openapi({
+    description: 'Epoch milliseconds when the release was published',
+  }),
+  prerelease: z.boolean().openapi({
+    description: 'Whether the release is a prerelease',
+  }),
+  htmlUrl: z.string().url().openapi({
+    description: 'URL of the release on GitHub',
+  }),
+  assets: z.array(UpdateReleaseAssetContract).openapi({
     description:
-      'Application identifier from the AniTrend version.json manifest',
+      'Downloadable assets; filtered to the configured asset names when the source config lists them',
   }),
   updatedAt: z.number().finite().openapi({
     description:
@@ -48,6 +83,5 @@ export const UpdateReleaseContract = z.object({
   }),
 }).openapi({
   title: 'UpdateRelease',
-  description:
-    'Cached update release for a channel, sourced from the AniTrend app version.json manifest',
+  description: 'Cached GitHub release for a product/channel source',
 });

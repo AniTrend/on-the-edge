@@ -4,7 +4,11 @@ import { LoggerService } from '@scope/logger';
 import { Collection, MongoCollectionAdapter } from '@scope/database/collection';
 import { UpdateRecordSchema } from './updates.schema.ts';
 import type { UpdateRecordWithId } from './updates.document.ts';
-import type { UpdateChannel, UpdateRecord } from './updates.types.ts';
+import type {
+  UpdateChannel,
+  UpdateProduct,
+  UpdateRecord,
+} from './updates.types.ts';
 
 const COLLECTION_NAME = 'updates';
 
@@ -17,12 +21,13 @@ export const STALE_AFTER_HOURS = 12;
 const STALE_AFTER_MS = STALE_AFTER_HOURS * 60 * 60 * 1000;
 
 /**
- * Mongo-backed cache of the latest update release per channel. The
- * unique index on `channel` (created by DatabaseIndexService) enforces
- * one record per channel; reads sort by updatedAt descending so they
- * stay deterministic even if duplicates exist. Persisted documents are
- * re-validated against the runtime schema on read; invalid records are
- * dropped, mirroring the news repository.
+ * Mongo-backed cache of the latest release per (product, channel)
+ * source. The unique composite index on `product` and `channel`
+ * (created by DatabaseIndexService) enforces one record per source;
+ * reads sort by updatedAt descending so they stay deterministic even
+ * if duplicates exist. Persisted documents are re-validated against
+ * the runtime schema on read; invalid records (including legacy
+ * version.json records) are dropped, mirroring the news repository.
  */
 @Injectable()
 export class UpdatesRepository {
@@ -37,23 +42,47 @@ export class UpdatesRepository {
     );
   }
 
-  /** Insert or replace the cached record for the record's channel. */
+  /** Insert or replace the cached record for its (product, channel). */
   async upsert(record: UpdateRecord): Promise<void> {
     await this.collection.updateOne(
-      { channel: record.channel },
+      { product: record.product, channel: record.channel },
       { $set: record },
       { upsert: true },
     );
   }
 
-  async findByChannel(channel: UpdateChannel): Promise<UpdateRecord | null> {
+  async findByKey(
+    product: UpdateProduct,
+    channel: UpdateChannel,
+  ): Promise<UpdateRecord | null> {
     const sort: Sorting<UpdateRecordWithId> = {
       updatedAt: 'desc',
       _id: 'desc',
     };
-    const document = await this.collection.findOne({ channel }, { sort });
+    const document = await this.collection.findOne({ product, channel }, {
+      sort,
+    });
     if (!document) return null;
     return this.toValidatedRecord(document);
+  }
+
+  /**
+   * Refresh the cached record's freshness without replacing release
+   * data (304 or same-release revalidation). Optionally stores the
+   * latest ETag so subsequent conditional requests can 304.
+   */
+  async touchFreshness(
+    product: UpdateProduct,
+    channel: UpdateChannel,
+    now: number = Date.now(),
+    etag?: string,
+  ): Promise<void> {
+    const set: { updatedAt: number; etag?: string | null } = { updatedAt: now };
+    if (etag !== undefined) set.etag = etag;
+    await this.collection.updateOne(
+      { product, channel },
+      { $set: set },
+    );
   }
 
   async findAll(): Promise<UpdateRecord[]> {

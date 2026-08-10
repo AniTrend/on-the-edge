@@ -66,7 +66,9 @@ function makeValidDoc(
     // Health
     'Health',
     // Updates
+    'UpdateProduct',
     'UpdateChannel',
+    'UpdateReleaseAsset',
     'UpdateRelease',
   ];
   for (const name of expectedNames) {

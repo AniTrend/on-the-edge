@@ -1,21 +1,28 @@
 import { z } from 'zod';
 
+const publishedAtFromIso = z.preprocess(
+  (value) => (typeof value === 'string' ? Date.parse(value) : value),
+  z.number().finite(),
+);
+
+export const GithubReleaseAssetPayloadSchema = z.object({
+  name: z.string().min(1),
+  browser_download_url: z.string().url(),
+  size: z.number().int().nonnegative().nullish(),
+});
+
 /**
- * Remote version.json payload served by a GitHub update source,
- * matching the observed AniTrend app manifest fields exactly:
- * code, version, migration, minSdk, releaseNotes, appId.
- *
- * Unknown extra fields are tolerated and stripped (default zod object
- * behavior). `migration` accepts both a boolean flag and a version
- * string form; the persisted record preserves whichever the source
- * declares. `channel` is intentionally NOT part of the manifest: the
- * edge assigns the authoritative channel from the source mapping.
+ * Raw GitHub REST release payload (snake_case API keys).
+ * `published_at` is converted from the API's ISO 8601 string to epoch
+ * milliseconds. Unknown extra fields are tolerated and stripped.
  */
-export const GithubVersionJsonSchema = z.object({
-  code: z.number().int().positive(),
-  version: z.string().min(1),
-  migration: z.union([z.boolean(), z.string().min(1)]).nullish(),
-  minSdk: z.number().int().nonnegative(),
-  releaseNotes: z.string().nullish(),
-  appId: z.string().min(1),
+export const GithubReleasePayloadSchema = z.object({
+  tag_name: z.string().min(1),
+  name: z.string().nullish(),
+  body: z.string().nullish(),
+  published_at: publishedAtFromIso,
+  prerelease: z.boolean(),
+  draft: z.boolean(),
+  html_url: z.string().url(),
+  assets: z.array(GithubReleaseAssetPayloadSchema).default([]),
 });

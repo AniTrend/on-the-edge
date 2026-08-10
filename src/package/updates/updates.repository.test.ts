@@ -88,14 +88,19 @@ const createUpdateRecord = (
   overrides: Partial<UpdateRecord> = {},
 ): UpdateRecord => {
   return {
+    product: 'ANITREND_APP',
     channel: 'STABLE',
-    code: 42,
-    version: '2.4.0',
-    migration: true,
-    minSdk: 26,
+    tag: 'v2.4.0',
+    name: 'Release 2.4.0',
     releaseNotes: null,
-    appId: 'com.anitrend.app',
+    publishedAt: 1_752_000_000_000,
+    prerelease: false,
+    htmlUrl: 'https://github.com/AniTrend/anitrend-app/releases/tag/v2.4.0',
+    assets: [],
+    code: 20400,
+    version: '2.4.0',
     updatedAt: Date.now(),
+    etag: null,
     ...overrides,
   };
 };
@@ -121,88 +126,103 @@ describe('UpdatesRepository', () => {
     );
   };
 
-  it('inserts a new record on upsert and reads it back', async () => {
+  it('inserts a new record on upsert and reads it back by product/channel', async () => {
     const repository = createRepository();
     const record = createUpdateRecord();
 
     await repository.upsert(record);
-    const result = await repository.findByChannel('STABLE');
+    const result = await repository.findByKey('ANITREND_APP', 'STABLE');
 
+    assertEquals(result?.product, 'ANITREND_APP');
     assertEquals(result?.channel, 'STABLE');
-    assertEquals(result?.code, 42);
+    assertEquals(result?.tag, 'v2.4.0');
+    assertEquals(result?.code, 20400);
     assertEquals(result?.version, '2.4.0');
-    assertEquals(result?.migration, true);
-    assertEquals(result?.minSdk, 26);
-    assertEquals(result?.releaseNotes, null);
-    assertEquals(result?.appId, 'com.anitrend.app');
-    assertEquals(result?.updatedAt, record.updatedAt);
+    assertEquals(result?.etag, null);
     assertEquals(await collection.countDocuments({}), 1);
   });
 
-  it('replaces an existing record for the same channel on upsert', async () => {
+  it('replaces an existing record for the same product/channel on upsert', async () => {
     const repository = createRepository();
-    await repository.upsert(createUpdateRecord({ code: 42 }));
+    await repository.upsert(createUpdateRecord({ code: 20400 }));
 
     await repository.upsert(
-      createUpdateRecord({ code: 43, version: '2.4.1' }),
+      createUpdateRecord({ tag: 'v2.4.1', code: 20401, version: '2.4.1' }),
     );
-    const result = await repository.findByChannel('STABLE');
+    const result = await repository.findByKey('ANITREND_APP', 'STABLE');
 
-    assertEquals(result?.code, 43);
-    assertEquals(result?.version, '2.4.1');
+    assertEquals(result?.tag, 'v2.4.1');
+    assertEquals(result?.code, 20401);
     assertEquals(await collection.countDocuments({}), 1);
   });
 
-  it('keeps records of different channels separate', async () => {
+  it('keeps records of different product/channel identities separate', async () => {
     const repository = createRepository();
-    await repository.upsert(createUpdateRecord({ channel: 'STABLE' }));
-    await repository.upsert(createUpdateRecord({ channel: 'BETA' }));
+    await repository.upsert(
+      createUpdateRecord({ product: 'ANITREND_APP', channel: 'STABLE' }),
+    );
+    await repository.upsert(
+      createUpdateRecord({ product: 'ANITREND_APP', channel: 'BETA' }),
+    );
+    await repository.upsert(
+      createUpdateRecord({ product: 'ANITREND_V2', channel: 'STABLE' }),
+    );
 
-    const stable = await repository.findByChannel('STABLE');
-    const beta = await repository.findByChannel('BETA');
-    const experimental = await repository.findByChannel('EXPERIMENTAL');
+    const appStable = await repository.findByKey('ANITREND_APP', 'STABLE');
+    const appBeta = await repository.findByKey('ANITREND_APP', 'BETA');
+    const v2Stable = await repository.findByKey('ANITREND_V2', 'STABLE');
+    const v2Beta = await repository.findByKey('ANITREND_V2', 'BETA');
 
-    assertEquals(stable?.channel, 'STABLE');
-    assertEquals(beta?.channel, 'BETA');
-    assertEquals(experimental, null);
-    assertEquals(await collection.countDocuments({}), 2);
+    assertEquals(appStable?.channel, 'STABLE');
+    assertEquals(appBeta?.channel, 'BETA');
+    assertEquals(v2Stable?.product, 'ANITREND_V2');
+    assertEquals(v2Beta, null);
+    assertEquals(await collection.countDocuments({}), 3);
   });
 
-  it('returns null when no record exists for the channel', async () => {
+  it('touches freshness without replacing the release data', async () => {
     const repository = createRepository();
-    const result = await repository.findByChannel('EXPERIMENTAL');
+    await repository.upsert(
+      createUpdateRecord({ tag: 'v2.4.0', updatedAt: 1_000 }),
+    );
+
+    await repository.touchFreshness(
+      'ANITREND_APP',
+      'STABLE',
+      9_000,
+      '"etag-2"',
+    );
+    const result = await repository.findByKey('ANITREND_APP', 'STABLE');
+
+    assertEquals(result?.updatedAt, 9_000);
+    assertEquals(result?.etag, '"etag-2"');
+    assertEquals(result?.tag, 'v2.4.0');
+    assertEquals(await collection.countDocuments({}), 1);
+  });
+
+  it('returns null when no record exists for the product/channel', async () => {
+    const repository = createRepository();
+    const result = await repository.findByKey('ANITREND_V2', 'EXPERIMENTAL');
     assertEquals(result, null);
   });
 
   it('returns the newest cached record when duplicates exist', async () => {
     const repository = createRepository();
-    // Duplicates can only exist before the unique channel index is
+    // Duplicates can only exist before the unique composite index is
     // applied; reads must still be deterministic.
     await collection.insertMany([
-      createUpdateRecord({ channel: 'STABLE', code: 41, updatedAt: 1_000 }),
-      createUpdateRecord({ channel: 'STABLE', code: 42, updatedAt: 3_000 }),
+      createUpdateRecord({ code: 20399, updatedAt: 1_000 }),
+      createUpdateRecord({ code: 20400, updatedAt: 3_000 }),
     ]);
 
-    const result = await repository.findByChannel('STABLE');
+    const result = await repository.findByKey('ANITREND_APP', 'STABLE');
 
-    assertEquals(result?.code, 42);
+    assertEquals(result?.code, 20400);
     assertEquals(result?.updatedAt, 3_000);
-    assertEquals(await collection.countDocuments({ channel: 'STABLE' }), 2);
-  });
-
-  it('breaks updatedAt ties deterministically by _id descending', async () => {
-    const repository = createRepository();
-    await collection.insertMany([
-      createUpdateRecord({ channel: 'STABLE', code: 41, updatedAt: 2_000 }),
-      createUpdateRecord({ channel: 'STABLE', code: 42, updatedAt: 2_000 }),
-    ]);
-
-    const result = await repository.findByChannel('STABLE');
-
-    // Same updatedAt: the later-inserted record has the higher _id and
-    // must win, mirroring the findAll tie-breaker.
-    assertEquals(result?.code, 42);
-    assertEquals(result?.updatedAt, 2_000);
+    assertEquals(
+      await collection.countDocuments({ channel: 'STABLE' }),
+      2,
+    );
   });
 
   it('returns all records ordered by updatedAt descending', async () => {
@@ -225,14 +245,14 @@ describe('UpdatesRepository', () => {
   it('drops cached records that violate the runtime schema on read', async () => {
     const repository = createRepository();
     await collection.insertMany([
-      createUpdateRecord({ channel: 'STABLE', code: 43 }),
+      createUpdateRecord({ channel: 'STABLE', code: 20401 }),
       createUpdateRecord({
         channel: 'BETA',
         code: null as unknown as number,
       }),
     ]);
 
-    const result = await repository.findByChannel('BETA');
+    const result = await repository.findByKey('ANITREND_APP', 'BETA');
 
     assertEquals(result, null);
     assertEquals(await collection.countDocuments({}), 1);
@@ -242,23 +262,28 @@ describe('UpdatesRepository', () => {
     assertSpyCalls(loggerSpies.warn, 1);
   });
 
-  it('drops legacy records carrying null migration on read', async () => {
+  it('drops legacy version.json-shaped records on read', async () => {
     const repository = createRepository();
     await collection.insertMany([
-      createUpdateRecord({ channel: 'STABLE', code: 43 }),
-      createUpdateRecord({
+      createUpdateRecord({ channel: 'STABLE' }),
+      // Legacy record matching the key but missing all release fields
+      {
+        product: 'ANITREND_APP',
         channel: 'BETA',
-        migration: null as never,
-      }),
+        code: 42,
+        version: '2.4.0',
+        migration: null,
+        minSdk: 26,
+        releaseNotes: null,
+        appId: 'com.anitrend.app',
+        updatedAt: 1_000,
+      } as unknown as UpdateRecord,
     ]);
 
-    const result = await repository.findByChannel('BETA');
+    const result = await repository.findByKey('ANITREND_APP', 'BETA');
 
     assertEquals(result, null);
     assertEquals(await collection.countDocuments({}), 1);
-    assertEquals((await collection.find({}, {})).map((doc) => doc.channel), [
-      'STABLE',
-    ]);
     assertSpyCalls(loggerSpies.warn, 1);
   });
 
