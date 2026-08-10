@@ -1,0 +1,200 @@
+import { z } from 'zod';
+import { parse } from '@std/yaml';
+import { UpdateChannelSchema, UpdateProductSchema } from './updates.schema.ts';
+import type { UpdateChannel, UpdateProduct } from './updates.types.ts';
+
+export const ReleaseSelectorSchema = z.enum(['stable', 'prerelease']);
+
+const REPOSITORY_PATTERN = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
+const PROPERTIES_PATH_PATTERN = /^(?!\/)(?!.*\.\.)[A-Za-z0-9_./-]+$/;
+const ASSET_NAME_PATTERN = /^[A-Za-z0-9_.-]+$/;
+
+/**
+ * Validated GitHub Releases source for one (product, channel) pair.
+ * All identity values are regex-bounded so they cannot inject into the
+ * constructed GitHub URLs; the URLs themselves are https by
+ * construction.
+ */
+export const UpdateSourceSchema = z.object({
+  product: UpdateProductSchema,
+  channel: UpdateChannelSchema,
+  repository: z.string().regex(
+    REPOSITORY_PATTERN,
+    'repository must be owner/repo with slug characters only',
+  ),
+  propertiesPath: z.string().regex(
+    PROPERTIES_PATH_PATTERN,
+    'properties path contains invalid characters',
+  ).optional(),
+  selector: ReleaseSelectorSchema,
+  rollingWindowDays: z.number().int().min(1).max(3650).optional(),
+  assets: z.array(
+    z.string().regex(
+      ASSET_NAME_PATTERN,
+      'asset name contains invalid characters',
+    ),
+  ).max(10).optional(),
+});
+
+export type UpdateSource = z.infer<typeof UpdateSourceSchema>;
+
+/**
+ * Structured selector in the YAML document. Identifiers are parsed and
+ * validated now but not yet used for release selection; that is the
+ * responsibility of a later phase.
+ */
+const UpdateSelectorConfigSchema = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('stable') }),
+  z.object({
+    type: z.literal('prerelease'),
+    identifiers: z.array(z.string().min(1)).min(1).max(10).optional(),
+  }),
+]);
+
+const UpdateChannelConfigSchema = z.object({
+  selector: UpdateSelectorConfigSchema,
+  rollingWindowDays: z.number().int().min(1).max(3650).optional(),
+  assets: z.object({
+    preferred: z.array(
+      z.string().regex(
+        ASSET_NAME_PATTERN,
+        'asset name contains invalid characters',
+      ),
+    ).max(10).optional(),
+  }).optional(),
+});
+
+const UpdateProductConfigSchema = z.object({
+  repository: z.string().regex(
+    REPOSITORY_PATTERN,
+    'repository must be owner/repo with slug characters only',
+  ),
+  version: z.object({
+    propertiesPath: z.string().regex(
+      PROPERTIES_PATH_PATTERN,
+      'properties path contains invalid characters',
+    ),
+  }).optional(),
+  channels: z.record(UpdateChannelSchema, UpdateChannelConfigSchema),
+});
+
+/**
+ * Schema for the versioned YAML update sources document. schemaVersion
+ * is a literal: a missing or newer value is a validation error so the
+ * document never silently changes meaning under a newer reader.
+ */
+export const UpdateSourcesConfigSchema = z.object({
+  schemaVersion: z.literal(1),
+  products: z.record(UpdateProductSchema, UpdateProductConfigSchema),
+});
+
+type UpdateSourcesConfig = z.infer<typeof UpdateSourcesConfigSchema>;
+type UpdateProductConfig = z.infer<typeof UpdateProductConfigSchema>;
+type UpdateChannelConfig = z.infer<typeof UpdateChannelConfigSchema>;
+
+const formatIssues = (issues: z.ZodIssue[]): string => {
+  return issues.map((issue) => {
+    const path = issue.path.join('.') || 'root';
+    return `${path}: ${issue.message}`;
+  }).join('; ');
+};
+
+/** Flatten the product-centric document into the internal source list. */
+const flattenSources = (config: UpdateSourcesConfig): UpdateSource[] => {
+  const sources: UpdateSource[] = [];
+  for (const product of UpdateProductSchema.options) {
+    const productConfig = config.products[product];
+    if (!productConfig) continue;
+    for (const channel of UpdateChannelSchema.options) {
+      const channelConfig = productConfig.channels[channel];
+      if (!channelConfig) continue;
+      sources.push(toSource(product, productConfig, channel, channelConfig));
+    }
+  }
+  return sources;
+};
+
+const toSource = (
+  product: UpdateProduct,
+  productConfig: UpdateProductConfig,
+  channel: UpdateChannel,
+  channelConfig: UpdateChannelConfig,
+): UpdateSource => {
+  const source: UpdateSource = {
+    product,
+    channel,
+    repository: productConfig.repository,
+    selector: channelConfig.selector.type === 'stable'
+      ? 'stable'
+      : 'prerelease',
+  };
+  if (productConfig.version) {
+    source.propertiesPath = productConfig.version.propertiesPath;
+  }
+  if (channelConfig.rollingWindowDays !== undefined) {
+    source.rollingWindowDays = channelConfig.rollingWindowDays;
+  }
+  if (channelConfig.assets?.preferred) {
+    source.assets = channelConfig.assets.preferred;
+  }
+  return source;
+};
+
+export const UPDATE_CONFIG_ENV = 'UPDATE_CONFIG_PATH';
+
+/**
+ * Embedded default document, resolved relative to this module so it
+ * survives `deno compile --include config/update-sources.yml` and the
+ * Dockerfile deleting the source tree at runtime.
+ */
+const EMBEDDED_CONFIG_URL = new URL(
+  '../../../config/update-sources.yml',
+  import.meta.url,
+);
+
+/**
+ * Load and validate the update sources configuration.
+ *
+ * With no path (or a blank one) the embedded default document is read.
+ * A provided path must exist and parse cleanly: a missing or unreadable
+ * file, malformed YAML, or a schema violation each throw a descriptive
+ * error so misconfiguration fails loudly at startup. An empty sources
+ * result is valid and disables update refresh.
+ */
+export const loadUpdateSources = (configPath?: string): UpdateSource[] => {
+  const target = configPath === undefined || configPath.trim().length === 0
+    ? EMBEDDED_CONFIG_URL
+    : configPath;
+
+  let text: string;
+  try {
+    text = Deno.readTextFileSync(target);
+  } catch (error) {
+    throw new Error(
+      `Unable to read update sources config at ${target}: ${
+        (error as Error).message
+      }`,
+    );
+  }
+
+  let document: unknown;
+  try {
+    document = parse(text);
+  } catch (error) {
+    throw new Error(
+      `Invalid YAML in update sources config at ${target}: ${
+        (error as Error).message
+      }`,
+    );
+  }
+
+  const parsed = UpdateSourcesConfigSchema.safeParse(document);
+  if (!parsed.success) {
+    throw new Error(
+      `Invalid update sources config at ${target}: ${
+        formatIssues(parsed.error.issues)
+      }`,
+    );
+  }
+  return flattenSources(parsed.data);
+};

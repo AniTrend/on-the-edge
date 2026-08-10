@@ -1,6 +1,7 @@
-import { describe, it } from '@std/testing/bdd';
+import { afterEach, describe, it } from '@std/testing/bdd';
 import { assertEquals, assertRejects, assertThrows } from '@std/assert';
 import { assertSpyCalls, spy } from '@std/testing/mock';
+import { stringify } from '@std/yaml';
 import { NotFoundException } from '@danet/core';
 import type {
   GithubRelease,
@@ -11,7 +12,7 @@ import { SecretService } from '@scope/secret';
 import { createMockLogger, createMockSecret } from '@scope/common/testing';
 import { STALE_AFTER_HOURS } from './updates.repository.ts';
 import type { UpdatesRepository } from './updates.repository.ts';
-import type { UpdateSource } from './updates.sources.ts';
+import type { UpdateSource } from './updates.config.ts';
 import type {
   UpdateChannel,
   UpdateProduct,
@@ -24,14 +25,6 @@ import {
   UpdatesService,
 } from './updates.service.ts';
 
-const STABLE_SOURCE_JSON = {
-  product: 'ANITREND_APP',
-  channel: 'STABLE',
-  repository: 'AniTrend/anitrend-app',
-  propertiesPath: 'gradle/version.properties',
-  selector: 'stable',
-};
-
 const source = (overrides: Partial<UpdateSource> = {}): UpdateSource => ({
   product: 'ANITREND_APP',
   channel: 'STABLE',
@@ -39,6 +32,67 @@ const source = (overrides: Partial<UpdateSource> = {}): UpdateSource => ({
   propertiesPath: 'gradle/version.properties',
   selector: 'stable',
   ...overrides,
+});
+
+/**
+ * Convert flat sources into the product-centric YAML config document
+ * the loader expects, so the harness exercises the real config path.
+ */
+const sourcesToConfigYaml = (sources: UpdateSource[]): string => {
+  const products: Record<
+    string,
+    {
+      repository: string;
+      version?: { propertiesPath: string };
+      channels: Record<string, unknown>;
+    }
+  > = {};
+  for (const item of sources) {
+    const product = products[item.product] ?? {
+      repository: item.repository,
+      channels: {},
+    };
+    products[item.product] = product;
+    if (item.propertiesPath !== undefined) {
+      product.version = { propertiesPath: item.propertiesPath };
+    }
+    product.channels[item.channel] = {
+      selector: item.selector === 'stable'
+        ? { type: 'stable' }
+        : { type: 'prerelease' },
+      ...(item.rollingWindowDays !== undefined
+        ? { rollingWindowDays: item.rollingWindowDays }
+        : {}),
+      ...(item.assets !== undefined
+        ? { assets: { preferred: item.assets } }
+        : {}),
+    };
+  }
+  return stringify({ schemaVersion: 1, products });
+};
+
+/** Temp config files written by the harness, removed after each test. */
+const tempConfigPaths: string[] = [];
+
+const writeRawConfig = (text: string): string => {
+  const path = Deno.makeTempFileSync({ suffix: '.yml' });
+  Deno.writeTextFileSync(path, text);
+  tempConfigPaths.push(path);
+  return path;
+};
+
+const writeSourcesConfig = (sources: UpdateSource[]): string => {
+  return writeRawConfig(sourcesToConfigYaml(sources));
+};
+
+afterEach(() => {
+  for (const path of tempConfigPaths.splice(0)) {
+    try {
+      Deno.removeSync(path);
+    } catch {
+      // Already removed; nothing left to clean up.
+    }
+  }
 });
 
 const release = (overrides: Partial<GithubRelease> = {}): GithubRelease => ({
@@ -105,9 +159,7 @@ const createHarness = (
   const { service: secret } = createMockSecret({
     CLIENT_REQUEST_TIMEOUT: '5000',
     DENO_ENV: 'test',
-    UPDATE_SOURCES: JSON.stringify({
-      sources: options.sources ?? [],
-    }),
+    UPDATE_CONFIG_PATH: writeSourcesConfig(options.sources ?? []),
     ...options.env,
   });
   const loggerStub = createMockLogger();
@@ -710,12 +762,10 @@ describe('UpdatesService', () => {
 
   it('skips the initial refresh in CI mode using CI=true semantics', async () => {
     const previousCi = Deno.env.get('CI');
-    const previousSources = Deno.env.get('UPDATE_SOURCES');
+    const previousConfigPath = Deno.env.get('UPDATE_CONFIG_PATH');
+    const configPath = writeSourcesConfig([source()]);
     Deno.env.set('CI', 'true');
-    Deno.env.set(
-      'UPDATE_SOURCES',
-      JSON.stringify({ sources: [STABLE_SOURCE_JSON] }),
-    );
+    Deno.env.set('UPDATE_CONFIG_PATH', configPath);
     try {
       const loggerStub = createMockLogger();
       const github = {
@@ -749,19 +799,22 @@ describe('UpdatesService', () => {
       } else {
         Deno.env.set('CI', previousCi);
       }
-      if (previousSources === undefined) {
-        Deno.env.delete('UPDATE_SOURCES');
+      if (previousConfigPath === undefined) {
+        Deno.env.delete('UPDATE_CONFIG_PATH');
       } else {
-        Deno.env.set('UPDATE_SOURCES', previousSources);
+        Deno.env.set('UPDATE_CONFIG_PATH', previousConfigPath);
       }
     }
   });
 
-  it('rejects a malformed UPDATE_SOURCES configuration at construction', () => {
+  it('rejects a malformed update sources config at construction', () => {
+    const configPath = writeRawConfig(
+      'schemaVersion: 1\nproducts: [unclosed\n',
+    );
     const { service: secret } = createMockSecret({
       CLIENT_REQUEST_TIMEOUT: '5000',
       DENO_ENV: 'test',
-      UPDATE_SOURCES: '{not json',
+      UPDATE_CONFIG_PATH: configPath,
     });
     const loggerStub = createMockLogger();
     const github = {} as unknown as GithubService;
@@ -770,8 +823,30 @@ describe('UpdatesService', () => {
     assertThrows(
       () => new UpdatesService(github, repository, secret, loggerStub.logger),
       Error,
-      'UPDATE_SOURCES is not valid JSON',
+      'Invalid YAML',
     );
+  });
+
+  it('rejects a missing update sources config path at construction', () => {
+    const dir = Deno.makeTempDirSync();
+    try {
+      const { service: secret } = createMockSecret({
+        CLIENT_REQUEST_TIMEOUT: '5000',
+        DENO_ENV: 'test',
+        UPDATE_CONFIG_PATH: `${dir}/missing.yml`,
+      });
+      const loggerStub = createMockLogger();
+      const github = {} as unknown as GithubService;
+      const repository = {} as unknown as UpdatesRepository;
+
+      assertThrows(
+        () => new UpdatesService(github, repository, secret, loggerStub.logger),
+        Error,
+        'Unable to read update sources config',
+      );
+    } finally {
+      Deno.removeSync(dir, { recursive: true });
+    }
   });
 });
 

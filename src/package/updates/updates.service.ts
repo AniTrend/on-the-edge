@@ -11,10 +11,10 @@ import { LoggerService } from '@scope/logger';
 import { STALE_AFTER_HOURS, UpdatesRepository } from './updates.repository.ts';
 import { transform } from './updates.transformer.ts';
 import {
-  parseUpdateSources,
-  UPDATE_SOURCES_ENV,
+  loadUpdateSources,
+  UPDATE_CONFIG_ENV,
   type UpdateSource,
-} from './updates.sources.ts';
+} from './updates.config.ts';
 import type {
   UpdateChannel,
   UpdateProduct,
@@ -85,8 +85,8 @@ export const parseRefreshIntervalHours = (
  * lifecycle pattern: manual setInterval started on bootstrap and
  * cleared on close, because ScheduleModule + @Interval crashes during
  * Swagger generation (see PushRetryService). No timer is created when
- * no source is configured. A malformed UPDATE_SOURCES value throws
- * from the constructor so misconfiguration fails loudly.
+ * no source is configured. A missing or malformed update sources
+ * config throws from the constructor so misconfiguration fails loudly.
  */
 @Injectable({ scope: SCOPE.GLOBAL })
 export class UpdatesService implements OnAppBootstrap, OnAppClose {
@@ -105,7 +105,7 @@ export class UpdatesService implements OnAppBootstrap, OnAppClose {
     private readonly logger: LoggerService,
   ) {
     this.lastOnDemandRefreshAt = {};
-    const sources = parseUpdateSources(this.optionalSecret(UPDATE_SOURCES_ENV));
+    const sources = loadUpdateSources(this.optionalSecret(UPDATE_CONFIG_ENV));
     this.sources = new Map(
       sources.map((source) => [
         `${source.product}:${source.channel}`,
