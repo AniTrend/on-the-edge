@@ -1,4 +1,4 @@
-import { Controller, Get } from '@danet/core';
+import { Context, Controller, type ExecutionContext, Get } from '@danet/core';
 import { ReturnedSchema } from '@danet/zod';
 import { ConfigService } from './config.service.ts';
 import { ConfigSchemaSwagger } from './config.swagger.ts';
@@ -10,7 +10,7 @@ export class ConfigController {
 
   @Get()
   @ReturnedSchema(ConfigSchemaSwagger)
-  async config(): Promise<Config> {
-    return this.configService.getConfig();
+  async config(@Context() context: ExecutionContext): Promise<Config> {
+    return this.configService.getConfig(context);
   }
 }

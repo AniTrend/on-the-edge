@@ -43,6 +43,7 @@ export class ExperimentService implements OnAppClose {
       | 'enable-tmdb-source'
       | 'enable-trakt-source'
       | 'enable-notify-source'
+      | 'anitrend-v2-promotion'
     >,
   ): boolean {
     return this.invoke(() => this.growthBook.isOn(feature));
@@ -60,7 +61,9 @@ export class ExperimentService implements OnAppClose {
   getFeatureValue<T>(
     feature: keyof Pick<
       AppFeatures,
-      'episode-align-title-sim' | 'platform-source'
+      | 'episode-align-title-sim'
+      | 'platform-source'
+      | 'anitrend-v2-promotion'
     >,
     defaultValue: T,
   ): WidenPrimitives<T> {

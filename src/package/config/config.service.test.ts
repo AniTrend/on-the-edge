@@ -1,6 +1,6 @@
 import { describe, it } from '@std/testing/bdd';
 import { assertEquals, assertRejects } from '@std/assert';
-import { NotFoundException } from '@danet/core';
+import { type ExecutionContext, NotFoundException } from '@danet/core';
 import { createMockLogger } from '@scope/common/testing';
 import { ConfigService } from './config.service.ts';
 import { validateNavigation } from './config.validation.ts';
@@ -310,11 +310,16 @@ describe('sortNavigation', () => {
 // ---------------------------------------------------------------------------
 
 class ExperimentStub {
-  getFeatureValue<T>(_feature: string, defaultValue: T): T {
-    return defaultValue;
+  featureValue: unknown = null;
+  enabled = false;
+  lastFeatureKey: string | null = null;
+
+  getFeatureValue<T>(feature: string, _defaultValue: T): T {
+    this.lastFeatureKey = feature;
+    return this.featureValue as T;
   }
   isEnabled(_feature: string): boolean {
-    return false;
+    return this.enabled;
   }
 }
 
@@ -486,5 +491,149 @@ describe('ConfigService.getConfig', () => {
       () => service.getConfig(),
       NotFoundException,
     );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Unit: ConfigService promotion (14.2-14.6, 15.10)
+// ---------------------------------------------------------------------------
+
+const promotionPayload = {
+  id: 'promo-anitrend-v2',
+  targetProduct: 'ANITREND_V2',
+  title: 'Try AniTrend v2',
+  message: 'A new home for your anime list',
+  action: { type: 'OPEN_URL', url: 'https://v2.anitrend.co' },
+};
+
+const clientContext = (
+  overrides?: Partial<Record<string, unknown>>,
+): Record<string, unknown> => ({
+  appId: 'ANITREND_APP',
+  packageName: 'com.anitrend.app',
+  version: '2.0.0',
+  versionCode: 100,
+  buildType: 'release',
+  source: 'google-play',
+  locale: 'en-US',
+  platform: {
+    browserName: null,
+    browserVersion: null,
+    cpuArchitecture: null,
+    deviceModel: null,
+    deviceVendor: null,
+    deviceType: null,
+    engineName: null,
+    engineVersion: null,
+    osName: null,
+    osVersion: null,
+    deviceBuildId: null,
+  },
+  ...overrides,
+});
+
+const promotionContext = (
+  attributes?: unknown,
+): ExecutionContext =>
+  ({
+    get: (key: string) => key === 'client-attributes' ? attributes : undefined,
+  }) as unknown as ExecutionContext;
+
+const buildPromotionService = (experiment: ExperimentStub) => {
+  const repository = {
+    getConfig: async () =>
+      makeDocumentStub({
+        navigation: [validNavItem({ key: 'home', destination: '/home' })],
+      }),
+  };
+  const { logger } = createMockLogger();
+  return new ConfigService(
+    repository as unknown as ConfigRepository,
+    experiment as unknown as ExperimentService,
+    logger,
+  );
+};
+
+describe('ConfigService promotion', () => {
+  it('returns no promotion when the feature value is absent', async () => {
+    const experiment = new ExperimentStub();
+    experiment.enabled = true;
+    const service = buildPromotionService(experiment);
+
+    const result = await service.getConfig(promotionContext(clientContext()));
+    assertEquals(result.promotion, undefined);
+  });
+
+  it('returns no promotion when the feature is off', async () => {
+    const experiment = new ExperimentStub();
+    experiment.featureValue = promotionPayload;
+    const service = buildPromotionService(experiment);
+
+    const result = await service.getConfig(promotionContext(clientContext()));
+    assertEquals(result.promotion, undefined);
+  });
+
+  it('returns the promotion payload for an AniTrend App release client', async () => {
+    const experiment = new ExperimentStub();
+    experiment.featureValue = promotionPayload;
+    experiment.enabled = true;
+    const service = buildPromotionService(experiment);
+
+    const result = await service.getConfig(promotionContext(clientContext()));
+    assertEquals(result.promotion?.id, 'promo-anitrend-v2');
+    assertEquals(result.promotion?.targetProduct, 'ANITREND_V2');
+    assertEquals(result.promotion?.title, 'Try AniTrend v2');
+    assertEquals(
+      result.promotion?.message,
+      'A new home for your anime list',
+    );
+    assertEquals(result.promotion?.action?.type, 'OPEN_URL');
+    assertEquals(result.promotion?.action?.url, 'https://v2.anitrend.co');
+  });
+
+  it('never returns a self-promotion for AniTrend v2 clients', async () => {
+    const experiment = new ExperimentStub();
+    experiment.featureValue = promotionPayload;
+    experiment.enabled = true;
+    const service = buildPromotionService(experiment);
+
+    const result = await service.getConfig(
+      promotionContext(clientContext({ appId: 'ANITREND_V2' })),
+    );
+    assertEquals(result.promotion, undefined);
+  });
+
+  it('returns no promotion for a non-release build type', async () => {
+    const experiment = new ExperimentStub();
+    experiment.featureValue = promotionPayload;
+    experiment.enabled = true;
+    const service = buildPromotionService(experiment);
+
+    const result = await service.getConfig(
+      promotionContext(clientContext({ buildType: 'debug' })),
+    );
+    assertEquals(result.promotion, undefined);
+  });
+
+  it('returns no promotion when the client context is missing', async () => {
+    const experiment = new ExperimentStub();
+    experiment.featureValue = promotionPayload;
+    experiment.enabled = true;
+    const service = buildPromotionService(experiment);
+
+    const withoutContext = await service.getConfig();
+    const emptyContext = await service.getConfig(promotionContext());
+    assertEquals(withoutContext.promotion, undefined);
+    assertEquals(emptyContext.promotion, undefined);
+  });
+
+  it('looks up the anitrend-v2-promotion feature key', async () => {
+    const experiment = new ExperimentStub();
+    experiment.featureValue = promotionPayload;
+    experiment.enabled = true;
+    const service = buildPromotionService(experiment);
+
+    await service.getConfig(promotionContext(clientContext()));
+    assertEquals(experiment.lastFeatureKey, 'anitrend-v2-promotion');
   });
 });

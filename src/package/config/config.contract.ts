@@ -63,12 +63,35 @@ export const ConfigGenreContract = z.object({
   description: 'Genre entry linked to a media entity',
 });
 
+export const PromotionActionContract = z.object({
+  type: z.literal('OPEN_URL'),
+  url: z.string().url(),
+}).openapi({
+  title: 'PromotionAction',
+  description: 'Action attached to a promotion payload',
+});
+
+export const PromotionContract = z.object({
+  id: z.string(),
+  targetProduct: z.enum(['ANITREND_V2']).openapi({
+    title: 'PromotionTargetProduct',
+    description: 'Product the promotion is intended for',
+  }),
+  title: z.string(),
+  message: z.string(),
+  action: PromotionActionContract,
+}).openapi({
+  title: 'Promotion',
+  description: 'Promotion payload for eligible clients',
+});
+
 export const ConfigContract = z.object({
   id: z.string(),
   settings: ConfigSettingsContract,
   image: ConfigImageContract,
   navigation: z.array(ConfigNavigationItemContract).default([]),
   genres: z.array(ConfigGenreContract).default([]),
+  promotion: PromotionContract.nullable().optional(),
 }).openapi({
   title: 'Config',
   description: 'Client configuration',
