@@ -3,7 +3,6 @@ import { OnAppBootstrap, OnAppClose } from '@danet/core/hook';
 import {
   type GithubRelease,
   GithubService,
-  parseSemverTag,
   parseVersionProperties,
 } from '@scope/service/github';
 import { SecretService } from '@scope/secret';
@@ -11,12 +10,14 @@ import { LoggerService } from '@scope/logger';
 import { STALE_AFTER_HOURS, UpdatesRepository } from './updates.repository.ts';
 import { transform } from './updates.transformer.ts';
 import {
-  parseUpdateSources,
-  UPDATE_SOURCES_ENV,
+  computePolicyFingerprint,
+  loadUpdateSources,
+  UPDATE_CONFIG_ENV,
   type UpdateSource,
-} from './updates.sources.ts';
+} from './updates.config.ts';
 import type {
   UpdateChannel,
+  UpdateDecision,
   UpdateProduct,
   UpdateRecord,
   UpdateRelease,
@@ -52,6 +53,14 @@ const MIN_REFRESH_INTERVAL_HOURS = 1;
 const MAX_REFRESH_INTERVAL_HOURS = STALE_AFTER_HOURS;
 
 /**
+ * Maximum number of sources refreshed concurrently on the scheduled
+ * path. On-demand refreshes share per-source in-flight work via the
+ * single-flight map, so overlapping refresh() calls do not multiply
+ * upstream calls (spec 11.5).
+ */
+const REFRESH_CONCURRENCY_LIMIT = 3;
+
+/**
  * Minimum time between on-demand (request-path) refresh attempts per
  * (product, channel) source. Bounds request-driven GitHub traffic when
  * the cache is stale/missing and refreshes keep failing; the scheduled
@@ -85,8 +94,8 @@ export const parseRefreshIntervalHours = (
  * lifecycle pattern: manual setInterval started on bootstrap and
  * cleared on close, because ScheduleModule + @Interval crashes during
  * Swagger generation (see PushRetryService). No timer is created when
- * no source is configured. A malformed UPDATE_SOURCES value throws
- * from the constructor so misconfiguration fails loudly.
+ * no source is configured. A missing or malformed update sources
+ * config throws from the constructor so misconfiguration fails loudly.
  */
 @Injectable({ scope: SCOPE.GLOBAL })
 export class UpdatesService implements OnAppBootstrap, OnAppClose {
@@ -96,7 +105,15 @@ export class UpdatesService implements OnAppBootstrap, OnAppClose {
     Record<UpdateSourceKey, number>
   >;
   private refreshTimer: ReturnType<typeof setInterval> | undefined;
-  private refreshing = false;
+  /**
+   * Per-source single-flight map: at most one refresh per
+   * (product, channel) is in flight at a time, and concurrent callers
+   * await the same promise (spec 11.3).
+   */
+  private readonly inFlightRefresh: Map<
+    UpdateSourceKey,
+    Promise<UpdateChannelResult>
+  > = new Map();
 
   constructor(
     private readonly github: GithubService,
@@ -105,7 +122,7 @@ export class UpdatesService implements OnAppBootstrap, OnAppClose {
     private readonly logger: LoggerService,
   ) {
     this.lastOnDemandRefreshAt = {};
-    const sources = parseUpdateSources(this.optionalSecret(UPDATE_SOURCES_ENV));
+    const sources = loadUpdateSources(this.optionalSecret(UPDATE_CONFIG_ENV));
     this.sources = new Map(
       sources.map((source) => [
         `${source.product}:${source.channel}`,
@@ -172,30 +189,44 @@ export class UpdatesService implements OnAppBootstrap, OnAppClose {
   }
 
   /**
-   * Resolve the cached release for a (product, channel) source.
+   * Resolve an update decision for a specific client (spec 9.1-9.3).
    *
-   * A fresh record is served directly from Mongo without any upstream
-   * call. A stale or missing record triggers at most one guarded,
-   * source-scoped refresh attempt, throttled per source by
-   * ON_DEMAND_REFRESH_COOLDOWN_MS; concurrent requests skip via the
-   * non-overlapping guard, bounding GitHub calls per request. Refresh
-   * errors (network or persistence) are caught and logged, and the
-   * cached record is served as a fallback; a source with no record at
-   * all resolves to NotFound. No cross-product fallback is applied.
+   * A source must be configured for the requested (product, channel):
+   * otherwise the decision is UNSUPPORTED and there is never a silent
+   * fallback to the stable channel (spec 8.4). A fresh record is
+   * served directly from Mongo without any upstream call; a stale or
+   * missing record triggers at most one guarded, source-scoped refresh
+   * attempt, throttled per source by ON_DEMAND_REFRESH_COOLDOWN_MS; a
+   * refresh already in flight for the source is always joined so
+   * concurrent requests share one upstream call. Refresh errors
+   * (network or persistence) are caught and logged, and the cached
+   * record is served as a fallback; a configured source with no record
+   * at all resolves to NotFound. The decision compares the client
+   * version code against the cached release code: an equal or newer
+   * client is UP_TO_DATE and a downgrade is never offered (spec 9.3).
    */
   async getUpdate(
     product: UpdateProduct,
     channel: UpdateChannel,
-  ): Promise<UpdateRelease> {
+    clientVersionCode: number,
+  ): Promise<UpdateDecision> {
     const key = `${product}:${channel}`;
-    const assetFilter = this.sources.get(key)?.assets;
+    const source = this.sources.get(key);
+    if (!source) {
+      this.logger.instance.debug('No update source configured; unsupported', {
+        product,
+        channel,
+      });
+      return { status: 'UNSUPPORTED' };
+    }
+    const assetFilter = source.assets;
     const cached = await this.repository.findByKey(product, channel);
     if (cached && !this.repository.isStale(cached)) {
       this.logger.instance.debug('Serving fresh cached update', {
         product,
         channel,
       });
-      return this.toPublicRelease(cached, assetFilter);
+      return this.toDecision(cached, clientVersionCode, assetFilter);
     }
     if (cached) {
       this.logger.instance.info('Cached update is stale; refreshing', {
@@ -235,36 +266,41 @@ export class UpdatesService implements OnAppBootstrap, OnAppClose {
         { product, channel },
       );
     }
-    return this.toPublicRelease(record, assetFilter);
+    return this.toDecision(record, clientVersionCode, assetFilter);
   }
 
   /**
    * Refresh a single (product, channel) source on demand (request
-   * path). Honors the non-overlapping guard and records the attempt
-   * time for the per-source retry cooldown.
+   * path). Per-source single-flight: a refresh already in flight for
+   * the key is returned as-is so both callers await the same upstream
+   * operation. The attempt time is recorded for the per-source retry
+   * cooldown.
    */
   async refreshSource(
     product: UpdateProduct,
     channel: UpdateChannel,
   ): Promise<UpdateChannelResult> {
     const key = `${product}:${channel}`;
-    if (this.refreshing) {
-      return { product, channel, status: 'skipped' };
+    const inFlight = this.inFlightRefresh.get(key);
+    if (inFlight) {
+      return inFlight;
     }
     const source = this.sources.get(key);
     if (!source) {
       return { product, channel, status: 'skipped' };
     }
     this.lastOnDemandRefreshAt[key] = Date.now();
-    this.refreshing = true;
-    try {
-      return await this.refreshSourceUnchecked(source);
-    } finally {
-      this.refreshing = false;
-    }
+    const promise = this.refreshSourceUnchecked(source)
+      .finally(() => this.inFlightRefresh.delete(key));
+    this.inFlightRefresh.set(key, promise);
+    return promise;
   }
 
   private canAttemptOnDemandRefresh(key: UpdateSourceKey): boolean {
+    // A refresh already in flight for this source is always joined,
+    // regardless of the per-source cooldown: joining costs no upstream
+    // call and serves the freshest result.
+    if (this.inFlightRefresh.has(key)) return true;
     const lastAttempt = this.lastOnDemandRefreshAt[key];
     if (lastAttempt === undefined) return true;
     return Date.now() - lastAttempt >= ON_DEMAND_REFRESH_COOLDOWN_MS;
@@ -276,25 +312,56 @@ export class UpdatesService implements OnAppBootstrap, OnAppClose {
     const { product, channel } = source;
     const [owner, repo] = this.splitRepository(source.repository);
     const cached = await this.repository.findByKey(product, channel);
+    const policyFingerprint = await computePolicyFingerprint(source);
+    // Spec 10.4: a cached record selected under a different policy
+    // fingerprint must not have its ETag trusted, so the revalidation
+    // is fully unconditional (no If-None-Match).
+    const trustEtag = cached !== null &&
+      cached.policyFingerprint === policyFingerprint;
+    if (cached && !trustEtag) {
+      this.logger.instance.info(
+        'Update policy fingerprint changed; revalidating without cached ETag',
+        { product, channel },
+      );
+    }
 
-    const outcome = source.selector === 'stable'
-      ? await this.github.fetchLatestRelease(
-        owner,
-        repo,
-        cached?.etag ?? undefined,
-      )
-      : await this.github.fetchReleases(owner, repo, {
-        selector: source.selector,
-        rollingWindowDays: source.rollingWindowDays,
-        ifNoneMatch: cached?.etag ?? undefined,
-      });
+    const outcome = await this.github.fetchReleases(owner, repo, {
+      selector: source.selector,
+      rollingWindowDays: source.rollingWindowDays,
+      ifNoneMatch: trustEtag ? cached?.etag ?? undefined : undefined,
+    });
     if (!outcome) {
       return { product, channel, status: 'failed' };
     }
     if (outcome.status === 'not-modified') {
-      // 304: cached release is still current; touch freshness.
-      await this.repository.touchFreshness(product, channel);
-      return { product, channel, status: 'unchanged' };
+      // 304 received: the remote release list is unchanged. Trust it
+      // only when the cached candidate is still eligible under
+      // time-dependent local policy (spec 10.1/10.2).
+      this.logger.instance.debug('GitHub returned 304 for source', {
+        product,
+        channel,
+      });
+      if (cached !== null && this.isCachedEligible(cached, source)) {
+        await this.repository.touchFreshness(
+          product,
+          channel,
+          Date.now(),
+          cached.etag ?? undefined,
+          policyFingerprint,
+        );
+        return { product, channel, status: 'unchanged' };
+      }
+      this.logger.instance.warn(
+        '304 rejected by local policy; re-fetching unconditionally',
+        { product, channel },
+      );
+      return this.revalidateAfterExpiredCache(
+        source,
+        owner,
+        repo,
+        cached,
+        policyFingerprint,
+      );
     }
     const release = outcome.release;
     if (!release) {
@@ -311,9 +378,94 @@ export class UpdatesService implements OnAppBootstrap, OnAppClose {
         channel,
         Date.now(),
         outcome.etag,
+        policyFingerprint,
       );
       return { product, channel, status: 'unchanged' };
     }
+    return this.resolveAndPersist(
+      source,
+      owner,
+      repo,
+      release,
+      outcome.etag,
+      policyFingerprint,
+    );
+  }
+
+  /**
+   * Time-dependent local policy check (spec 10.1/10.2). When the
+   * source configures a rolling window, the cached candidate is only
+   * eligible while its publishedAt still falls inside that window.
+   * Selector and identifier changes are already covered by the policy
+   * fingerprint, so age is the only rule re-evaluated here.
+   */
+  private isCachedEligible(
+    cached: UpdateRecord,
+    source: UpdateSource,
+  ): boolean {
+    if (source.rollingWindowDays === undefined) return true;
+    const cutoff = Date.now() - source.rollingWindowDays * 86_400_000;
+    return cached.publishedAt >= cutoff;
+  }
+
+  /**
+   * Re-evaluate a source after a 304 was rejected by local policy (the
+   * cached candidate aged out of its rolling window). Performs an
+   * unconditional fetch without If-None-Match; fetchReleases applies
+   * the rolling window filter, so any release it returns is eligible.
+   * A different tag is resolved and persisted as a fresh record. The
+   * aged-out cached selection is never marked fresh: a same-tag (or
+   * absent) selection resolves to failed so the old record remains
+   * only as a stale fallback.
+   */
+  private async revalidateAfterExpiredCache(
+    source: UpdateSource,
+    owner: string,
+    repo: string,
+    cached: UpdateRecord | null,
+    policyFingerprint: string,
+  ): Promise<UpdateChannelResult> {
+    const { product, channel } = source;
+    const outcome = await this.github.fetchReleases(owner, repo, {
+      selector: source.selector,
+      rollingWindowDays: source.rollingWindowDays,
+    });
+    if (!outcome || outcome.status === 'not-modified' || !outcome.release) {
+      return { product, channel, status: 'failed' };
+    }
+    if (cached && cached.tag === outcome.release.tagName) {
+      // The fresh selection is the same, still-ineligible release:
+      // never refresh its validity.
+      this.logger.instance.warn(
+        'Cached release aged out of the policy window and remains ineligible',
+        { product, channel, tag: cached.tag },
+      );
+      return { product, channel, status: 'failed' };
+    }
+    return this.resolveAndPersist(
+      source,
+      owner,
+      repo,
+      outcome.release,
+      outcome.etag,
+      policyFingerprint,
+    );
+  }
+
+  /**
+   * Resolve version and code for a fresh selection and persist it as
+   * the new cached record. Shared by the normal refresh path and the
+   * expired-cache revalidation path.
+   */
+  private async resolveAndPersist(
+    source: UpdateSource,
+    owner: string,
+    repo: string,
+    release: GithubRelease,
+    etag: string | undefined,
+    policyFingerprint: string,
+  ): Promise<UpdateChannelResult> {
+    const { product, channel } = source;
     const versionInfo = await this.resolveVersionAndCode(
       source,
       owner,
@@ -333,18 +485,22 @@ export class UpdatesService implements OnAppBootstrap, OnAppClose {
       release,
       version: versionInfo.version,
       code: versionInfo.code,
-      etag: outcome.etag,
+      etag,
       assetFilter: source.assets,
+      policyFingerprint,
     });
     await this.repository.upsert(record);
     return { product, channel, status: 'updated', code: record.code };
   }
 
   /**
-   * Resolve version and code for a release: prefer tagged
-   * gradle/version.properties when both values are present, otherwise
-   * fall back to the strict semver tag. Returns undefined when neither
-   * yields a valid pair.
+   * Resolve version and code for a release from the authoritative
+   * tagged gradle/version.properties document. Both `version` and
+   * `code` are required; a missing, unparseable, or incomplete
+   * document resolves to undefined and the candidate release is
+   * rejected, retaining the previously cached record. A source with no
+   * propertiesPath has no authoritative code source and also resolves
+   * to undefined: a version code is never fabricated from the tag.
    */
   private async resolveVersionAndCode(
     source: UpdateSource,
@@ -352,21 +508,23 @@ export class UpdatesService implements OnAppBootstrap, OnAppClose {
     repo: string,
     release: GithubRelease,
   ): Promise<{ version: string; code: number } | undefined> {
-    if (source.propertiesPath) {
-      const text = await this.github.fetchVersionProperties(
-        owner,
-        repo,
-        release.tagName,
-        source.propertiesPath,
-      );
-      if (text !== undefined) {
-        const parsed = parseVersionProperties(text);
-        if (parsed.version !== undefined && parsed.code !== undefined) {
-          return { version: parsed.version, code: parsed.code };
-        }
-      }
+    if (!source.propertiesPath) {
+      return undefined;
     }
-    return parseSemverTag(release.tagName);
+    const text = await this.github.fetchVersionProperties(
+      owner,
+      repo,
+      release.tagName,
+      source.propertiesPath,
+    );
+    if (text === undefined) {
+      return undefined;
+    }
+    const parsed = parseVersionProperties(text);
+    if (parsed.version === undefined || parsed.code === undefined) {
+      return undefined;
+    }
+    return { version: parsed.version, code: parsed.code };
   }
 
   private splitRepository(repository: string): [string, string] {
@@ -376,68 +534,80 @@ export class UpdatesService implements OnAppBootstrap, OnAppClose {
 
   /**
    * Fetch and persist the latest release for every configured source
-   * (scheduled path). Non-overlapping: concurrent calls return a
-   * skipped result while a refresh is in flight. Failures are isolated
-   * per source: a throwing source is recorded as failed and logged, and
-   * the remaining sources still refresh.
+   * (scheduled path). Sources are refreshed with bounded concurrency
+   * and each goes through the per-source single-flight map, so an
+   * overlapping refresh() or on-demand request shares the same
+   * in-flight work instead of multiplying upstream calls. Failures
+   * are isolated per source: a throwing source is recorded as failed
+   * and logged, and the remaining sources still refresh.
    */
   async refresh(): Promise<UpdateRefreshResult> {
-    if (this.refreshing) {
-      this.logger.instance.debug(
-        'Update refresh already in progress; skipping',
-      );
-      return { refreshedAt: Date.now(), skipped: true, results: [] };
-    }
-    this.refreshing = true;
-    try {
-      const results: UpdateChannelResult[] = [];
-      for (const source of this.sources.values()) {
-        try {
-          results.push(await this.refreshSourceUnchecked(source));
-        } catch (error) {
-          this.logger.instance.warn(
-            'Source refresh failed',
-            { product: source.product, channel: source.channel, cause: error },
-          );
-          results.push({
-            product: source.product,
-            channel: source.channel,
-            status: 'failed',
-          });
+    const sources = [...this.sources.values()];
+    const results: UpdateChannelResult[] = new Array(sources.length);
+    let next = 0;
+    const workers = Array.from(
+      { length: Math.min(REFRESH_CONCURRENCY_LIMIT, sources.length) },
+      async () => {
+        while (true) {
+          const index = next++;
+          if (index >= sources.length) return;
+          const source = sources[index];
+          try {
+            results[index] = await this.refreshSource(
+              source.product,
+              source.channel,
+            );
+          } catch (error) {
+            this.logger.instance.warn(
+              'Source refresh failed',
+              {
+                product: source.product,
+                channel: source.channel,
+                cause: error,
+              },
+            );
+            results[index] = {
+              product: source.product,
+              channel: source.channel,
+              status: 'failed',
+            };
+          }
         }
-      }
-      const failedCount = results.filter((result) =>
-        result.status === 'failed'
-      ).length;
-      if (failedCount > 0) {
-        this.logger.instance.warn('Update refresh completed with failures', {
-          failed: failedCount,
-          total: results.length,
-          results,
-        });
-      } else {
-        this.logger.instance.info('Update refresh completed', {
-          total: results.length,
-          results,
-        });
-      }
-      return { refreshedAt: Date.now(), skipped: false, results };
-    } finally {
-      this.refreshing = false;
+      },
+    );
+    await Promise.all(workers);
+    const failedCount =
+      results.filter((result) => result.status === 'failed').length;
+    if (failedCount > 0) {
+      this.logger.instance.warn('Update refresh completed with failures', {
+        failed: failedCount,
+        total: results.length,
+        results,
+      });
+    } else {
+      this.logger.instance.info('Update refresh completed', {
+        total: results.length,
+        results,
+      });
     }
+    return { refreshedAt: Date.now(), skipped: false, results };
   }
 
   /**
-   * Public response mapping: strips the internal ETag cache metadata
-   * so the public release shape stays clean, and applies the
-   * configured asset-name filter when present (covering records cached
-   * before a filter was configured).
+   * Public response mapping: strips the internal ETag and policy
+   * fingerprint cache metadata so the public release shape stays
+   * clean, and applies the configured asset-name filter when present
+   * (covering records cached before a filter was configured).
    */
   private toPublicRelease(
     record: UpdateRecord,
     assetFilter?: string[],
   ): UpdateRelease {
-    const { etag: _etag, ...rest } = record;
+    const {
+      etag: _etag,
+      policyFingerprint: _policyFingerprint,
+      ...rest
+    } = record;
     if (assetFilter && assetFilter.length > 0) {
       return {
         ...rest,
@@ -445,5 +615,25 @@ export class UpdatesService implements OnAppBootstrap, OnAppClose {
       };
     }
     return rest;
+  }
+
+  /**
+   * Map a cached record onto a decision for a client (spec 9.3). The
+   * comparison uses Android versionCode semantics: only a cached
+   * release with a strictly higher code is offered. An equal or newer
+   * client is UP_TO_DATE; downgrades are never encouraged.
+   */
+  private toDecision(
+    record: UpdateRecord,
+    clientVersionCode: number,
+    assetFilter?: string[],
+  ): UpdateDecision {
+    if (clientVersionCode < record.code) {
+      return {
+        status: 'UPDATE_AVAILABLE',
+        release: this.toPublicRelease(record, assetFilter),
+      };
+    }
+    return { status: 'UP_TO_DATE' };
   }
 }

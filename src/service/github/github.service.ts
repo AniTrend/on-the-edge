@@ -1,4 +1,5 @@
 import { Injectable } from '@danet/core';
+import { compare, tryParse } from '@std/semver';
 import {
   createClient,
   type RequestClient,
@@ -9,6 +10,7 @@ import { LoggerService } from '@scope/logger';
 import { DEFAULT_HEADERS } from '../constants.ts';
 import { GithubReleasePayloadSchema } from './github.schema.ts';
 import type {
+  GithubRateLimit,
   GithubRelease,
   GithubReleaseOutcome,
   GithubReleasePayload,
@@ -21,6 +23,38 @@ import {
 
 const GITHUB_API_BASE = 'https://api.github.com';
 const GITHUB_RAW_BASE = 'https://raw.githubusercontent.com';
+const GITHUB_API_ACCEPT = 'application/vnd.github+json';
+const GITHUB_API_VERSION = '2022-11-28';
+const GITHUB_TOKEN_SECRET = 'GITHUB_TOKEN';
+
+/**
+ * Parse the GitHub REST API rate-limit response headers into a numeric
+ * snapshot. Returns undefined when any header is absent or non-numeric;
+ * rate limiting is best-effort telemetry for the edge, never a failure.
+ */
+export const parseRateLimit = (
+  headers: Headers,
+): GithubRateLimit | undefined => {
+  const limit = headers.get('x-ratelimit-limit');
+  const remaining = headers.get('x-ratelimit-remaining');
+  const reset = headers.get('x-ratelimit-reset');
+  if (limit === null || remaining === null || reset === null) {
+    return undefined;
+  }
+  const parsed = {
+    limit: Number(limit),
+    remaining: Number(remaining),
+    reset: Number(reset),
+  };
+  if (
+    !Number.isFinite(parsed.limit) ||
+    !Number.isFinite(parsed.remaining) ||
+    !Number.isFinite(parsed.reset)
+  ) {
+    return undefined;
+  }
+  return parsed;
+};
 
 /** Accept only https URLs; anything else is rejected before use. */
 export const isHttpsUrl = (value: string): boolean => {
@@ -62,29 +96,6 @@ export const parseVersionProperties = (
   return { version, code, name };
 };
 
-const SEMVER_TAG_PATTERN = /^v?(\d{1,4})\.(\d{1,4})\.(\d{1,4})$/;
-
-/**
- * Strictly parse a bare-semver release tag (optional `v` prefix) into a
- * version string and a deterministic version code following AniTrend's
- * observed convention: major * 1_000_000_000 + minor * 1_000_000 +
- * patch * 1_000. Returns undefined for anything that is not a plain
- * MAJOR.MINOR.PATCH semver.
- */
-export const parseSemverTag = (
-  tag: string,
-): { version: string; code: number } | undefined => {
-  const match = SEMVER_TAG_PATTERN.exec(tag.trim());
-  if (!match) return undefined;
-  const major = Number(match[1]);
-  const minor = Number(match[2]);
-  const patch = Number(match[3]);
-  return {
-    version: `${major}.${minor}.${patch}`,
-    code: major * 1_000_000_000 + minor * 1_000_000 + patch * 1_000,
-  };
-};
-
 /**
  * Reusable GitHub update source client. Fetches release metadata from
  * the GitHub REST API and tagged gradle/version.properties from raw
@@ -109,50 +120,54 @@ export class GithubService {
     return client;
   }
 
-  /**
-   * Fetch the latest stable release (non-prerelease, non-draft) via
-   * /releases/latest. Honors If-None-Match: a 304 resolves to
-   * `not-modified` with the cached release untouched. Text responses
-   * are used because the request client cannot deserialize bodyless
-   * 304 responses as JSON.
-   */
-  async fetchLatestRelease(
-    owner: string,
-    repo: string,
-    ifNoneMatch?: string,
-  ): Promise<GithubReleaseOutcome | undefined> {
-    const path = `/repos/${owner}/${repo}/releases/latest`;
+  /** Read an optional secret; undefined when it is not configured. */
+  private optionalSecret(key: string): string | undefined {
     try {
-      const { data, status, headers } = await this.createClient(GITHUB_API_BASE)
-        .get<string>(path, {
-          headers: ifNoneMatch ? { 'If-None-Match': ifNoneMatch } : {},
-          responseType: 'text',
-          validateStatus: (s) => s === 304 || (s >= 200 && s < 300),
-        });
-      if (status === 304) {
-        return { status: 'not-modified' };
-      }
-      return {
-        status: 'ok',
-        release: this.toDomainRelease(
-          GithubReleasePayloadSchema.parse(JSON.parse(data)),
-        ),
-        etag: headers.get('etag') ?? undefined,
-      };
-    } catch (error) {
-      this.logger.instance.warn(
-        'Unable to fetch latest GitHub release',
-        { owner, repo, cause: error },
-      );
+      return this.secret.get<string>(key);
+    } catch {
       return undefined;
     }
   }
 
   /**
-   * Fetch and select a release from the /releases list. Excludes
-   * drafts, filters prereleases according to the selector, sorts
-   * deterministically by published_at (tie-break by tag name), and
-   * optionally applies a rolling window in days. Honors If-None-Match.
+   * Headers for api.github.com requests: the pinned REST API version
+   * and GitHub JSON media type, plus an optional bearer token. These
+   * are passed per-request so raw.githubusercontent.com fetches stay
+   * on DEFAULT_HEADERS and never carry the token.
+   */
+  private apiHeaders(ifNoneMatch?: string): Record<string, string> {
+    const headers: Record<string, string> = {
+      'Accept': GITHUB_API_ACCEPT,
+      'X-GitHub-Api-Version': GITHUB_API_VERSION,
+    };
+    const token = this.optionalSecret(GITHUB_TOKEN_SECRET);
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    if (ifNoneMatch) {
+      headers['If-None-Match'] = ifNoneMatch;
+    }
+    return headers;
+  }
+
+  /** Snapshot rate-limit headers into the outcome and debug-log them. */
+  private captureRateLimit(headers: Headers): GithubRateLimit | undefined {
+    const rateLimit = parseRateLimit(headers);
+    if (rateLimit) {
+      this.logger.instance.debug('GitHub rate limit', rateLimit);
+    }
+    return rateLimit;
+  }
+
+  /**
+   * Fetch and select a release from the /releases list. Every channel
+   * goes through this list path so semantic-version ordering applies
+   * everywhere. Drafts never qualify. Stable keeps non-prereleases;
+   * prerelease keeps only prereleases whose tag parses as semver and
+   * matches the configured identifiers (when set). Sorts by semver
+   * precedence descending, tie-broken by published_at then tag name,
+   * and optionally applies a rolling window in days. Honors
+   * If-None-Match.
    */
   async fetchReleases(
     owner: string,
@@ -168,9 +183,7 @@ export class GithubService {
       const { data, status, headers } = await this.createClient(GITHUB_API_BASE)
         .get<string>(path, {
           params: { per_page: 100 },
-          headers: options.ifNoneMatch
-            ? { 'If-None-Match': options.ifNoneMatch }
-            : {},
+          headers: this.apiHeaders(options.ifNoneMatch),
           responseType: 'text',
           validateStatus: (s) => s === 304 || (s >= 200 && s < 300),
         });
@@ -195,8 +208,11 @@ export class GithubService {
           options.rollingWindowDays,
         ),
         etag: headers.get('etag') ?? undefined,
+        rateLimit: this.captureRateLimit(headers),
       };
     } catch (error) {
+      // Non-fatal by design: callers keep the stale cached release on
+      // any GitHub failure (network, timeout, malformed payload).
       this.logger.instance.warn(
         'Unable to fetch GitHub releases',
         { owner, repo, cause: error },
@@ -208,7 +224,8 @@ export class GithubService {
   /**
    * Fetch the tagged gradle/version.properties document as text.
    * A 404 (no properties at the tag) and network errors resolve to
-   * undefined; callers fall back to the semver tag.
+   * undefined; callers reject the candidate release on any failure so
+   * the previously cached record is retained.
    */
   async fetchVersionProperties(
     owner: string,
@@ -255,6 +272,8 @@ export class GithubService {
         name: asset.name,
         url: asset.browser_download_url,
         size: asset.size,
+        contentType: asset.content_type,
+        digest: asset.digest,
       })),
     };
   }
@@ -267,17 +286,60 @@ export class GithubService {
     const cutoff = rollingWindowDays !== undefined
       ? Date.now() - rollingWindowDays * 24 * 60 * 60 * 1000
       : undefined;
-    return releases
-      .filter((release) => !release.draft)
-      .filter((release) =>
-        selector === 'stable' ? !release.prerelease : release.prerelease
-      )
+    const candidates = releases.filter((release) => !release.draft);
+    const eligible = selector.type === 'stable'
+      ? candidates.filter((release) => !release.prerelease)
+      : this.prereleaseCandidates(candidates, selector.identifiers);
+    return eligible
       .filter((release) =>
         cutoff === undefined || release.publishedAt >= cutoff
       )
-      .sort((a, b) =>
-        b.publishedAt - a.publishedAt ||
-        (a.tagName < b.tagName ? 1 : a.tagName > b.tagName ? -1 : 0)
-      )[0];
+      .sort((a, b) => this.compareReleases(a, b))[0];
+  }
+
+  /**
+   * Filter prerelease candidates to those whose tag parses as semver
+   * and (when identifiers are configured) matches at least one
+   * configured identifier. A tag that is not valid semver is skipped
+   * with a debug log and never fails the whole refresh.
+   */
+  private prereleaseCandidates(
+    releases: GithubRelease[],
+    identifiers?: string[],
+  ): GithubRelease[] {
+    const normalized = identifiers?.map((id) => id.toLowerCase());
+    return releases.filter((release) => {
+      if (!release.prerelease) return false;
+      const semver = tryParse(release.tagName);
+      if (!semver) {
+        this.logger.instance.debug(
+          'Skipping release with non-semver tag',
+          { tag: release.tagName, reason: 'tag is not valid semver' },
+        );
+        return false;
+      }
+      if (normalized === undefined || normalized.length === 0) {
+        return true;
+      }
+      return (semver.prerelease ?? []).some((item) =>
+        normalized.includes(String(item).toLowerCase())
+      );
+    });
+  }
+
+  /**
+   * Order releases by semver precedence descending, tie-broken by
+   * published_at descending then tag name descending. Non-semver tags
+   * fall back to the publication-date ordering.
+   */
+  private compareReleases(a: GithubRelease, b: GithubRelease): number {
+    const aSemver = tryParse(a.tagName);
+    const bSemver = tryParse(b.tagName);
+    if (aSemver && bSemver) {
+      const byVersion = compare(bSemver, aSemver);
+      if (byVersion !== 0) return byVersion;
+    }
+    return b.publishedAt - a.publishedAt ||
+      (a.tagName < b.tagName ? 1 : a.tagName > b.tagName ? -1 : 0);
   }
 }

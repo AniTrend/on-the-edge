@@ -23,6 +23,9 @@ export const EXPECTED_SCHEMA_NAMES = [
   'Config',
   'ConfigSettings',
   'ConfigImage',
+  'Promotion',
+  'PromotionAction',
+  'PromotionTargetProduct',
 
   // News (direct response + paging)
   'News',
@@ -95,6 +98,8 @@ export const EXPECTED_SCHEMA_NAMES = [
   'UpdateChannel',
   'UpdateReleaseAsset',
   'UpdateRelease',
+  'UpdateDecision',
+  'UpdateDecisionStatus',
 ] as const;
 
 /**

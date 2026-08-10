@@ -1,0 +1,60 @@
+# Embedded default update sources configuration.
+#
+# This file is compiled into the edge binary via `deno compile --include`
+# and read at startup when UPDATE_CONFIG_PATH is unset. It is version
+# controlled, so changes ship with the release rather than via a JSON
+# blob in the environment.
+#
+# schemaVersion must be 1; a different value is a startup error.
+schemaVersion: 1
+
+products:
+  ANITREND_APP:
+    repository: AniTrend/anitrend-app
+    version:
+      propertiesPath: gradle/version.properties
+    channels:
+      STABLE:
+        selector:
+          type: stable
+        assets:
+          preferred:
+            - app-github-release.apk
+            - app-release.apk
+      BETA:
+        selector:
+          type: prerelease
+          identifiers:
+            - beta
+            - rc
+        rollingWindowDays: 90
+      EXPERIMENTAL:
+        selector:
+          type: prerelease
+          identifiers:
+            - alpha
+            - dev
+            - experimental
+        rollingWindowDays: 30
+
+  ANITREND_V2:
+    repository: AniTrend/anitrend-v2
+    version:
+      propertiesPath: gradle/version.properties
+    channels:
+      STABLE:
+        selector:
+          type: stable
+      BETA:
+        selector:
+          type: prerelease
+          identifiers:
+            - beta
+            - rc
+      EXPERIMENTAL:
+        selector:
+          type: prerelease
+          identifiers:
+            - alpha
+            - dev
+            - experimental

@@ -1,5 +1,5 @@
 import { HttpContext } from '@danet/core';
-import { ClientAttributes, RequestAttributes } from '../types/header.types.ts';
+import { ClientContext, RequestAttributes } from '../types/header.types.ts';
 
 export const setRequestAttributes = (
   context: HttpContext,
@@ -16,13 +16,13 @@ export const getRequestAttributes = (
 
 export const setClientAttributes = (
   context: HttpContext,
-  attributes: ClientAttributes,
+  attributes: ClientContext,
 ) => {
   context.set('client-attributes', attributes);
 };
 
 export const getClientAttributes = (
   context: HttpContext,
-): ClientAttributes => {
+): ClientContext => {
   return context.get('client-attributes');
 };

@@ -1,7 +1,7 @@
 import { Transform } from '@scope/common/transformer';
 import { ConfigDocument, NavigationItemInput } from './config.document.ts';
 import { Config } from './config.types.ts';
-import { PlatformSource } from '@scope/experiment';
+import { PlatformSource, PromotionFeature } from '@scope/experiment';
 
 const toImageUrl = (image: string, source: PlatformSource): string => {
   if (source) {
@@ -44,9 +44,10 @@ export const transform: Transform<
     document: ConfigDocument;
     platformSource: PlatformSource;
     isAnalyticsEnabled: boolean;
+    promotion: PromotionFeature | null;
   },
   Config
-> = ({ document, platformSource, isAnalyticsEnabled }) => {
+> = ({ document, platformSource, isAnalyticsEnabled, promotion }) => {
   const { image, _id, genres, navigation } = document;
   return {
     id: _id.toString(),
@@ -74,5 +75,8 @@ export const transform: Transform<
       },
       key: item.key || keyFromDestination(item.destination),
     })),
+    // The promotion is emitted only when eligible, so the field stays
+    // absent from the payload otherwise.
+    ...(promotion ? { promotion } : {}),
   };
 };

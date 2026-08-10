@@ -1,4 +1,5 @@
 import { UserAgent } from '@std/http';
+import { ZodError } from 'zod';
 import {
   DanetMiddleware,
   ForbiddenException,
@@ -7,7 +8,13 @@ import {
   Logger,
   NextFunction,
 } from '@danet/core';
-import { ClientAttributes, RequestAttributes } from '@scope/common/types';
+import {
+  ClientContext,
+  clientContextSchema,
+  ClientHeader,
+  RequestAttributes,
+  UpdateProduct,
+} from '@scope/common/types';
 import { setClientAttributes, setRequestAttributes } from '@scope/common/utils';
 import { SecretService } from '@scope/secret';
 import { isHealthCheck } from './health-check.ts';
@@ -20,17 +27,22 @@ export class HeaderMiddleware implements DanetMiddleware {
     private readonly secret: SecretService,
   ) {}
 
+  // Canonical client headers expected from the mobile clients. These are
+  // client-supplied targeting metadata, not authentication, and must never
+  // be used to authorize privileged operations.
   private readonly REQUIRED_HEADERS: string[] = [
     'host',
     'accept',
     'accept-encoding',
     'user-agent',
-    'x-app-name',
-    'x-app-version',
-    'x-app-code',
-    'x-app-source',
-    'x-app-locale',
-    'x-app-build',
+    ClientHeader.appId,
+    ClientHeader.package,
+    ClientHeader.version,
+    ClientHeader.versionCode,
+    ClientHeader.source,
+    ClientHeader.locale,
+    ClientHeader.buildType,
+    ClientHeader.deviceBuildId,
   ];
 
   private fail = (header: string, _context: HttpContext) => {
@@ -54,30 +66,89 @@ export class HeaderMiddleware implements DanetMiddleware {
     };
   };
 
-  private clientAttributes = (request: Request): ClientAttributes => {
-    const { headers } = request;
-    const userAgentString = headers.get('user-agent')!;
+  private failValue = (error: ZodError) => {
+    const detail = error.issues
+      .map((issue) => `${issue.path.join('.')} (${issue.code})`)
+      .join(', ');
+    const message = `Invalid client context headers: ${detail}`;
+    if (!this.secret.isDevelopment()) {
+      this.logger.error(message);
+      throw new ForbiddenException();
+    } else {
+      this.logger.warn(message);
+    }
+  };
+
+  private platform = (
+    headers: Headers,
+    deviceBuildId: string | null,
+  ): ClientContext['platform'] => {
+    const userAgentString = headers.get('user-agent') ?? '';
     const { browser, cpu, device, engine, os } = new UserAgent(userAgentString);
+    return {
+      browserName: browser.name ?? null,
+      browserVersion: browser.version ?? null,
+      cpuArchitecture: cpu.architecture ?? null,
+      deviceModel: device.model ?? null,
+      deviceVendor: device.vendor ?? null,
+      deviceType: device.type ?? null,
+      engineName: engine.name ?? null,
+      engineVersion: engine.version ?? null,
+      osName: os.name ?? null,
+      osVersion: os.version ?? null,
+      deviceBuildId,
+    };
+  };
+
+  // Dev-only best-effort context so local development can continue after a
+  // validation warning instead of failing the request.
+  private devClientContext = (headers: Headers): ClientContext => {
+    const appId = headers.get(ClientHeader.appId);
+    const versionCode = Number.parseInt(
+      headers.get(ClientHeader.versionCode) ?? '',
+      10,
+    );
+    const deviceBuildId = headers.get(ClientHeader.deviceBuildId);
+    return {
+      appId: appId === UpdateProduct.ANITREND_V2
+        ? UpdateProduct.ANITREND_V2
+        : UpdateProduct.ANITREND_APP,
+      packageName: headers.get(ClientHeader.package) ?? '',
+      version: headers.get(ClientHeader.version) ?? '',
+      versionCode: Number.isSafeInteger(versionCode) && versionCode > 0
+        ? versionCode
+        : 0,
+      source: headers.get(ClientHeader.source) ?? '',
+      locale: headers.get(ClientHeader.locale) ?? '',
+      buildType: headers.get(ClientHeader.buildType) ?? '',
+      platform: this.platform(
+        headers,
+        deviceBuildId && deviceBuildId.length > 0 ? deviceBuildId : null,
+      ),
+    };
+  };
+
+  private clientContext = (request: Request): ClientContext => {
+    const { headers } = request;
+    const parsed = clientContextSchema.safeParse({
+      appId: headers.get(ClientHeader.appId),
+      packageName: headers.get(ClientHeader.package),
+      version: headers.get(ClientHeader.version),
+      versionCode: headers.get(ClientHeader.versionCode),
+      source: headers.get(ClientHeader.source),
+      locale: headers.get(ClientHeader.locale),
+      buildType: headers.get(ClientHeader.buildType),
+      deviceBuildId: headers.get(ClientHeader.deviceBuildId) ?? null,
+    });
+
+    if (!parsed.success) {
+      this.failValue(parsed.error);
+      return this.devClientContext(headers);
+    }
 
     return {
-      locale: headers.get('x-app-locale')!,
-      version: headers.get('x-app-version')!,
-      source: headers.get('x-app-source')!,
-      code: headers.get('x-app-code')!,
-      label: headers.get('x-app-name')!,
-      build: headers.get('x-app-build')!,
-      platform: {
-        browserName: browser.name ?? null,
-        browserVersion: browser.version ?? null,
-        cpuArchitecture: cpu.architecture ?? null,
-        deviceModel: device.model ?? null,
-        deviceVendor: device.vendor ?? null,
-        deviceType: device.type ?? null,
-        engineName: engine.name ?? null,
-        engineVersion: engine.version ?? null,
-        osName: os.name ?? null,
-        osVersion: os.version ?? null,
-      },
+      ...parsed.data,
+      platform: this.platform(headers, parsed.data.deviceBuildId),
     };
   };
 
@@ -93,7 +164,7 @@ export class HeaderMiddleware implements DanetMiddleware {
       }
     }
     setRequestAttributes(context, this.requestAttributes(request));
-    setClientAttributes(context, this.clientAttributes(request));
+    setClientAttributes(context, this.clientContext(request));
     await next();
   }
 }
