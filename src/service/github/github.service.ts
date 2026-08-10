@@ -107,7 +107,7 @@ export class GithubService {
   constructor(
     private readonly secret: SecretService,
     private readonly logger: LoggerService,
-  ) { }
+  ) {}
 
   private createClient(baseUrl: string): RequestClient {
     const client = createClient({
@@ -234,8 +234,9 @@ export class GithubService {
     path: string,
   ): Promise<string | undefined> {
     const encodedTag = encodeURIComponent(tag);
-    const requestPath = `/${encodeURIComponent(owner)}/${encodeURIComponent(repo)
-      }/${encodedTag}/${path}`;
+    const requestPath = `/${encodeURIComponent(owner)}/${
+      encodeURIComponent(repo)
+    }/${encodedTag}/${path}`;
     try {
       const { data } = await this.createClient(GITHUB_RAW_BASE).get(
         requestPath,

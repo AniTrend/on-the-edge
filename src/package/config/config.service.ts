@@ -22,7 +22,7 @@ export class ConfigService {
     private readonly repository: ConfigRepository,
     private readonly experiment: ExperimentService,
     private readonly logger: LoggerService,
-  ) { }
+  ) {}
 
   async getConfig(context?: ExecutionContext): Promise<Config> {
     const features = {
@@ -50,7 +50,8 @@ export class ConfigService {
         { errors: navErrors },
       );
       throw new Error(
-        `Config navigation payload is invalid: ${navErrors.map((e) => e.message).join('; ')
+        `Config navigation payload is invalid: ${
+          navErrors.map((e) => e.message).join('; ')
         }`,
       );
     }

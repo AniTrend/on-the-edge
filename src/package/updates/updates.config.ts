@@ -208,7 +208,8 @@ export const loadUpdateSources = (configPath?: string): UpdateSource[] => {
     text = Deno.readTextFileSync(target);
   } catch (error) {
     throw new Error(
-      `Unable to read update sources config at ${target}: ${(error as Error).message
+      `Unable to read update sources config at ${target}: ${
+        (error as Error).message
       }`,
     );
   }
@@ -218,7 +219,8 @@ export const loadUpdateSources = (configPath?: string): UpdateSource[] => {
     document = parse(text);
   } catch (error) {
     throw new Error(
-      `Invalid YAML in update sources config at ${target}: ${(error as Error).message
+      `Invalid YAML in update sources config at ${target}: ${
+        (error as Error).message
       }`,
     );
   }
@@ -226,7 +228,8 @@ export const loadUpdateSources = (configPath?: string): UpdateSource[] => {
   const parsed = UpdateSourcesConfigSchema.safeParse(document);
   if (!parsed.success) {
     throw new Error(
-      `Invalid update sources config at ${target}: ${formatIssues(parsed.error.issues)
+      `Invalid update sources config at ${target}: ${
+        formatIssues(parsed.error.issues)
       }`,
     );
   }

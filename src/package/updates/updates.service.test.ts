@@ -165,16 +165,16 @@ const createHarness = (
   const loggerStub = createMockLogger();
   const fetchReleases = spy(
     options.fetchReleasesImpl ??
-    (async (_owner: string, _repo: string) => ({
-      status: 'ok' as const,
-      release: release(),
-      etag: undefined as string | undefined,
-    })),
+      (async (_owner: string, _repo: string) => ({
+        status: 'ok' as const,
+        release: release(),
+        etag: undefined as string | undefined,
+      })),
   );
   const fetchVersionProperties = spy(
     options.fetchPropertiesImpl ??
-    (async (_owner: string, _repo: string, _tag: string, _path: string) =>
-      propertiesText),
+      (async (_owner: string, _repo: string, _tag: string, _path: string) =>
+        propertiesText),
   );
   const github = {
     fetchReleases,
@@ -207,9 +207,9 @@ const createHarness = (
   );
   const upsert = spy(
     options.upsertImpl ??
-    (async (record: UpdateRecord) => {
-      records.set(`${record.product}:${record.channel}`, record);
-    }),
+      (async (record: UpdateRecord) => {
+        records.set(`${record.product}:${record.channel}`, record);
+      }),
   );
   const isStale = spy(
     (
@@ -996,8 +996,8 @@ describe('UpdatesService', () => {
       } as unknown as GithubService;
       const repository = {
         findByKey: spy(async () => null),
-        touchFreshness: spy(async () => { }),
-        upsert: spy(async () => { }),
+        touchFreshness: spy(async () => {}),
+        upsert: spy(async () => {}),
         isStale: spy(() => false),
       } as unknown as UpdatesRepository;
       const service = new UpdatesService(

@@ -29,7 +29,7 @@ import {
 export class UpdatesController {
   constructor(
     private readonly service: UpdatesService,
-  ) { }
+  ) {}
 
   @Get('update')
   @ReturnedSchema(UpdateDecisionSwagger)

@@ -25,7 +25,7 @@ export class HeaderMiddleware implements DanetMiddleware {
 
   constructor(
     private readonly secret: SecretService,
-  ) { }
+  ) {}
 
   // Canonical client headers expected from the mobile clients. These are
   // client-supplied targeting metadata, not authentication, and must never

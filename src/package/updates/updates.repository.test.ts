@@ -21,7 +21,7 @@ import { UpdatesRepository } from './updates.repository.ts';
 class MockMongoCollection {
   constructor(
     private readonly memoryCollection: InMemoryCollection<UpdateRecord>,
-  ) { }
+  ) {}
 
   find(filter: Filter<UpdateRecord>, options?: FindOptions<UpdateRecord>) {
     return {
@@ -77,7 +77,7 @@ class MockMongoCollection {
 }
 
 class MockMongoService {
-  constructor(private readonly memoryCollection: MockMongoCollection) { }
+  constructor(private readonly memoryCollection: MockMongoCollection) {}
 
   collection<T>(_name: string): MockMongoCollection {
     return this.memoryCollection as unknown as MockMongoCollection & T;

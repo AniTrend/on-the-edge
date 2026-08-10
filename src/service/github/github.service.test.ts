@@ -60,8 +60,8 @@ const captureRequests = (): { requests: RecordedRequest[] } => {
     const url = typeof input === 'string'
       ? input
       : input instanceof URL
-        ? input.href
-        : input.url;
+      ? input.href
+      : input.url;
     requests.push({ url, headers: new Headers(init?.headers) });
     return mockedFetch(input, init);
   };
