@@ -90,8 +90,10 @@ export const EXPECTED_SCHEMA_NAMES = [
   // Health (direct response)
   'Health',
 
-  // Updates (direct response + enum)
+  // Updates (direct response + enums + nested asset)
+  'UpdateProduct',
   'UpdateChannel',
+  'UpdateReleaseAsset',
   'UpdateRelease',
 ] as const;
 

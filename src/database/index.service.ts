@@ -131,10 +131,16 @@ export class DatabaseIndexService implements OnAppBootstrap {
     const collection = this.mongo.collection(UPDATES);
 
     try {
-      // Unique index enforcing one cached update record per channel
+      // Migrate the legacy single-channel unique index (version.json
+      // era) to the composite (product, channel) identity. The drop is
+      // best-effort: fresh deployments have no legacy index.
+      await collection.dropIndex('idx_channel_unique').catch(() => undefined);
+
+      // Unique index enforcing one cached release record per
+      // (product, channel) source
       await collection.createIndex(
-        { channel: 1 },
-        { unique: true, name: 'idx_channel_unique' },
+        { product: 1, channel: 1 },
+        { unique: true, name: 'idx_product_channel_unique' },
       );
 
       this.logger.instance.debug(

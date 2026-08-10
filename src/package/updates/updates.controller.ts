@@ -1,7 +1,10 @@
 import { Controller, Get } from '@danet/core';
 import { Query, ReturnedSchema } from '@danet/zod';
 import { UpdatesService } from './updates.service.ts';
-import { DEFAULT_UPDATE_CHANNEL } from './updates.schema.ts';
+import {
+  DEFAULT_UPDATE_CHANNEL,
+  DEFAULT_UPDATE_PRODUCT,
+} from './updates.schema.ts';
 import type { UpdateQuery, UpdateRelease } from './updates.types.ts';
 import { UpdateQuerySwagger, UpdateReleaseSwagger } from './updates.swagger.ts';
 
@@ -20,6 +23,9 @@ export class UpdatesController {
   async update(
     @Query(UpdateQuerySwagger) query: UpdateQuery,
   ): Promise<UpdateRelease> {
-    return this.service.getUpdate(query.channel ?? DEFAULT_UPDATE_CHANNEL);
+    return this.service.getUpdate(
+      query.product ?? DEFAULT_UPDATE_PRODUCT,
+      query.channel ?? DEFAULT_UPDATE_CHANNEL,
+    );
   }
 }

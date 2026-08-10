@@ -1,13 +1,22 @@
 import { describe, it } from '@std/testing/bdd';
-import { assertEquals, assertRejects } from '@std/assert';
+import { assertEquals, assertRejects, assertThrows } from '@std/assert';
 import { assertSpyCalls, spy } from '@std/testing/mock';
 import { NotFoundException } from '@danet/core';
-import type { GithubService, GithubVersionJson } from '@scope/service/github';
+import type {
+  GithubRelease,
+  GithubReleaseOutcome,
+  GithubService,
+} from '@scope/service/github';
 import { SecretService } from '@scope/secret';
 import { createMockLogger, createMockSecret } from '@scope/common/testing';
 import { STALE_AFTER_HOURS } from './updates.repository.ts';
 import type { UpdatesRepository } from './updates.repository.ts';
-import type { UpdateChannel, UpdateRecord } from './updates.types.ts';
+import type { UpdateSource } from './updates.sources.ts';
+import type {
+  UpdateChannel,
+  UpdateProduct,
+  UpdateRecord,
+} from './updates.types.ts';
 import {
   DEFAULT_REFRESH_INTERVAL_HOURS,
   ON_DEMAND_REFRESH_COOLDOWN_MS,
@@ -15,64 +24,148 @@ import {
   UpdatesService,
 } from './updates.service.ts';
 
-const STABLE_SOURCE =
-  'https://raw.githubusercontent.test/anitrend/app/stable/version.json';
-const BETA_SOURCE =
-  'https://raw.githubusercontent.test/anitrend/app/beta/version.json';
+const STABLE_SOURCE_JSON = {
+  product: 'ANITREND_APP',
+  channel: 'STABLE',
+  repository: 'AniTrend/anitrend-app',
+  propertiesPath: 'gradle/version.properties',
+  selector: 'stable',
+};
 
-const payload = (
-  overrides: Partial<GithubVersionJson> = {},
-): GithubVersionJson => ({
-  code: 42,
-  version: '2.4.0',
-  migration: true,
-  minSdk: 26,
-  releaseNotes: null,
-  appId: 'com.anitrend.app',
+const source = (overrides: Partial<UpdateSource> = {}): UpdateSource => ({
+  product: 'ANITREND_APP',
+  channel: 'STABLE',
+  repository: 'AniTrend/anitrend-app',
+  propertiesPath: 'gradle/version.properties',
+  selector: 'stable',
   ...overrides,
 });
+
+const release = (overrides: Partial<GithubRelease> = {}): GithubRelease => ({
+  tagName: 'v2.4.0',
+  name: 'Release 2.4.0',
+  body: null,
+  publishedAt: 1_752_000_000_000,
+  prerelease: false,
+  draft: false,
+  htmlUrl: 'https://github.com/AniTrend/anitrend-app/releases/tag/v2.4.0',
+  assets: [],
+  ...overrides,
+});
+
+const propertiesText = 'VERSION_NAME=2.4.0\nVERSION_CODE=20400\n';
 
 const createRecord = (
   overrides: Partial<UpdateRecord> = {},
 ): UpdateRecord => ({
+  product: 'ANITREND_APP',
   channel: 'STABLE',
-  code: 42,
-  version: '2.4.0',
-  migration: true,
-  minSdk: 26,
+  tag: 'v2.4.0',
+  name: 'Release 2.4.0',
   releaseNotes: null,
-  appId: 'com.anitrend.app',
+  publishedAt: 1_752_000_000_000,
+  prerelease: false,
+  htmlUrl: 'https://github.com/AniTrend/anitrend-app/releases/tag/v2.4.0',
+  assets: [],
+  code: 20400,
+  version: '2.4.0',
   updatedAt: Date.now(),
+  etag: null,
   ...overrides,
 });
 
 const createHarness = (
-  env: Record<string, string> = {},
-  fetchImpl?: (sourceUrl: string) => Promise<GithubVersionJson | undefined>,
-  seed: UpdateRecord[] = [],
-  upsertImpl?: (record: UpdateRecord) => Promise<void>,
+  options: {
+    sources?: UpdateSource[];
+    fetchLatestImpl?: (
+      owner: string,
+      repo: string,
+      ifNoneMatch?: string,
+    ) => Promise<GithubReleaseOutcome | undefined>;
+    fetchReleasesImpl?: (
+      owner: string,
+      repo: string,
+      options: {
+        selector: 'stable' | 'prerelease';
+        rollingWindowDays?: number;
+        ifNoneMatch?: string;
+      },
+    ) => Promise<GithubReleaseOutcome | undefined>;
+    fetchPropertiesImpl?: (
+      owner: string,
+      repo: string,
+      tag: string,
+      path: string,
+    ) => Promise<string | undefined>;
+    upsertImpl?: (record: UpdateRecord) => Promise<void>;
+    seed?: UpdateRecord[];
+    env?: Record<string, string>;
+  } = {},
 ) => {
   const { service: secret } = createMockSecret({
     CLIENT_REQUEST_TIMEOUT: '5000',
     DENO_ENV: 'test',
-    ...env,
+    UPDATE_SOURCES: JSON.stringify({
+      sources: options.sources ?? [],
+    }),
+    ...options.env,
   });
   const loggerStub = createMockLogger();
-  const impl: (sourceUrl: string) => Promise<GithubVersionJson | undefined> =
-    fetchImpl ?? (async () => payload());
-  const fetchVersionJson = spy(impl);
-  const github = { fetchVersionJson } as unknown as GithubService;
-  const records = new Map<UpdateChannel, UpdateRecord>(
-    seed.map((record) => [record.channel, record]),
+  const fetchLatestRelease = spy(
+    options.fetchLatestImpl ??
+      (async (_owner: string, _repo: string, _ifNoneMatch?: string) => ({
+        status: 'ok' as const,
+        release: release(),
+        etag: undefined as string | undefined,
+      })),
+  );
+  const fetchReleases = spy(
+    options.fetchReleasesImpl ??
+      (async (_owner: string, _repo: string) => ({
+        status: 'ok' as const,
+        release: release(),
+        etag: undefined as string | undefined,
+      })),
+  );
+  const fetchVersionProperties = spy(
+    options.fetchPropertiesImpl ??
+      (async (_owner: string, _repo: string, _tag: string, _path: string) =>
+        propertiesText),
+  );
+  const github = {
+    fetchLatestRelease,
+    fetchReleases,
+    fetchVersionProperties,
+  } as unknown as GithubService;
+  const records = new Map<string, UpdateRecord>(
+    (options.seed ?? []).map((record) => [
+      `${record.product}:${record.channel}`,
+      record,
+    ]),
+  );
+  const findByKey = spy(
+    async (product: UpdateProduct, channel: UpdateChannel) =>
+      records.get(`${product}:${channel}`) ?? null,
+  );
+  const touchFreshness = spy(
+    async (
+      product: UpdateProduct,
+      channel: UpdateChannel,
+      _now?: number,
+      _etag?: string,
+    ) => {
+      const key = `${product}:${channel}`;
+      const record = records.get(key);
+      if (record) {
+        records.set(key, { ...record, updatedAt: Date.now() });
+      }
+    },
   );
   const upsert = spy(
-    upsertImpl ??
+    options.upsertImpl ??
       (async (record: UpdateRecord) => {
-        records.set(record.channel, record);
+        records.set(`${record.product}:${record.channel}`, record);
       }),
-  );
-  const findByChannel = spy(
-    async (channel: UpdateChannel) => records.get(channel) ?? null,
   );
   const isStale = spy(
     (
@@ -81,8 +174,9 @@ const createHarness = (
     ) => now - record.updatedAt >= STALE_AFTER_HOURS * 60 * 60 * 1000,
   );
   const repository = {
+    findByKey,
+    touchFreshness,
     upsert,
-    findByChannel,
     isStale,
   } as unknown as UpdatesRepository;
   const service = new UpdatesService(
@@ -93,259 +187,518 @@ const createHarness = (
   );
   return {
     service,
-    fetchVersionJson,
-    upsert,
-    findByChannel,
+    github: { fetchLatestRelease, fetchReleases, fetchVersionProperties },
+    repository: { findByKey, touchFreshness, upsert, isStale },
     spies: loggerStub.spies,
   };
 };
 
-/** Force the per-channel on-demand cooldown timestamp for determinism. */
+/** Force the per-source on-demand cooldown timestamp for determinism. */
 const setOnDemandRefreshAt = (
   service: UpdatesService,
-  channel: UpdateChannel,
+  key: string,
   at: number,
 ) => {
   (
     service as unknown as {
-      lastOnDemandRefreshAt: Partial<Record<UpdateChannel, number>>;
+      lastOnDemandRefreshAt: Partial<Record<string, number>>;
     }
-  ).lastOnDemandRefreshAt[channel] = at;
+  ).lastOnDemandRefreshAt[key] = at;
 };
 
 describe('UpdatesService', () => {
-  it('fetches and persists the latest manifest for every configured channel', async () => {
-    const { service, fetchVersionJson, upsert } = createHarness({
-      UPDATES_SOURCE_STABLE: STABLE_SOURCE,
-      UPDATES_SOURCE_BETA: BETA_SOURCE,
+  it('persists release-backed records for every configured source', async () => {
+    const { service, repository } = createHarness({
+      sources: [
+        source(),
+        source({ product: 'ANITREND_V2', channel: 'EXPERIMENTAL' }),
+      ],
     });
 
     const result = await service.refresh();
 
     assertEquals(result.skipped, false);
     assertEquals(result.results, [
-      { channel: 'STABLE', status: 'updated', code: 42 },
-      { channel: 'BETA', status: 'updated', code: 42 },
-      { channel: 'EXPERIMENTAL', status: 'skipped' },
+      {
+        product: 'ANITREND_APP',
+        channel: 'STABLE',
+        status: 'updated',
+        code: 20400,
+      },
+      {
+        product: 'ANITREND_V2',
+        channel: 'EXPERIMENTAL',
+        status: 'updated',
+        code: 20400,
+      },
     ]);
-    assertSpyCalls(fetchVersionJson, 2);
-    assertEquals(fetchVersionJson.calls[0].args[0], STABLE_SOURCE);
-    assertEquals(fetchVersionJson.calls[1].args[0], BETA_SOURCE);
-    assertSpyCalls(upsert, 2);
-    assertEquals(upsert.calls[0].args[0].channel, 'STABLE');
-    assertEquals(upsert.calls[0].args[0].code, 42);
-    assertEquals(upsert.calls[0].args[0].version, '2.4.0');
-    assertEquals(upsert.calls[0].args[0].appId, 'com.anitrend.app');
-    assertEquals(typeof upsert.calls[0].args[0].updatedAt, 'number');
-    // No invented manifest fields are persisted
-    assertEquals('url' in upsert.calls[0].args[0], false);
-    assertEquals('publishedAt' in upsert.calls[0].args[0], false);
-    assertEquals(upsert.calls[1].args[0].channel, 'BETA');
+    assertSpyCalls(repository.upsert, 2);
+    const record = repository.upsert.calls[0].args[0];
+    assertEquals(record.product, 'ANITREND_APP');
+    assertEquals(record.channel, 'STABLE');
+    assertEquals(record.tag, 'v2.4.0');
+    assertEquals(record.name, 'Release 2.4.0');
+    assertEquals(record.code, 20400);
+    assertEquals(record.version, '2.4.0');
+    assertEquals(record.publishedAt, 1_752_000_000_000);
+    assertEquals(record.prerelease, false);
+    assertEquals(record.htmlUrl, release().htmlUrl);
+    assertEquals(typeof record.updatedAt, 'number');
   });
 
-  it('marks unconfigured channels as skipped without fetching', async () => {
-    const { service, fetchVersionJson, upsert } = createHarness();
+  it('refreshes with no sources into an empty result', async () => {
+    const { service, repository } = createHarness({ sources: [] });
+
+    const result = await service.refresh();
+
+    assertEquals(result.skipped, false);
+    assertEquals(result.results, []);
+    assertSpyCalls(repository.upsert, 0);
+  });
+
+  it('uses the prerelease list path with the rolling window for prerelease selectors', async () => {
+    const { service, github } = createHarness({
+      sources: [
+        source({
+          channel: 'BETA',
+          selector: 'prerelease',
+          rollingWindowDays: 90,
+        }),
+      ],
+    });
+
+    await service.refresh();
+
+    assertSpyCalls(github.fetchLatestRelease, 0);
+    assertSpyCalls(github.fetchReleases, 1);
+    assertEquals(github.fetchReleases.calls[0].args[0], 'AniTrend');
+    assertEquals(github.fetchReleases.calls[0].args[1], 'anitrend-app');
+    assertEquals(github.fetchReleases.calls[0].args[2].selector, 'prerelease');
+    assertEquals(github.fetchReleases.calls[0].args[2].rollingWindowDays, 90);
+  });
+
+  it('falls back to the strict semver tag when properties are absent', async () => {
+    const { service, repository, github } = createHarness({
+      sources: [source()],
+      fetchPropertiesImpl: async () => undefined,
+    });
+
+    await service.refresh();
+
+    assertSpyCalls(github.fetchVersionProperties, 1);
+    const record = repository.upsert.calls[0].args[0];
+    assertEquals(record.version, '2.4.0');
+    assertEquals(record.code, 2_004_000_000);
+  });
+
+  it('marks the source failed when neither properties nor the tag resolve', async () => {
+    const { service, repository } = createHarness({
+      sources: [source()],
+      fetchPropertiesImpl: async () => undefined,
+      fetchLatestImpl: async () => ({
+        status: 'ok',
+        release: release({ tagName: 'release-2026-01' }),
+        etag: undefined,
+      }),
+    });
 
     const result = await service.refresh();
 
     assertEquals(result.results, [
-      { channel: 'STABLE', status: 'skipped' },
-      { channel: 'BETA', status: 'skipped' },
-      { channel: 'EXPERIMENTAL', status: 'skipped' },
+      { product: 'ANITREND_APP', channel: 'STABLE', status: 'failed' },
     ]);
-    assertSpyCalls(fetchVersionJson, 0);
-    assertSpyCalls(upsert, 0);
+    assertSpyCalls(repository.upsert, 0);
   });
 
-  it('marks channels as failed when the source is unreachable', async () => {
-    const { service, fetchVersionJson, upsert } = createHarness(
-      {
-        UPDATES_SOURCE_STABLE: STABLE_SOURCE,
-        UPDATES_SOURCE_BETA: BETA_SOURCE,
-      },
-      async (sourceUrl) => sourceUrl === BETA_SOURCE ? undefined : payload(),
-    );
+  it('touches freshness on 304 without replacing the cached release', async () => {
+    const staleRecord = createRecord({
+      updatedAt: Date.now() - 13 * 60 * 60 * 1000,
+      etag: '"abc123"',
+    });
+    const { service, repository, github } = createHarness({
+      sources: [source()],
+      seed: [staleRecord],
+      fetchLatestImpl: async () => ({ status: 'not-modified' }),
+    });
 
     const result = await service.refresh();
 
     assertEquals(result.results, [
-      { channel: 'STABLE', status: 'updated', code: 42 },
-      { channel: 'BETA', status: 'failed' },
-      { channel: 'EXPERIMENTAL', status: 'skipped' },
+      { product: 'ANITREND_APP', channel: 'STABLE', status: 'unchanged' },
     ]);
-    assertSpyCalls(fetchVersionJson, 2);
-    assertSpyCalls(upsert, 1);
+    assertSpyCalls(github.fetchLatestRelease, 1);
+    assertSpyCalls(repository.touchFreshness, 1);
+    assertSpyCalls(repository.upsert, 0);
+    const touched = repository.touchFreshness.calls[0].args;
+    assertEquals(touched[0], 'ANITREND_APP');
+    assertEquals(touched[1], 'STABLE');
   });
 
-  it('isolates a throwing channel during the scheduled refresh', async () => {
-    const { service, fetchVersionJson, upsert, spies } = createHarness(
-      {
-        UPDATES_SOURCE_STABLE: STABLE_SOURCE,
-        UPDATES_SOURCE_BETA: BETA_SOURCE,
-      },
-      undefined,
-      [],
-      async (record) => {
+  it('touches freshness when the same release tag is still selected', async () => {
+    const staleRecord = createRecord({
+      updatedAt: Date.now() - 13 * 60 * 60 * 1000,
+      etag: null,
+    });
+    const { service, repository } = createHarness({
+      sources: [source()],
+      seed: [staleRecord],
+      fetchLatestImpl: async () => ({
+        status: 'ok',
+        release: release(),
+        etag: '"new-etag"',
+      }),
+    });
+
+    const result = await service.refresh();
+
+    assertEquals(result.results, [
+      { product: 'ANITREND_APP', channel: 'STABLE', status: 'unchanged' },
+    ]);
+    assertSpyCalls(repository.touchFreshness, 1);
+    assertSpyCalls(repository.upsert, 0);
+    // The new ETag is stored for the next conditional request.
+    assertEquals(repository.touchFreshness.calls[0].args[3], '"new-etag"');
+  });
+
+  it('isolates a throwing source during the scheduled refresh', async () => {
+    const { service, repository, spies } = createHarness({
+      sources: [
+        source(),
+        source({ channel: 'BETA' }),
+      ],
+      upsertImpl: async (record) => {
         if (record.channel === 'STABLE') {
           throw new Error('persistence failure');
         }
       },
-    );
+    });
 
     const result = await service.refresh();
 
-    // STABLE persistence throws; BETA must still refresh successfully
-    // and EXPERIMENTAL remains skipped.
     assertEquals(result.results, [
-      { channel: 'STABLE', status: 'failed' },
-      { channel: 'BETA', status: 'updated', code: 42 },
-      { channel: 'EXPERIMENTAL', status: 'skipped' },
+      { product: 'ANITREND_APP', channel: 'STABLE', status: 'failed' },
+      {
+        product: 'ANITREND_APP',
+        channel: 'BETA',
+        status: 'updated',
+        code: 20400,
+      },
     ]);
-    assertSpyCalls(fetchVersionJson, 2);
-    assertSpyCalls(upsert, 2);
-    // Per-channel failure warning plus the failed-summary warning.
-    assertEquals(
-      spies.warn.calls[0].args[0],
-      'Channel refresh failed',
-    );
-    assertSpyCalls(spies.warn, 2);
+    assertSpyCalls(repository.upsert, 2);
+    assertEquals(spies.warn.calls[0].args[0], 'Source refresh failed');
   });
 
-  it('skips refresh while another refresh is in progress', async () => {
-    let resolveFetch!: (value: GithubVersionJson | undefined) => void;
-    const pending = new Promise<GithubVersionJson | undefined>((resolve) => {
+  it('serves a fresh cached record without any GitHub calls', async () => {
+    const { service, repository, github } = createHarness({
+      sources: [source()],
+      seed: [createRecord()],
+    });
+
+    const result = await service.getUpdate('ANITREND_APP', 'STABLE');
+
+    assertEquals(result.code, 20400);
+    assertSpyCalls(github.fetchLatestRelease, 0);
+    assertSpyCalls(repository.upsert, 0);
+  });
+
+  it('refreshes a stale record once and serves the fresh result', async () => {
+    const { service, repository, github } = createHarness({
+      sources: [source()],
+      seed: [createRecord({
+        tag: 'v2.3.9',
+        code: 20399,
+        updatedAt: Date.now() - 13 * 60 * 60 * 1000,
+      })],
+    });
+
+    const result = await service.getUpdate('ANITREND_APP', 'STABLE');
+
+    assertEquals(result.code, 20400);
+    assertSpyCalls(github.fetchLatestRelease, 1);
+    assertSpyCalls(repository.upsert, 1);
+  });
+
+  it('serves the stale record when the on-demand refresh fails', async () => {
+    const staleRecord = createRecord({
+      code: 20399,
+      updatedAt: Date.now() - 13 * 60 * 60 * 1000,
+    });
+    const { service, github } = createHarness({
+      sources: [source()],
+      seed: [staleRecord],
+      fetchLatestImpl: async () => undefined,
+    });
+
+    const result = await service.getUpdate('ANITREND_APP', 'STABLE');
+
+    assertEquals(result.code, 20399);
+    assertSpyCalls(github.fetchLatestRelease, 1);
+  });
+
+  it('serves the stale record when the on-demand refresh rejects', async () => {
+    const staleRecord = createRecord({
+      code: 20399,
+      updatedAt: Date.now() - 13 * 60 * 60 * 1000,
+    });
+    const { service, github } = createHarness({
+      sources: [source()],
+      seed: [staleRecord],
+      upsertImpl: async () => {
+        throw new Error('persistence failure');
+      },
+    });
+
+    const result = await service.getUpdate('ANITREND_APP', 'STABLE');
+
+    assertEquals(result.code, 20399);
+    assertSpyCalls(github.fetchLatestRelease, 1);
+    // Cooldown applies: an immediate retry must not fetch again.
+    await service.getUpdate('ANITREND_APP', 'STABLE');
+    assertSpyCalls(github.fetchLatestRelease, 1);
+  });
+
+  it('returns NotFound when the on-demand refresh rejects and no record exists', async () => {
+    const { service } = createHarness({
+      sources: [source()],
+      upsertImpl: async () => {
+        throw new Error('persistence failure');
+      },
+    });
+
+    await assertRejects(
+      () => service.getUpdate('ANITREND_APP', 'STABLE'),
+      NotFoundException,
+    );
+  });
+
+  it('does not retry a failed missing-source refresh within the cooldown', async () => {
+    const { service, github } = createHarness({
+      sources: [source()],
+      fetchLatestImpl: async () => undefined,
+    });
+
+    await assertRejects(
+      () => service.getUpdate('ANITREND_APP', 'STABLE'),
+      NotFoundException,
+    );
+    await assertRejects(
+      () => service.getUpdate('ANITREND_APP', 'STABLE'),
+      NotFoundException,
+    );
+
+    assertSpyCalls(github.fetchLatestRelease, 1);
+  });
+
+  it('serves fresh cache hits without refresh attempts or cooldown interaction', async () => {
+    const { service, repository, github } = createHarness({
+      sources: [source()],
+      seed: [createRecord()],
+    });
+
+    await service.getUpdate('ANITREND_APP', 'STABLE');
+    await service.getUpdate('ANITREND_APP', 'STABLE');
+
+    assertSpyCalls(repository.findByKey, 2);
+    assertSpyCalls(github.fetchLatestRelease, 0);
+  });
+
+  it('retries an on-demand refresh after the cooldown expires', async () => {
+    const staleRecord = createRecord({
+      code: 20399,
+      updatedAt: Date.now() - 13 * 60 * 60 * 1000,
+    });
+    const { service, github } = createHarness({
+      sources: [source()],
+      seed: [staleRecord],
+      fetchLatestImpl: async () => undefined,
+    });
+
+    assertEquals(
+      (await service.getUpdate('ANITREND_APP', 'STABLE')).code,
+      20399,
+    );
+    assertSpyCalls(github.fetchLatestRelease, 1);
+
+    assertEquals(
+      (await service.getUpdate('ANITREND_APP', 'STABLE')).code,
+      20399,
+    );
+    assertSpyCalls(github.fetchLatestRelease, 1);
+
+    setOnDemandRefreshAt(
+      service,
+      'ANITREND_APP:STABLE',
+      Date.now() - ON_DEMAND_REFRESH_COOLDOWN_MS - 1,
+    );
+    assertEquals(
+      (await service.getUpdate('ANITREND_APP', 'STABLE')).code,
+      20399,
+    );
+    assertSpyCalls(github.fetchLatestRelease, 2);
+  });
+
+  it('refreshes only the requested product/channel on demand', async () => {
+    const { service, github, repository } = createHarness({
+      sources: [
+        source(),
+        source({ channel: 'BETA' }),
+      ],
+    });
+
+    await service.getUpdate('ANITREND_APP', 'STABLE');
+
+    assertSpyCalls(github.fetchLatestRelease, 1);
+    assertEquals(repository.upsert.calls[0].args[0].channel, 'STABLE');
+  });
+
+  it('persists only configured assets for a source', async () => {
+    const releaseWithAssets = release({
+      assets: [
+        { name: 'app-github-release.apk', url: 'https://x/a.apk', size: 1 },
+        { name: 'app-release.apk', url: 'https://x/b.apk', size: 2 },
+        { name: 'other-file.txt', url: 'https://x/c.txt', size: 3 },
+      ],
+    });
+    const { service, repository } = createHarness({
+      sources: [
+        source({ assets: ['app-github-release.apk', 'app-release.apk'] }),
+      ],
+      fetchLatestImpl: async () => ({
+        status: 'ok',
+        release: releaseWithAssets,
+        etag: undefined,
+      }),
+    });
+
+    await service.refresh();
+
+    const record = repository.upsert.calls[0].args[0];
+    assertEquals(
+      record.assets.map((asset) => asset.name),
+      ['app-github-release.apk', 'app-release.apk'],
+    );
+  });
+
+  it('keeps the full release asset list when no filter is configured', async () => {
+    const releaseWithAssets = release({
+      assets: [
+        { name: 'app-release.apk', url: 'https://x/b.apk', size: 2 },
+        { name: 'other-file.txt', url: 'https://x/c.txt', size: 3 },
+      ],
+    });
+    const { service, repository } = createHarness({
+      sources: [source()],
+      fetchLatestImpl: async () => ({
+        status: 'ok',
+        release: releaseWithAssets,
+        etag: undefined,
+      }),
+    });
+
+    await service.refresh();
+
+    const record = repository.upsert.calls[0].args[0];
+    assertEquals(record.assets.length, 2);
+  });
+
+  it('filters legacy cached assets at the response boundary', async () => {
+    const cachedRecord = createRecord({
+      assets: [
+        { name: 'app-github-release.apk', url: 'https://x/a.apk', size: 1 },
+        { name: 'app-release.apk', url: 'https://x/b.apk', size: 2 },
+        { name: 'other-file.txt', url: 'https://x/c.txt', size: 3 },
+      ],
+    });
+    const { service, github } = createHarness({
+      sources: [source({ assets: ['app-release.apk'] })],
+      seed: [cachedRecord],
+    });
+
+    const result = await service.getUpdate('ANITREND_APP', 'STABLE');
+
+    assertEquals(
+      result.assets.map((asset) => asset.name),
+      ['app-release.apk'],
+    );
+    assertSpyCalls(github.fetchLatestRelease, 0);
+  });
+
+  it('serves cached records per product identity without cross-product leaks', async () => {
+    const { service, github } = createHarness({
+      sources: [
+        source(),
+        source({ product: 'ANITREND_V2', channel: 'EXPERIMENTAL' }),
+      ],
+      seed: [createRecord({ product: 'ANITREND_V2', channel: 'EXPERIMENTAL' })],
+    });
+
+    const v2 = await service.getUpdate('ANITREND_V2', 'EXPERIMENTAL');
+    assertEquals(v2.product, 'ANITREND_V2');
+
+    // Same channel, different product: no cached record and no
+    // configured source for ANITREND_APP:EXPERIMENTAL, so the
+    // on-demand refresh skips and NotFound is returned. No
+    // cross-product fallback.
+    await assertRejects(
+      () => service.getUpdate('ANITREND_APP', 'EXPERIMENTAL'),
+      NotFoundException,
+    );
+    assertSpyCalls(github.fetchLatestRelease, 0);
+  });
+
+  it('does not fetch again while a scheduled refresh is already in flight', async () => {
+    let resolveFetch!: (value: GithubReleaseOutcome | undefined) => void;
+    const pending = new Promise<GithubReleaseOutcome | undefined>((resolve) => {
       resolveFetch = resolve;
     });
-    const { service } = createHarness(
-      { UPDATES_SOURCE_STABLE: STABLE_SOURCE },
-      () => pending,
-    );
-
-    const first = service.refresh();
-    const second = await service.refresh();
-
-    assertEquals(second.skipped, true);
-    assertEquals(second.results, []);
-
-    resolveFetch(payload());
-    const firstResult = await first;
-    assertEquals(firstResult.skipped, false);
-    assertEquals(firstResult.results, [
-      { channel: 'STABLE', status: 'updated', code: 42 },
-      { channel: 'BETA', status: 'skipped' },
-      { channel: 'EXPERIMENTAL', status: 'skipped' },
-    ]);
-  });
-
-  it('ignores non-HTTPS source URLs and skips those channels', async () => {
-    const { service, fetchVersionJson, upsert, spies } = createHarness({
-      UPDATES_SOURCE_STABLE: 'http://insecure.test/version.json',
-      UPDATES_SOURCE_BETA: BETA_SOURCE,
+    const staleRecord = createRecord({
+      code: 20399,
+      updatedAt: Date.now() - 13 * 60 * 60 * 1000,
+    });
+    const { service, github } = createHarness({
+      sources: [source()],
+      seed: [staleRecord],
+      fetchLatestImpl: () => pending,
     });
 
-    const result = await service.refresh();
+    const inFlight = service.refresh();
+    const result = await service.getUpdate('ANITREND_APP', 'STABLE');
 
-    assertEquals(result.results, [
-      { channel: 'STABLE', status: 'skipped' },
-      { channel: 'BETA', status: 'updated', code: 42 },
-      { channel: 'EXPERIMENTAL', status: 'skipped' },
-    ]);
-    assertSpyCalls(fetchVersionJson, 1);
-    assertEquals(fetchVersionJson.calls[0].args[0], BETA_SOURCE);
-    assertSpyCalls(upsert, 1);
-    assertSpyCalls(spies.warn, 1);
-    assertEquals(
-      spies.warn.calls[0].args[0],
-      'Ignoring non-HTTPS update source URL',
-    );
-  });
+    // The in-flight refresh owns the guard; the request path skips and
+    // serves the stale record without a second upstream call.
+    assertEquals(result.code, 20399);
+    assertSpyCalls(github.fetchLatestRelease, 1);
 
-  it('skips the initial refresh in CI mode using the mock secret', async () => {
-    const { service, fetchVersionJson, upsert } = createHarness({
-      DENO_ENV: 'true',
-      UPDATES_SOURCE_STABLE: STABLE_SOURCE,
+    resolveFetch({
+      status: 'ok',
+      release: release(),
+      etag: undefined,
     });
-
-    await service.onAppBootstrap();
-    await service.onAppClose();
-
-    assertSpyCalls(fetchVersionJson, 0);
-    assertSpyCalls(upsert, 0);
+    await inFlight;
   });
 
-  it('skips the initial refresh in CI mode using CI=true semantics', async () => {
-    const previousCi = Deno.env.get('CI');
-    const previousStable = Deno.env.get('UPDATES_SOURCE_STABLE');
-    Deno.env.set('CI', 'true');
-    Deno.env.set('UPDATES_SOURCE_STABLE', STABLE_SOURCE);
-    try {
-      const loggerStub = createMockLogger();
-      const fetchVersionJson = spy(async (_url: string) => payload());
-      const github = { fetchVersionJson } as unknown as GithubService;
-      const upsert = spy(async (_record: UpdateRecord) => {});
-      const repository = { upsert } as unknown as UpdatesRepository;
-      const service = new UpdatesService(
-        github,
-        repository,
-        new SecretService(),
-        loggerStub.logger,
-      );
-
-      await service.onAppBootstrap();
-      assertSpyCalls(fetchVersionJson, 0);
-      assertSpyCalls(upsert, 0);
-      await service.onAppClose();
-    } finally {
-      if (previousCi === undefined) {
-        Deno.env.delete('CI');
-      } else {
-        Deno.env.set('CI', previousCi);
-      }
-      if (previousStable === undefined) {
-        Deno.env.delete('UPDATES_SOURCE_STABLE');
-      } else {
-        Deno.env.set('UPDATES_SOURCE_STABLE', previousStable);
-      }
-    }
-  });
-
-  it('runs an initial refresh on bootstrap outside CI mode', async () => {
-    const { service, fetchVersionJson, upsert } = createHarness({
-      UPDATES_SOURCE_STABLE: STABLE_SOURCE,
-    });
-
-    await service.onAppBootstrap();
-    await service.onAppClose();
-
-    assertSpyCalls(fetchVersionJson, 1);
-    assertSpyCalls(upsert, 1);
-  });
-
-  it('does not create a refresh timer when no source channels are configured', async () => {
+  it('does not create a refresh timer when no sources are configured', async () => {
     const originalSetInterval = globalThis.setInterval;
     const setIntervalSpy = spy((..._args: unknown[]) => 0);
     globalThis.setInterval = setIntervalSpy as unknown as typeof setInterval;
     try {
-      const { service, fetchVersionJson } = createHarness();
+      const { service } = createHarness({ sources: [] });
 
       await service.onAppBootstrap();
 
       assertSpyCalls(setIntervalSpy, 0);
-      assertSpyCalls(fetchVersionJson, 0);
       await service.onAppClose();
     } finally {
       globalThis.setInterval = originalSetInterval;
     }
   });
 
-  it('creates a refresh timer when source channels are configured', async () => {
+  it('creates a refresh timer when sources are configured', async () => {
     const originalSetInterval = globalThis.setInterval;
     const setIntervalSpy = spy((..._args: unknown[]) => 0);
     globalThis.setInterval = setIntervalSpy as unknown as typeof setInterval;
     try {
-      const { service } = createHarness({
-        UPDATES_SOURCE_STABLE: STABLE_SOURCE,
-      });
+      const { service } = createHarness({ sources: [source()] });
 
       await service.onAppBootstrap();
       assertSpyCalls(setIntervalSpy, 1);
@@ -355,284 +708,70 @@ describe('UpdatesService', () => {
     }
   });
 
-  it('serves a fresh cached record without fetching from GitHub', async () => {
-    const { service, fetchVersionJson, upsert, findByChannel } = createHarness(
-      { UPDATES_SOURCE_STABLE: STABLE_SOURCE },
-      undefined,
-      [createRecord({ channel: 'STABLE' })],
+  it('skips the initial refresh in CI mode using CI=true semantics', async () => {
+    const previousCi = Deno.env.get('CI');
+    const previousSources = Deno.env.get('UPDATE_SOURCES');
+    Deno.env.set('CI', 'true');
+    Deno.env.set(
+      'UPDATE_SOURCES',
+      JSON.stringify({ sources: [STABLE_SOURCE_JSON] }),
     );
+    try {
+      const loggerStub = createMockLogger();
+      const github = {
+        fetchLatestRelease: spy(async () => ({
+          status: 'ok' as const,
+          release: release(),
+          etag: undefined as string | undefined,
+        })),
+        fetchReleases: spy(async () => undefined),
+        fetchVersionProperties: spy(async () => propertiesText),
+      } as unknown as GithubService;
+      const repository = {
+        findByKey: spy(async () => null),
+        touchFreshness: spy(async () => {}),
+        upsert: spy(async () => {}),
+        isStale: spy(() => false),
+      } as unknown as UpdatesRepository;
+      const service = new UpdatesService(
+        github,
+        repository,
+        new SecretService(),
+        loggerStub.logger,
+      );
 
-    const result = await service.getUpdate('STABLE');
-
-    assertEquals(result.code, 42);
-    assertSpyCalls(findByChannel, 1);
-    assertSpyCalls(fetchVersionJson, 0);
-    assertSpyCalls(upsert, 0);
+      await service.onAppBootstrap();
+      assertSpyCalls(github.fetchLatestRelease as never, 0);
+      await service.onAppClose();
+    } finally {
+      if (previousCi === undefined) {
+        Deno.env.delete('CI');
+      } else {
+        Deno.env.set('CI', previousCi);
+      }
+      if (previousSources === undefined) {
+        Deno.env.delete('UPDATE_SOURCES');
+      } else {
+        Deno.env.set('UPDATE_SOURCES', previousSources);
+      }
+    }
   });
 
-  it('refreshes a stale cached record once and serves the fresh result', async () => {
-    const { service, fetchVersionJson, upsert } = createHarness(
-      { UPDATES_SOURCE_STABLE: STABLE_SOURCE },
-      undefined,
-      [createRecord({
-        channel: 'STABLE',
-        code: 41,
-        updatedAt: Date.now() - 13 * 60 * 60 * 1000,
-      })],
-    );
-
-    const result = await service.getUpdate('STABLE');
-
-    assertEquals(result.code, 42);
-    assertSpyCalls(fetchVersionJson, 1);
-    assertSpyCalls(upsert, 1);
-  });
-
-  it('serves the stale record when the refresh fails', async () => {
-    const staleRecord = createRecord({
-      channel: 'STABLE',
-      code: 41,
-      updatedAt: Date.now() - 13 * 60 * 60 * 1000,
+  it('rejects a malformed UPDATE_SOURCES configuration at construction', () => {
+    const { service: secret } = createMockSecret({
+      CLIENT_REQUEST_TIMEOUT: '5000',
+      DENO_ENV: 'test',
+      UPDATE_SOURCES: '{not json',
     });
-    const { service, fetchVersionJson, upsert } = createHarness(
-      { UPDATES_SOURCE_STABLE: STABLE_SOURCE },
-      async () => undefined,
-      [staleRecord],
+    const loggerStub = createMockLogger();
+    const github = {} as unknown as GithubService;
+    const repository = {} as unknown as UpdatesRepository;
+
+    assertThrows(
+      () => new UpdatesService(github, repository, secret, loggerStub.logger),
+      Error,
+      'UPDATE_SOURCES is not valid JSON',
     );
-
-    const result = await service.getUpdate('STABLE');
-
-    assertEquals(result.code, 41);
-    assertSpyCalls(fetchVersionJson, 1);
-    assertSpyCalls(upsert, 0);
-  });
-
-  it('refreshes once when no cached record exists and returns it', async () => {
-    const { service, fetchVersionJson, upsert } = createHarness({
-      UPDATES_SOURCE_STABLE: STABLE_SOURCE,
-    });
-
-    const result = await service.getUpdate('STABLE');
-
-    assertEquals(result.code, 42);
-    assertSpyCalls(fetchVersionJson, 1);
-    assertSpyCalls(upsert, 1);
-  });
-
-  it('throws NotFound when the channel is missing and unconfigured', async () => {
-    const { service, fetchVersionJson } = createHarness();
-
-    await assertRejects(
-      () => service.getUpdate('EXPERIMENTAL'),
-      NotFoundException,
-    );
-    assertSpyCalls(fetchVersionJson, 0);
-  });
-
-  it('serves a fresh cached record for an unconfigured channel without fetching', async () => {
-    const { service, fetchVersionJson } = createHarness(
-      {},
-      undefined,
-      [createRecord({ channel: 'EXPERIMENTAL' })],
-    );
-
-    const result = await service.getUpdate('EXPERIMENTAL');
-
-    assertEquals(result.channel, 'EXPERIMENTAL');
-    assertSpyCalls(fetchVersionJson, 0);
-  });
-
-  it('does not fetch again while a scheduled refresh is already in flight', async () => {
-    let resolveFetch!: (value: GithubVersionJson | undefined) => void;
-    const pending = new Promise<GithubVersionJson | undefined>((resolve) => {
-      resolveFetch = resolve;
-    });
-    const staleRecord = createRecord({
-      channel: 'STABLE',
-      code: 41,
-      updatedAt: Date.now() - 13 * 60 * 60 * 1000,
-    });
-    const { service, fetchVersionJson } = createHarness(
-      { UPDATES_SOURCE_STABLE: STABLE_SOURCE },
-      () => pending,
-      [staleRecord],
-    );
-
-    const inFlight = service.refresh();
-    const result = await service.getUpdate('STABLE');
-
-    // The in-flight refresh owns the guard; the request path skips and
-    // serves the stale record without a second upstream call.
-    assertEquals(result.code, 41);
-    assertSpyCalls(fetchVersionJson, 1);
-
-    resolveFetch(payload());
-    await inFlight;
-  });
-
-  it('serves the stale record when the on-demand refresh rejects', async () => {
-    const staleRecord = createRecord({
-      channel: 'STABLE',
-      code: 41,
-      updatedAt: Date.now() - 13 * 60 * 60 * 1000,
-    });
-    const { service, fetchVersionJson } = createHarness(
-      { UPDATES_SOURCE_STABLE: STABLE_SOURCE },
-      undefined,
-      [staleRecord],
-      async () => {
-        throw new Error('persistence failure');
-      },
-    );
-
-    const result = await service.getUpdate('STABLE');
-
-    assertEquals(result.code, 41);
-    assertSpyCalls(fetchVersionJson, 1);
-    // Cooldown applies: an immediate retry must not fetch again.
-    await service.getUpdate('STABLE');
-    assertSpyCalls(fetchVersionJson, 1);
-  });
-
-  it('returns NotFound when the on-demand refresh rejects and no record exists', async () => {
-    const { service, fetchVersionJson } = createHarness(
-      { UPDATES_SOURCE_STABLE: STABLE_SOURCE },
-      undefined,
-      [],
-      async () => {
-        throw new Error('persistence failure');
-      },
-    );
-
-    await assertRejects(
-      () => service.getUpdate('STABLE'),
-      NotFoundException,
-    );
-    assertSpyCalls(fetchVersionJson, 1);
-  });
-
-  it('does not retry a failed missing-channel refresh within the cooldown', async () => {
-    const { service, fetchVersionJson } = createHarness(
-      { UPDATES_SOURCE_STABLE: STABLE_SOURCE },
-      async () => undefined,
-    );
-
-    await assertRejects(() => service.getUpdate('STABLE'), NotFoundException);
-    await assertRejects(() => service.getUpdate('STABLE'), NotFoundException);
-
-    assertSpyCalls(fetchVersionJson, 1);
-  });
-
-  it('serves fresh cache hits without refresh attempts or cooldown interaction', async () => {
-    const { service, fetchVersionJson, findByChannel } = createHarness(
-      { UPDATES_SOURCE_STABLE: STABLE_SOURCE },
-      undefined,
-      [createRecord({ channel: 'STABLE' })],
-    );
-
-    await service.getUpdate('STABLE');
-    await service.getUpdate('STABLE');
-
-    assertSpyCalls(findByChannel, 2);
-    assertSpyCalls(fetchVersionJson, 0);
-  });
-
-  it('retries an on-demand refresh after the cooldown expires', async () => {
-    const staleRecord = createRecord({
-      channel: 'STABLE',
-      code: 41,
-      updatedAt: Date.now() - 13 * 60 * 60 * 1000,
-    });
-    const { service, fetchVersionJson } = createHarness(
-      { UPDATES_SOURCE_STABLE: STABLE_SOURCE },
-      async () => undefined,
-      [staleRecord],
-    );
-
-    // First attempt fails; stale record is served.
-    assertEquals((await service.getUpdate('STABLE')).code, 41);
-    assertSpyCalls(fetchVersionJson, 1);
-
-    // Within the cooldown: no second attempt.
-    assertEquals((await service.getUpdate('STABLE')).code, 41);
-    assertSpyCalls(fetchVersionJson, 1);
-
-    // After the cooldown: a new attempt is allowed.
-    setOnDemandRefreshAt(
-      service,
-      'STABLE',
-      Date.now() - ON_DEMAND_REFRESH_COOLDOWN_MS - 1,
-    );
-    assertEquals((await service.getUpdate('STABLE')).code, 41);
-    assertSpyCalls(fetchVersionJson, 2);
-  });
-
-  it('refreshes only the requested channel on demand', async () => {
-    const { service, fetchVersionJson, upsert } = createHarness({
-      UPDATES_SOURCE_STABLE: STABLE_SOURCE,
-      UPDATES_SOURCE_BETA: BETA_SOURCE,
-    });
-
-    await service.getUpdate('STABLE');
-
-    assertSpyCalls(fetchVersionJson, 1);
-    assertEquals(fetchVersionJson.calls[0].args[0], STABLE_SOURCE);
-    assertSpyCalls(upsert, 1);
-    assertEquals(upsert.calls[0].args[0].channel, 'STABLE');
-  });
-
-  it('omits migration from persisted records when the manifest omits it', async () => {
-    const { service, upsert } = createHarness(
-      { UPDATES_SOURCE_STABLE: STABLE_SOURCE },
-      async () => payload({ migration: null }),
-    );
-
-    await service.refresh();
-
-    assertEquals('migration' in upsert.calls[0].args[0], false);
-  });
-
-  it('preserves valid boolean and string migration values', async () => {
-    const booleanHarness = createHarness(
-      { UPDATES_SOURCE_STABLE: STABLE_SOURCE },
-      async () => payload({ migration: true }),
-    );
-    await booleanHarness.service.refresh();
-    assertEquals(booleanHarness.upsert.calls[0].args[0].migration, true);
-
-    const falseHarness = createHarness(
-      { UPDATES_SOURCE_STABLE: STABLE_SOURCE },
-      async () => payload({ migration: false }),
-    );
-    await falseHarness.service.refresh();
-    assertEquals(falseHarness.upsert.calls[0].args[0].migration, false);
-
-    const stringHarness = createHarness(
-      { UPDATES_SOURCE_STABLE: STABLE_SOURCE },
-      async () => payload({ migration: '3.0.0' }),
-    );
-    await stringHarness.service.refresh();
-    assertEquals(stringHarness.upsert.calls[0].args[0].migration, '3.0.0');
-  });
-
-  it('never returns null migration on the request path', async () => {
-    // Legacy record carrying migration: null, invalid per the current
-    // schema; the response boundary must still omit it.
-    const legacy = createRecord({
-      channel: 'STABLE',
-      migration: null as never,
-    });
-    const { service, fetchVersionJson } = createHarness(
-      { UPDATES_SOURCE_STABLE: STABLE_SOURCE },
-      undefined,
-      [legacy],
-    );
-
-    const result = await service.getUpdate('STABLE');
-
-    assertEquals('migration' in result, false);
-    assertEquals((result as Record<string, unknown>).migration, undefined);
-    assertSpyCalls(fetchVersionJson, 0);
   });
 });
 
