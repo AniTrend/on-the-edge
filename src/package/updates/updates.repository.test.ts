@@ -21,7 +21,7 @@ import { UpdatesRepository } from './updates.repository.ts';
 class MockMongoCollection {
   constructor(
     private readonly memoryCollection: InMemoryCollection<UpdateRecord>,
-  ) {}
+  ) { }
 
   find(filter: Filter<UpdateRecord>, options?: FindOptions<UpdateRecord>) {
     return {
@@ -77,7 +77,7 @@ class MockMongoCollection {
 }
 
 class MockMongoService {
-  constructor(private readonly memoryCollection: MockMongoCollection) {}
+  constructor(private readonly memoryCollection: MockMongoCollection) { }
 
   collection<T>(_name: string): MockMongoCollection {
     return this.memoryCollection as unknown as MockMongoCollection & T;
@@ -101,6 +101,7 @@ const createUpdateRecord = (
     version: '2.4.0',
     updatedAt: Date.now(),
     etag: null,
+    policyFingerprint: 'fixture-fingerprint',
     ...overrides,
   };
 };
@@ -191,11 +192,13 @@ describe('UpdatesRepository', () => {
       'STABLE',
       9_000,
       '"etag-2"',
+      'new-fingerprint',
     );
     const result = await repository.findByKey('ANITREND_APP', 'STABLE');
 
     assertEquals(result?.updatedAt, 9_000);
     assertEquals(result?.etag, '"etag-2"');
+    assertEquals(result?.policyFingerprint, 'new-fingerprint');
     assertEquals(result?.tag, 'v2.4.0');
     assertEquals(await collection.countDocuments({}), 1);
   });

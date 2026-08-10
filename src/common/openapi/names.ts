@@ -98,6 +98,8 @@ export const EXPECTED_SCHEMA_NAMES = [
   'UpdateChannel',
   'UpdateReleaseAsset',
   'UpdateRelease',
+  'UpdateDecision',
+  'UpdateDecisionStatus',
 ] as const;
 
 /**

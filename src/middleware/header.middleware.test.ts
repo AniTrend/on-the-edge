@@ -72,7 +72,7 @@ describe('HeaderMiddleware', () => {
   it('allows GET /v1/health without required app headers in production', async () => {
     const middleware = buildMiddleware('production');
     const { context, setSpy } = buildContext('GET', '/v1/health');
-    const nextSpy = spy(async () => {});
+    const nextSpy = spy(async () => { });
 
     await middleware.action(context, nextSpy);
 
@@ -83,7 +83,7 @@ describe('HeaderMiddleware', () => {
   it('does not exempt non-GET requests to /v1/health in production', async () => {
     const middleware = buildMiddleware('production');
     const { context } = buildContext('POST', '/v1/health');
-    const nextSpy = spy(async () => {});
+    const nextSpy = spy(async () => { });
 
     await assertRejects(
       () => middleware.action(context, nextSpy),
@@ -96,7 +96,7 @@ describe('HeaderMiddleware', () => {
   it('still enforces required headers for a normal GET route in production', async () => {
     const middleware = buildMiddleware('production');
     const { context } = buildContext('GET', '/v1/series');
-    const nextSpy = spy(async () => {});
+    const nextSpy = spy(async () => { });
 
     await assertRejects(
       () => middleware.action(context, nextSpy),
@@ -113,7 +113,7 @@ describe('HeaderMiddleware', () => {
       '/v1/series',
       buildHeaders({ [ClientHeader.appId]: undefined }),
     );
-    const nextSpy = spy(async () => {});
+    const nextSpy = spy(async () => { });
 
     await assertRejects(
       () => middleware.action(context, nextSpy),
@@ -130,7 +130,7 @@ describe('HeaderMiddleware', () => {
       '/v1/series',
       buildHeaders({ [ClientHeader.appId]: 'SOMETHING_ELSE' }),
     );
-    const nextSpy = spy(async () => {});
+    const nextSpy = spy(async () => { });
 
     await assertRejects(
       () => middleware.action(context, nextSpy),
@@ -147,7 +147,7 @@ describe('HeaderMiddleware', () => {
       '/v1/series',
       buildHeaders({ [ClientHeader.package]: undefined }),
     );
-    const nextSpy = spy(async () => {});
+    const nextSpy = spy(async () => { });
 
     await assertRejects(
       () => middleware.action(context, nextSpy),
@@ -165,7 +165,7 @@ describe('HeaderMiddleware', () => {
         '/v1/series',
         buildHeaders({ [ClientHeader.versionCode]: versionCode }),
       );
-      const nextSpy = spy(async () => {});
+      const nextSpy = spy(async () => { });
 
       await assertRejects(
         () => middleware.action(context, nextSpy),
@@ -183,7 +183,7 @@ describe('HeaderMiddleware', () => {
       '/v1/series',
       buildHeaders({ [ClientHeader.version]: '' }),
     );
-    const nextSpy = spy(async () => {});
+    const nextSpy = spy(async () => { });
 
     await assertRejects(
       () => middleware.action(context, nextSpy),
@@ -200,7 +200,7 @@ describe('HeaderMiddleware', () => {
       '/v1/series',
       buildHeaders({ [ClientHeader.buildType]: 'benchmark' }),
     );
-    const nextSpy = spy(async () => {});
+    const nextSpy = spy(async () => { });
 
     await middleware.action(context, nextSpy);
 
@@ -215,7 +215,7 @@ describe('HeaderMiddleware', () => {
       '/v1/series',
       buildHeaders({ [ClientHeader.deviceBuildId]: 'TQ3A.230805.001' }),
     );
-    const nextSpy = spy(async () => {});
+    const nextSpy = spy(async () => { });
 
     await middleware.action(context, nextSpy);
 
@@ -233,7 +233,7 @@ describe('HeaderMiddleware', () => {
       '/v1/series',
       buildHeaders(),
     );
-    const nextSpy = spy(async () => {});
+    const nextSpy = spy(async () => { });
 
     await middleware.action(context, nextSpy);
 
@@ -256,7 +256,7 @@ describe('HeaderMiddleware', () => {
       '/v1/series',
       buildHeaders({ [ClientHeader.versionCode]: 'not-a-number' }),
     );
-    const nextSpy = spy(async () => {});
+    const nextSpy = spy(async () => { });
 
     await middleware.action(context, nextSpy);
 

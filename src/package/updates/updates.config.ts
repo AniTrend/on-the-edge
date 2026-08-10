@@ -140,6 +140,46 @@ const toSource = (
 export const UPDATE_CONFIG_ENV = 'UPDATE_CONFIG_PATH';
 
 /**
+ * Canonical JSON serialization of the policy-relevant source fields,
+ * built with a fixed key order so the resulting digest is stable
+ * across runs and re-orderings of the YAML document. The config
+ * `schemaVersion` is deliberately excluded: it is global and constant
+ * for the lifetime of a reader, so it carries no per-source signal
+ * (spec 10.3).
+ */
+const policyCanonical = (source: UpdateSource): string => {
+  const selector: Record<string, unknown> = { type: source.selector.type };
+  if (source.selector.type === 'prerelease' && source.selector.identifiers) {
+    selector.identifiers = source.selector.identifiers;
+  }
+  return JSON.stringify({
+    repository: source.repository,
+    propertiesPath: source.propertiesPath ?? null,
+    selector,
+    rollingWindowDays: source.rollingWindowDays ?? null,
+    assets: source.assets ?? null,
+  });
+};
+
+/**
+ * SHA-256 fingerprint of the policy-relevant fields of a source. A
+ * change to any covered field invalidates the fingerprint, so a cached
+ * record selected under a different fingerprint must not have its ETag
+ * trusted for 304 revalidation (spec 10.3-10.4).
+ */
+export const computePolicyFingerprint = async (
+  source: UpdateSource,
+): Promise<string> => {
+  const digest = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(policyCanonical(source)),
+  );
+  return [...new Uint8Array(digest)]
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('');
+};
+
+/**
  * Embedded default document, resolved relative to this module so it
  * survives `deno compile --include config/update-sources.yml` and the
  * Dockerfile deleting the source tree at runtime.
@@ -168,8 +208,7 @@ export const loadUpdateSources = (configPath?: string): UpdateSource[] => {
     text = Deno.readTextFileSync(target);
   } catch (error) {
     throw new Error(
-      `Unable to read update sources config at ${target}: ${
-        (error as Error).message
+      `Unable to read update sources config at ${target}: ${(error as Error).message
       }`,
     );
   }
@@ -179,8 +218,7 @@ export const loadUpdateSources = (configPath?: string): UpdateSource[] => {
     document = parse(text);
   } catch (error) {
     throw new Error(
-      `Invalid YAML in update sources config at ${target}: ${
-        (error as Error).message
+      `Invalid YAML in update sources config at ${target}: ${(error as Error).message
       }`,
     );
   }
@@ -188,8 +226,7 @@ export const loadUpdateSources = (configPath?: string): UpdateSource[] => {
   const parsed = UpdateSourcesConfigSchema.safeParse(document);
   if (!parsed.success) {
     throw new Error(
-      `Invalid update sources config at ${target}: ${
-        formatIssues(parsed.error.issues)
+      `Invalid update sources config at ${target}: ${formatIssues(parsed.error.issues)
       }`,
     );
   }

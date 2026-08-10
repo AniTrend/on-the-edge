@@ -13,11 +13,16 @@ import { SecretService } from '@scope/secret';
 import { createMockLogger, createMockSecret } from '@scope/common/testing';
 import { STALE_AFTER_HOURS } from './updates.repository.ts';
 import type { UpdatesRepository } from './updates.repository.ts';
-import type { UpdateSource } from './updates.config.ts';
+import {
+  computePolicyFingerprint,
+  type UpdateSource,
+} from './updates.config.ts';
 import type {
   UpdateChannel,
+  UpdateDecision,
   UpdateProduct,
   UpdateRecord,
+  UpdateRelease,
 } from './updates.types.ts';
 import {
   DEFAULT_REFRESH_INTERVAL_HOURS,
@@ -124,6 +129,7 @@ const createRecord = (
   version: '2.4.0',
   updatedAt: Date.now(),
   etag: null,
+  policyFingerprint: 'fixture-fingerprint',
   ...overrides,
 });
 
@@ -159,16 +165,16 @@ const createHarness = (
   const loggerStub = createMockLogger();
   const fetchReleases = spy(
     options.fetchReleasesImpl ??
-      (async (_owner: string, _repo: string) => ({
-        status: 'ok' as const,
-        release: release(),
-        etag: undefined as string | undefined,
-      })),
+    (async (_owner: string, _repo: string) => ({
+      status: 'ok' as const,
+      release: release(),
+      etag: undefined as string | undefined,
+    })),
   );
   const fetchVersionProperties = spy(
     options.fetchPropertiesImpl ??
-      (async (_owner: string, _repo: string, _tag: string, _path: string) =>
-        propertiesText),
+    (async (_owner: string, _repo: string, _tag: string, _path: string) =>
+      propertiesText),
   );
   const github = {
     fetchReleases,
@@ -190,6 +196,7 @@ const createHarness = (
       channel: UpdateChannel,
       _now?: number,
       _etag?: string,
+      _fingerprint?: string,
     ) => {
       const key = `${product}:${channel}`;
       const record = records.get(key);
@@ -200,9 +207,9 @@ const createHarness = (
   );
   const upsert = spy(
     options.upsertImpl ??
-      (async (record: UpdateRecord) => {
-        records.set(`${record.product}:${record.channel}`, record);
-      }),
+    (async (record: UpdateRecord) => {
+      records.set(`${record.product}:${record.channel}`, record);
+    }),
   );
   const isStale = spy(
     (
@@ -244,12 +251,30 @@ const setOnDemandRefreshAt = (
 };
 
 /**
- * Yield control so pending microtasks (and a macrotask) can run. The
- * refresh path awaits the repository before issuing the upstream call,
- * so assertions on call counts need the microtask queue flushed first.
+ * Narrow an UPDATE_AVAILABLE decision to its release, failing the test
+ * on any other status.
  */
-const flushAsync = (): Promise<void> =>
-  new Promise((resolve) => setTimeout(resolve, 0));
+const expectAvailable = (decision: UpdateDecision): UpdateRelease => {
+  if (decision.status !== 'UPDATE_AVAILABLE') {
+    throw new Error(
+      `Expected UPDATE_AVAILABLE decision, got ${decision.status}`,
+    );
+  }
+  return decision.release;
+};
+
+/**
+ * Yield control so pending microtasks (and macrotasks) can run. The
+ * refresh path awaits the repository and the policy fingerprint
+ * digest (crypto.subtle resolves off the main thread) before issuing
+ * the upstream call, so assertions on call counts need the event loop
+ * flushed several times first.
+ */
+const flushAsync = async (): Promise<void> => {
+  for (let i = 0; i < 5; i++) {
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+  }
+};
 
 describe('UpdatesService', () => {
   it('persists release-backed records for every configured source', async () => {
@@ -348,9 +373,10 @@ describe('UpdatesService', () => {
     ]);
     assertSpyCalls(github.fetchVersionProperties, 1);
     assertSpyCalls(repository.upsert, 0);
-    const served = await service.getUpdate('ANITREND_APP', 'STABLE');
-    assertEquals(served.code, 20399);
-    assertEquals(served.version, '2.3.9');
+    const served = await service.getUpdate('ANITREND_APP', 'STABLE', 20398);
+    assertEquals(served.status, 'UPDATE_AVAILABLE');
+    assertEquals(expectAvailable(served).code, 20399);
+    assertEquals(expectAvailable(served).version, '2.3.9');
   });
 
   it('marks the source failed when no properties path is configured', async () => {
@@ -369,10 +395,12 @@ describe('UpdatesService', () => {
     assertSpyCalls(repository.upsert, 0);
   });
 
-  it('touches freshness on 304 without replacing the cached release', async () => {
+  it('accepts a 304 when the cached candidate is eligible without a second request', async () => {
+    const policyFingerprint = await computePolicyFingerprint(source());
     const staleRecord = createRecord({
       updatedAt: Date.now() - 13 * 60 * 60 * 1000,
       etag: '"abc123"',
+      policyFingerprint,
     });
     const { service, repository, github } = createHarness({
       sources: [source()],
@@ -385,18 +413,142 @@ describe('UpdatesService', () => {
     assertEquals(result.results, [
       { product: 'ANITREND_APP', channel: 'STABLE', status: 'unchanged' },
     ]);
+    // The conditional request sent the cached ETag and the 304 was
+    // trusted, so no unconditional second request happens.
     assertSpyCalls(github.fetchReleases, 1);
+    assertEquals(github.fetchReleases.calls[0].args[2].ifNoneMatch, '"abc123"');
     assertSpyCalls(repository.touchFreshness, 1);
     assertSpyCalls(repository.upsert, 0);
     const touched = repository.touchFreshness.calls[0].args;
     assertEquals(touched[0], 'ANITREND_APP');
     assertEquals(touched[1], 'STABLE');
+    assertEquals(touched[3], '"abc123"');
+    assertEquals(touched[4], policyFingerprint);
+  });
+
+  it('rejects a 304 when the cached candidate aged out of its rolling window and re-fetches unconditionally', async () => {
+    const prereleaseSource = source({
+      selector: { type: 'prerelease' },
+      rollingWindowDays: 30,
+    });
+    const policyFingerprint = await computePolicyFingerprint(prereleaseSource);
+    const agedOutRecord = createRecord({
+      tag: 'v2.4.0-beta.1',
+      prerelease: true,
+      publishedAt: Date.now() - 45 * 86_400_000,
+      etag: '"abc123"',
+      policyFingerprint,
+    });
+    let calls = 0;
+    const { service, repository, github } = createHarness({
+      sources: [prereleaseSource],
+      seed: [agedOutRecord],
+      fetchReleasesImpl: async () => {
+        calls += 1;
+        if (calls === 1) return { status: 'not-modified' };
+        // Unconditional re-fetch: nothing qualifies inside the rolling
+        // window, so nothing can replace the aged-out record.
+        return { status: 'ok', release: undefined, etag: undefined };
+      },
+    });
+
+    const result = await service.refresh();
+
+    assertEquals(result.results, [
+      { product: 'ANITREND_APP', channel: 'STABLE', status: 'failed' },
+    ]);
+    // Conditional then unconditional: exactly two upstream calls.
+    assertSpyCalls(github.fetchReleases, 2);
+    assertEquals(github.fetchReleases.calls[0].args[2].ifNoneMatch, '"abc123"');
+    assertEquals(github.fetchReleases.calls[1].args[2].ifNoneMatch, undefined);
+    // The expired release is never marked fresh again.
+    assertSpyCalls(repository.touchFreshness, 0);
+    assertSpyCalls(repository.upsert, 0);
+  });
+
+  it('replaces an aged-out cached selection with a newly eligible release after a rejected 304', async () => {
+    const prereleaseSource = source({
+      selector: { type: 'prerelease' },
+      rollingWindowDays: 30,
+    });
+    const policyFingerprint = await computePolicyFingerprint(prereleaseSource);
+    const agedOutRecord = createRecord({
+      tag: 'v2.4.0-beta.1',
+      prerelease: true,
+      publishedAt: Date.now() - 45 * 86_400_000,
+      etag: '"abc123"',
+      policyFingerprint,
+    });
+    let calls = 0;
+    const { service, repository, github } = createHarness({
+      sources: [prereleaseSource],
+      seed: [agedOutRecord],
+      fetchReleasesImpl: async () => {
+        calls += 1;
+        if (calls === 1) return { status: 'not-modified' };
+        return {
+          status: 'ok',
+          release: release({ tagName: 'v2.5.0-beta.1', prerelease: true }),
+          etag: '"new-etag"',
+        };
+      },
+    });
+
+    const result = await service.refresh();
+
+    assertEquals(result.results, [
+      {
+        product: 'ANITREND_APP',
+        channel: 'STABLE',
+        status: 'updated',
+        code: 20400,
+      },
+    ]);
+    assertSpyCalls(github.fetchReleases, 2);
+    assertSpyCalls(repository.upsert, 1);
+    const record = repository.upsert.calls[0].args[0];
+    assertEquals(record.tag, 'v2.5.0-beta.1');
+    assertEquals(record.policyFingerprint, policyFingerprint);
+  });
+
+  it('revalidates without the cached ETag when the policy fingerprint changed', async () => {
+    const staleRecord = createRecord({
+      updatedAt: Date.now() - 13 * 60 * 60 * 1000,
+      etag: '"abc123"',
+      policyFingerprint: 'stale-policy-fingerprint',
+    });
+    const { service, repository, github } = createHarness({
+      sources: [source()],
+      seed: [staleRecord],
+      fetchReleasesImpl: async () => ({
+        status: 'ok',
+        release: release(),
+        etag: '"new-etag"',
+      }),
+    });
+
+    const result = await service.refresh();
+
+    // The cached ETag must not be sent: the record was selected under a
+    // different policy fingerprint, so the revalidation is full.
+    assertSpyCalls(github.fetchReleases, 1);
+    assertEquals(github.fetchReleases.calls[0].args[2].ifNoneMatch, undefined);
+    // Same tag still selected; freshness is refreshed and the current
+    // policy fingerprint is stored.
+    assertEquals(result.results, [
+      { product: 'ANITREND_APP', channel: 'STABLE', status: 'unchanged' },
+    ]);
+    assertSpyCalls(repository.touchFreshness, 1);
+    const policyFingerprint = await computePolicyFingerprint(source());
+    assertEquals(repository.touchFreshness.calls[0].args[4], policyFingerprint);
   });
 
   it('touches freshness when the same release tag is still selected', async () => {
+    const policyFingerprint = await computePolicyFingerprint(source());
     const staleRecord = createRecord({
       updatedAt: Date.now() - 13 * 60 * 60 * 1000,
       etag: null,
+      policyFingerprint,
     });
     const { service, repository } = createHarness({
       sources: [source()],
@@ -415,8 +567,10 @@ describe('UpdatesService', () => {
     ]);
     assertSpyCalls(repository.touchFreshness, 1);
     assertSpyCalls(repository.upsert, 0);
-    // The new ETag is stored for the next conditional request.
+    // The new ETag and the current policy fingerprint are stored for
+    // the next conditional request.
     assertEquals(repository.touchFreshness.calls[0].args[3], '"new-etag"');
+    assertEquals(repository.touchFreshness.calls[0].args[4], policyFingerprint);
   });
 
   it('isolates a throwing source during the scheduled refresh', async () => {
@@ -453,11 +607,55 @@ describe('UpdatesService', () => {
       seed: [createRecord()],
     });
 
-    const result = await service.getUpdate('ANITREND_APP', 'STABLE');
+    const result = await service.getUpdate('ANITREND_APP', 'STABLE', 20399);
 
-    assertEquals(result.code, 20400);
+    assertEquals(result.status, 'UPDATE_AVAILABLE');
+    assertEquals(expectAvailable(result).code, 20400);
     assertSpyCalls(github.fetchReleases, 0);
     assertSpyCalls(repository.upsert, 0);
+  });
+
+  it('offers an update when the client version code is lower than the release code', async () => {
+    const { service } = createHarness({
+      sources: [source()],
+      seed: [createRecord()],
+    });
+
+    const result = await service.getUpdate('ANITREND_APP', 'STABLE', 20399);
+
+    assertEquals(result.status, 'UPDATE_AVAILABLE');
+    assertEquals(expectAvailable(result).code, 20400);
+  });
+
+  it('is UP_TO_DATE when the client version code equals the release code', async () => {
+    const { service } = createHarness({
+      sources: [source()],
+      seed: [createRecord()],
+    });
+
+    const result = await service.getUpdate('ANITREND_APP', 'STABLE', 20400);
+
+    assertEquals(result, { status: 'UP_TO_DATE' });
+  });
+
+  it('is UP_TO_DATE when the client version code is higher than the release code', async () => {
+    const { service } = createHarness({
+      sources: [source()],
+      seed: [createRecord()],
+    });
+
+    const result = await service.getUpdate('ANITREND_APP', 'STABLE', 20500);
+
+    assertEquals(result, { status: 'UP_TO_DATE' });
+  });
+
+  it('returns UNSUPPORTED when no source is configured for the product/channel', async () => {
+    const { service, github } = createHarness({ sources: [] });
+
+    const result = await service.getUpdate('ANITREND_APP', 'STABLE', 20399);
+
+    assertEquals(result, { status: 'UNSUPPORTED' });
+    assertSpyCalls(github.fetchReleases, 0);
   });
 
   it('refreshes a stale record once and serves the fresh result', async () => {
@@ -470,9 +668,10 @@ describe('UpdatesService', () => {
       })],
     });
 
-    const result = await service.getUpdate('ANITREND_APP', 'STABLE');
+    const result = await service.getUpdate('ANITREND_APP', 'STABLE', 20399);
 
-    assertEquals(result.code, 20400);
+    assertEquals(result.status, 'UPDATE_AVAILABLE');
+    assertEquals(expectAvailable(result).code, 20400);
     assertSpyCalls(github.fetchReleases, 1);
     assertSpyCalls(repository.upsert, 1);
   });
@@ -488,9 +687,10 @@ describe('UpdatesService', () => {
       fetchReleasesImpl: async () => undefined,
     });
 
-    const result = await service.getUpdate('ANITREND_APP', 'STABLE');
+    const result = await service.getUpdate('ANITREND_APP', 'STABLE', 20398);
 
-    assertEquals(result.code, 20399);
+    assertEquals(result.status, 'UPDATE_AVAILABLE');
+    assertEquals(expectAvailable(result).code, 20399);
     assertSpyCalls(github.fetchReleases, 1);
   });
 
@@ -507,12 +707,13 @@ describe('UpdatesService', () => {
       },
     });
 
-    const result = await service.getUpdate('ANITREND_APP', 'STABLE');
+    const result = await service.getUpdate('ANITREND_APP', 'STABLE', 20398);
 
-    assertEquals(result.code, 20399);
+    assertEquals(result.status, 'UPDATE_AVAILABLE');
+    assertEquals(expectAvailable(result).code, 20399);
     assertSpyCalls(github.fetchReleases, 1);
     // Cooldown applies: an immediate retry must not fetch again.
-    await service.getUpdate('ANITREND_APP', 'STABLE');
+    await service.getUpdate('ANITREND_APP', 'STABLE', 20398);
     assertSpyCalls(github.fetchReleases, 1);
   });
 
@@ -525,7 +726,7 @@ describe('UpdatesService', () => {
     });
 
     await assertRejects(
-      () => service.getUpdate('ANITREND_APP', 'STABLE'),
+      () => service.getUpdate('ANITREND_APP', 'STABLE', 20399),
       NotFoundException,
     );
   });
@@ -537,11 +738,11 @@ describe('UpdatesService', () => {
     });
 
     await assertRejects(
-      () => service.getUpdate('ANITREND_APP', 'STABLE'),
+      () => service.getUpdate('ANITREND_APP', 'STABLE', 20399),
       NotFoundException,
     );
     await assertRejects(
-      () => service.getUpdate('ANITREND_APP', 'STABLE'),
+      () => service.getUpdate('ANITREND_APP', 'STABLE', 20399),
       NotFoundException,
     );
 
@@ -554,8 +755,8 @@ describe('UpdatesService', () => {
       seed: [createRecord()],
     });
 
-    await service.getUpdate('ANITREND_APP', 'STABLE');
-    await service.getUpdate('ANITREND_APP', 'STABLE');
+    await service.getUpdate('ANITREND_APP', 'STABLE', 20399);
+    await service.getUpdate('ANITREND_APP', 'STABLE', 20399);
 
     assertSpyCalls(repository.findByKey, 2);
     assertSpyCalls(github.fetchReleases, 0);
@@ -573,13 +774,17 @@ describe('UpdatesService', () => {
     });
 
     assertEquals(
-      (await service.getUpdate('ANITREND_APP', 'STABLE')).code,
+      expectAvailable(
+        await service.getUpdate('ANITREND_APP', 'STABLE', 20398),
+      ).code,
       20399,
     );
     assertSpyCalls(github.fetchReleases, 1);
 
     assertEquals(
-      (await service.getUpdate('ANITREND_APP', 'STABLE')).code,
+      expectAvailable(
+        await service.getUpdate('ANITREND_APP', 'STABLE', 20398),
+      ).code,
       20399,
     );
     assertSpyCalls(github.fetchReleases, 1);
@@ -590,7 +795,9 @@ describe('UpdatesService', () => {
       Date.now() - ON_DEMAND_REFRESH_COOLDOWN_MS - 1,
     );
     assertEquals(
-      (await service.getUpdate('ANITREND_APP', 'STABLE')).code,
+      expectAvailable(
+        await service.getUpdate('ANITREND_APP', 'STABLE', 20398),
+      ).code,
       20399,
     );
     assertSpyCalls(github.fetchReleases, 2);
@@ -604,7 +811,7 @@ describe('UpdatesService', () => {
       ],
     });
 
-    await service.getUpdate('ANITREND_APP', 'STABLE');
+    await service.getUpdate('ANITREND_APP', 'STABLE', 20399);
 
     assertSpyCalls(github.fetchReleases, 1);
     assertEquals(repository.upsert.calls[0].args[0].channel, 'STABLE');
@@ -673,10 +880,10 @@ describe('UpdatesService', () => {
       seed: [cachedRecord],
     });
 
-    const result = await service.getUpdate('ANITREND_APP', 'STABLE');
+    const result = await service.getUpdate('ANITREND_APP', 'STABLE', 20399);
 
     assertEquals(
-      result.assets.map((asset) => asset.name),
+      expectAvailable(result).assets.map((asset) => asset.name),
       ['app-release.apk'],
     );
     assertSpyCalls(github.fetchReleases, 0);
@@ -691,17 +898,19 @@ describe('UpdatesService', () => {
       seed: [createRecord({ product: 'ANITREND_V2', channel: 'EXPERIMENTAL' })],
     });
 
-    const v2 = await service.getUpdate('ANITREND_V2', 'EXPERIMENTAL');
-    assertEquals(v2.product, 'ANITREND_V2');
+    const v2 = await service.getUpdate('ANITREND_V2', 'EXPERIMENTAL', 20399);
+    assertEquals(v2.status, 'UPDATE_AVAILABLE');
+    assertEquals(expectAvailable(v2).product, 'ANITREND_V2');
 
-    // Same channel, different product: no cached record and no
-    // configured source for ANITREND_APP:EXPERIMENTAL, so the
-    // on-demand refresh skips and NotFound is returned. No
-    // cross-product fallback.
-    await assertRejects(
-      () => service.getUpdate('ANITREND_APP', 'EXPERIMENTAL'),
-      NotFoundException,
+    // Same channel, different product: no source is configured for
+    // ANITREND_APP:EXPERIMENTAL, so the decision is UNSUPPORTED with
+    // no upstream call and no cross-product fallback.
+    const unsupported = await service.getUpdate(
+      'ANITREND_APP',
+      'EXPERIMENTAL',
+      20399,
     );
+    assertEquals(unsupported, { status: 'UNSUPPORTED' });
     assertSpyCalls(github.fetchReleases, 0);
   });
 
@@ -724,7 +933,7 @@ describe('UpdatesService', () => {
     const inFlight = service.refresh();
     // Do not await yet: getUpdate joins the in-flight refresh instead
     // of skipping or issuing a second upstream call.
-    const pendingGet = service.getUpdate('ANITREND_APP', 'STABLE');
+    const pendingGet = service.getUpdate('ANITREND_APP', 'STABLE', 20399);
     await flushAsync();
     assertSpyCalls(github.fetchReleases, 1);
 
@@ -737,7 +946,8 @@ describe('UpdatesService', () => {
 
     // The request path awaited the shared refresh and serves the fresh
     // record, not the stale one.
-    assertEquals(result.code, 20400);
+    assertEquals(result.status, 'UPDATE_AVAILABLE');
+    assertEquals(expectAvailable(result).code, 20400);
     await inFlight;
   });
 
@@ -786,8 +996,8 @@ describe('UpdatesService', () => {
       } as unknown as GithubService;
       const repository = {
         findByKey: spy(async () => null),
-        touchFreshness: spy(async () => {}),
-        upsert: spy(async () => {}),
+        touchFreshness: spy(async () => { }),
+        upsert: spy(async () => { }),
         isStale: spy(() => false),
       } as unknown as UpdatesRepository;
       const service = new UpdatesService(

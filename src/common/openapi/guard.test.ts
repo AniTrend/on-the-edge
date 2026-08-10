@@ -73,6 +73,8 @@ function makeValidDoc(
     'UpdateChannel',
     'UpdateReleaseAsset',
     'UpdateRelease',
+    'UpdateDecision',
+    'UpdateDecisionStatus',
   ];
   for (const name of expectedNames) {
     schemas[name] = { type: 'object', properties: {} };
@@ -320,7 +322,7 @@ function makeValidDoc(
               description: 'OK',
               content: {
                 'application/json': {
-                  schema: { $ref: '#/components/schemas/UpdateRelease' },
+                  schema: { $ref: '#/components/schemas/UpdateDecision' },
                 },
               },
             },

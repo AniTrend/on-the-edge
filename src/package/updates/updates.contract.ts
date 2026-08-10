@@ -99,3 +99,35 @@ export const UpdateReleaseContract = z.object({
   title: 'UpdateRelease',
   description: 'Cached GitHub release for a product/channel source',
 });
+
+/**
+ * Outcome of an update lookup for a specific client (spec 9.2).
+ * UP_TO_DATE and UPDATE_AVAILABLE mirror the client version code
+ * comparison; UNSUPPORTED means no source is configured for the
+ * requested (product, channel).
+ */
+export const UpdateDecisionStatusContract = z.enum([
+  'UP_TO_DATE',
+  'UPDATE_AVAILABLE',
+  'UNSUPPORTED',
+]).openapi({
+  title: 'UpdateDecisionStatus',
+  description:
+    'Whether an update is available for the requesting client version',
+});
+
+/**
+ * Flat decision shape consumed by GraphQL Mesh. The internal
+ * `UpdateDecision` union is structurally assignable to this shape; a
+ * release is present only when an update is available (or as context
+ * on an unsupported decision).
+ */
+export const UpdateDecisionContract = z.object({
+  status: UpdateDecisionStatusContract,
+  release: UpdateReleaseContract.nullable().optional().openapi({
+    description: 'Cached release when an update is available for the client',
+  }),
+}).openapi({
+  title: 'UpdateDecision',
+  description: 'Update decision for the requesting client',
+});

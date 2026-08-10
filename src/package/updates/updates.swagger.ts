@@ -1,5 +1,7 @@
 import {
   UpdateChannelContract,
+  UpdateDecisionContract,
+  UpdateDecisionStatusContract,
   UpdateProductContract,
   UpdateReleaseAssetContract,
   UpdateReleaseContract,
@@ -10,6 +12,8 @@ export const UpdateReleaseSwagger = UpdateReleaseContract;
 export const UpdateChannelSwagger = UpdateChannelContract;
 export const UpdateProductSwagger = UpdateProductContract;
 export const UpdateReleaseAssetSwagger = UpdateReleaseAssetContract;
+export const UpdateDecisionSwagger = UpdateDecisionContract;
+export const UpdateDecisionStatusSwagger = UpdateDecisionStatusContract;
 
 // deno-lint-ignore no-explicit-any
 export const UpdateQuerySwagger = (UpdateQuerySchema as any).openapi({

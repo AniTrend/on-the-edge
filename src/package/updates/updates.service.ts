@@ -10,12 +10,14 @@ import { LoggerService } from '@scope/logger';
 import { STALE_AFTER_HOURS, UpdatesRepository } from './updates.repository.ts';
 import { transform } from './updates.transformer.ts';
 import {
+  computePolicyFingerprint,
   loadUpdateSources,
   UPDATE_CONFIG_ENV,
   type UpdateSource,
 } from './updates.config.ts';
 import type {
   UpdateChannel,
+  UpdateDecision,
   UpdateProduct,
   UpdateRecord,
   UpdateRelease,
@@ -187,31 +189,44 @@ export class UpdatesService implements OnAppBootstrap, OnAppClose {
   }
 
   /**
-   * Resolve the cached release for a (product, channel) source.
+   * Resolve an update decision for a specific client (spec 9.1-9.3).
    *
-   * A fresh record is served directly from Mongo without any upstream
-   * call. A stale or missing record triggers at most one guarded,
-   * source-scoped refresh attempt, throttled per source by
-   * ON_DEMAND_REFRESH_COOLDOWN_MS; a refresh already in flight for the
-   * source is always joined so concurrent requests share one upstream
-   * call. Refresh errors (network or persistence) are caught and
-   * logged, and the cached record is served as a fallback; a source
-   * with no record at all resolves to NotFound. No cross-product
-   * fallback is applied.
+   * A source must be configured for the requested (product, channel):
+   * otherwise the decision is UNSUPPORTED and there is never a silent
+   * fallback to the stable channel (spec 8.4). A fresh record is
+   * served directly from Mongo without any upstream call; a stale or
+   * missing record triggers at most one guarded, source-scoped refresh
+   * attempt, throttled per source by ON_DEMAND_REFRESH_COOLDOWN_MS; a
+   * refresh already in flight for the source is always joined so
+   * concurrent requests share one upstream call. Refresh errors
+   * (network or persistence) are caught and logged, and the cached
+   * record is served as a fallback; a configured source with no record
+   * at all resolves to NotFound. The decision compares the client
+   * version code against the cached release code: an equal or newer
+   * client is UP_TO_DATE and a downgrade is never offered (spec 9.3).
    */
   async getUpdate(
     product: UpdateProduct,
     channel: UpdateChannel,
-  ): Promise<UpdateRelease> {
+    clientVersionCode: number,
+  ): Promise<UpdateDecision> {
     const key = `${product}:${channel}`;
-    const assetFilter = this.sources.get(key)?.assets;
+    const source = this.sources.get(key);
+    if (!source) {
+      this.logger.instance.debug('No update source configured; unsupported', {
+        product,
+        channel,
+      });
+      return { status: 'UNSUPPORTED' };
+    }
+    const assetFilter = source.assets;
     const cached = await this.repository.findByKey(product, channel);
     if (cached && !this.repository.isStale(cached)) {
       this.logger.instance.debug('Serving fresh cached update', {
         product,
         channel,
       });
-      return this.toPublicRelease(cached, assetFilter);
+      return this.toDecision(cached, clientVersionCode, assetFilter);
     }
     if (cached) {
       this.logger.instance.info('Cached update is stale; refreshing', {
@@ -251,7 +266,7 @@ export class UpdatesService implements OnAppBootstrap, OnAppClose {
         { product, channel },
       );
     }
-    return this.toPublicRelease(record, assetFilter);
+    return this.toDecision(record, clientVersionCode, assetFilter);
   }
 
   /**
@@ -297,19 +312,56 @@ export class UpdatesService implements OnAppBootstrap, OnAppClose {
     const { product, channel } = source;
     const [owner, repo] = this.splitRepository(source.repository);
     const cached = await this.repository.findByKey(product, channel);
+    const policyFingerprint = await computePolicyFingerprint(source);
+    // Spec 10.4: a cached record selected under a different policy
+    // fingerprint must not have its ETag trusted, so the revalidation
+    // is fully unconditional (no If-None-Match).
+    const trustEtag = cached !== null &&
+      cached.policyFingerprint === policyFingerprint;
+    if (cached && !trustEtag) {
+      this.logger.instance.info(
+        'Update policy fingerprint changed; revalidating without cached ETag',
+        { product, channel },
+      );
+    }
 
     const outcome = await this.github.fetchReleases(owner, repo, {
       selector: source.selector,
       rollingWindowDays: source.rollingWindowDays,
-      ifNoneMatch: cached?.etag ?? undefined,
+      ifNoneMatch: trustEtag ? cached?.etag ?? undefined : undefined,
     });
     if (!outcome) {
       return { product, channel, status: 'failed' };
     }
     if (outcome.status === 'not-modified') {
-      // 304: cached release is still current; touch freshness.
-      await this.repository.touchFreshness(product, channel);
-      return { product, channel, status: 'unchanged' };
+      // 304 received: the remote release list is unchanged. Trust it
+      // only when the cached candidate is still eligible under
+      // time-dependent local policy (spec 10.1/10.2).
+      this.logger.instance.debug('GitHub returned 304 for source', {
+        product,
+        channel,
+      });
+      if (cached !== null && this.isCachedEligible(cached, source)) {
+        await this.repository.touchFreshness(
+          product,
+          channel,
+          Date.now(),
+          cached.etag ?? undefined,
+          policyFingerprint,
+        );
+        return { product, channel, status: 'unchanged' };
+      }
+      this.logger.instance.warn(
+        '304 rejected by local policy; re-fetching unconditionally',
+        { product, channel },
+      );
+      return this.revalidateAfterExpiredCache(
+        source,
+        owner,
+        repo,
+        cached,
+        policyFingerprint,
+      );
     }
     const release = outcome.release;
     if (!release) {
@@ -326,9 +378,94 @@ export class UpdatesService implements OnAppBootstrap, OnAppClose {
         channel,
         Date.now(),
         outcome.etag,
+        policyFingerprint,
       );
       return { product, channel, status: 'unchanged' };
     }
+    return this.resolveAndPersist(
+      source,
+      owner,
+      repo,
+      release,
+      outcome.etag,
+      policyFingerprint,
+    );
+  }
+
+  /**
+   * Time-dependent local policy check (spec 10.1/10.2). When the
+   * source configures a rolling window, the cached candidate is only
+   * eligible while its publishedAt still falls inside that window.
+   * Selector and identifier changes are already covered by the policy
+   * fingerprint, so age is the only rule re-evaluated here.
+   */
+  private isCachedEligible(
+    cached: UpdateRecord,
+    source: UpdateSource,
+  ): boolean {
+    if (source.rollingWindowDays === undefined) return true;
+    const cutoff = Date.now() - source.rollingWindowDays * 86_400_000;
+    return cached.publishedAt >= cutoff;
+  }
+
+  /**
+   * Re-evaluate a source after a 304 was rejected by local policy (the
+   * cached candidate aged out of its rolling window). Performs an
+   * unconditional fetch without If-None-Match; fetchReleases applies
+   * the rolling window filter, so any release it returns is eligible.
+   * A different tag is resolved and persisted as a fresh record. The
+   * aged-out cached selection is never marked fresh: a same-tag (or
+   * absent) selection resolves to failed so the old record remains
+   * only as a stale fallback.
+   */
+  private async revalidateAfterExpiredCache(
+    source: UpdateSource,
+    owner: string,
+    repo: string,
+    cached: UpdateRecord | null,
+    policyFingerprint: string,
+  ): Promise<UpdateChannelResult> {
+    const { product, channel } = source;
+    const outcome = await this.github.fetchReleases(owner, repo, {
+      selector: source.selector,
+      rollingWindowDays: source.rollingWindowDays,
+    });
+    if (!outcome || outcome.status === 'not-modified' || !outcome.release) {
+      return { product, channel, status: 'failed' };
+    }
+    if (cached && cached.tag === outcome.release.tagName) {
+      // The fresh selection is the same, still-ineligible release:
+      // never refresh its validity.
+      this.logger.instance.warn(
+        'Cached release aged out of the policy window and remains ineligible',
+        { product, channel, tag: cached.tag },
+      );
+      return { product, channel, status: 'failed' };
+    }
+    return this.resolveAndPersist(
+      source,
+      owner,
+      repo,
+      outcome.release,
+      outcome.etag,
+      policyFingerprint,
+    );
+  }
+
+  /**
+   * Resolve version and code for a fresh selection and persist it as
+   * the new cached record. Shared by the normal refresh path and the
+   * expired-cache revalidation path.
+   */
+  private async resolveAndPersist(
+    source: UpdateSource,
+    owner: string,
+    repo: string,
+    release: GithubRelease,
+    etag: string | undefined,
+    policyFingerprint: string,
+  ): Promise<UpdateChannelResult> {
+    const { product, channel } = source;
     const versionInfo = await this.resolveVersionAndCode(
       source,
       owner,
@@ -348,8 +485,9 @@ export class UpdatesService implements OnAppBootstrap, OnAppClose {
       release,
       version: versionInfo.version,
       code: versionInfo.code,
-      etag: outcome.etag,
+      etag,
       assetFilter: source.assets,
+      policyFingerprint,
     });
     await this.repository.upsert(record);
     return { product, channel, status: 'updated', code: record.code };
@@ -456,16 +594,20 @@ export class UpdatesService implements OnAppBootstrap, OnAppClose {
   }
 
   /**
-   * Public response mapping: strips the internal ETag cache metadata
-   * so the public release shape stays clean, and applies the
-   * configured asset-name filter when present (covering records cached
-   * before a filter was configured).
+   * Public response mapping: strips the internal ETag and policy
+   * fingerprint cache metadata so the public release shape stays
+   * clean, and applies the configured asset-name filter when present
+   * (covering records cached before a filter was configured).
    */
   private toPublicRelease(
     record: UpdateRecord,
     assetFilter?: string[],
   ): UpdateRelease {
-    const { etag: _etag, ...rest } = record;
+    const {
+      etag: _etag,
+      policyFingerprint: _policyFingerprint,
+      ...rest
+    } = record;
     if (assetFilter && assetFilter.length > 0) {
       return {
         ...rest,
@@ -473,5 +615,25 @@ export class UpdatesService implements OnAppBootstrap, OnAppClose {
       };
     }
     return rest;
+  }
+
+  /**
+   * Map a cached record onto a decision for a client (spec 9.3). The
+   * comparison uses Android versionCode semantics: only a cached
+   * release with a strictly higher code is offered. An equal or newer
+   * client is UP_TO_DATE; downgrades are never encouraged.
+   */
+  private toDecision(
+    record: UpdateRecord,
+    clientVersionCode: number,
+    assetFilter?: string[],
+  ): UpdateDecision {
+    if (clientVersionCode < record.code) {
+      return {
+        status: 'UPDATE_AVAILABLE',
+        release: this.toPublicRelease(record, assetFilter),
+      };
+    }
+    return { status: 'UP_TO_DATE' };
   }
 }

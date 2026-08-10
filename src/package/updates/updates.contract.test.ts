@@ -2,12 +2,16 @@ import { describe, it } from '@std/testing/bdd';
 import { assertEquals } from '@std/assert';
 import {
   UpdateChannelContract,
+  UpdateDecisionContract,
+  UpdateDecisionStatusContract,
   UpdateProductContract,
   UpdateReleaseAssetContract,
   UpdateReleaseContract,
 } from './updates.contract.ts';
 import { UpdateQuerySchema } from './updates.schema.ts';
 import {
+  UpdateDecisionStatusSwagger,
+  UpdateDecisionSwagger,
   UpdateProductSwagger,
   UpdateQuerySwagger,
   UpdateReleaseSwagger,
@@ -22,6 +26,8 @@ describe('Update contract schemas', () => {
     assertEquals(titleOf(UpdateProductContract), 'UpdateProduct');
     assertEquals(titleOf(UpdateChannelContract), 'UpdateChannel');
     assertEquals(titleOf(UpdateReleaseAssetContract), 'UpdateReleaseAsset');
+    assertEquals(titleOf(UpdateDecisionContract), 'UpdateDecision');
+    assertEquals(titleOf(UpdateDecisionStatusContract), 'UpdateDecisionStatus');
   });
 
   it('carries the release-backed fields only', () => {
@@ -93,14 +99,29 @@ describe('Update contract schemas', () => {
     const field = UpdateReleaseContract.shape.updatedAt;
     assertEquals(field.isFinite, true);
   });
+
+  it('exposes the decision status enum', () => {
+    assertEquals(UpdateDecisionStatusContract.options, [
+      'UP_TO_DATE',
+      'UPDATE_AVAILABLE',
+      'UNSUPPORTED',
+    ]);
+  });
+
+  it('shapes the decision as a flat status plus optional release', () => {
+    const shape = UpdateDecisionContract.shape;
+    assertEquals(Object.keys(shape).sort(), ['release', 'status']);
+    assertEquals(shape.release.isNullable(), true);
+    assertEquals(shape.release.isOptional(), true);
+  });
 });
 
 describe('UpdateQuerySchema', () => {
-  it('defaults to the ANITREND_V2 product and STABLE channel', () => {
+  it('does not default the product; only the channel defaults to STABLE', () => {
     const parsed = UpdateQuerySchema.safeParse({});
     assertEquals(parsed.success, true);
     if (parsed.success) {
-      assertEquals(parsed.data.product, 'ANITREND_V2');
+      assertEquals(parsed.data.product, undefined);
       assertEquals(parsed.data.channel, 'STABLE');
     }
   });
@@ -143,6 +164,8 @@ describe('Update swagger exports', () => {
   it('re-exports the contract as the response swagger schema', () => {
     assertEquals(UpdateReleaseSwagger, UpdateReleaseContract);
     assertEquals(UpdateProductSwagger, UpdateProductContract);
+    assertEquals(UpdateDecisionSwagger, UpdateDecisionContract);
+    assertEquals(UpdateDecisionStatusSwagger, UpdateDecisionStatusContract);
   });
 
   it('wraps the query schema with a named title', () => {

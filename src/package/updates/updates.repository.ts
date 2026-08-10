@@ -69,16 +69,23 @@ export class UpdatesRepository {
   /**
    * Refresh the cached record's freshness without replacing release
    * data (304 or same-release revalidation). Optionally stores the
-   * latest ETag so subsequent conditional requests can 304.
+   * latest ETag so subsequent conditional requests can 304, and the
+   * policy fingerprint the current selection was validated under.
    */
   async touchFreshness(
     product: UpdateProduct,
     channel: UpdateChannel,
     now: number = Date.now(),
     etag?: string,
+    fingerprint?: string,
   ): Promise<void> {
-    const set: { updatedAt: number; etag?: string | null } = { updatedAt: now };
+    const set: {
+      updatedAt: number;
+      etag?: string | null;
+      policyFingerprint?: string;
+    } = { updatedAt: now };
     if (etag !== undefined) set.etag = etag;
+    if (fingerprint !== undefined) set.policyFingerprint = fingerprint;
     await this.collection.updateOne(
       { product, channel },
       { $set: set },

@@ -14,6 +14,8 @@ export interface ReleaseTransformInput {
   etag?: string;
   /** Configured asset-name filter; absent or empty keeps all assets. */
   assetFilter?: string[];
+  /** Policy fingerprint the release was selected under. */
+  policyFingerprint: string;
 }
 
 /**
@@ -45,5 +47,6 @@ export const transform = (input: ReleaseTransformInput): UpdateRecord => {
     version: input.version,
     updatedAt: Date.now(),
     etag: input.etag ?? null,
+    policyFingerprint: input.policyFingerprint,
   };
 };
