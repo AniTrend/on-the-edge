@@ -51,6 +51,7 @@
     "jsr:@std/path@^1.1.4": "1.1.5",
     "jsr:@std/path@^1.1.5": "1.1.5",
     "jsr:@std/random@0.1.0": "0.1.0",
+    "jsr:@std/semver@^1.0.8": "1.0.8",
     "jsr:@std/streams@^1.1.1": "1.1.1",
     "jsr:@std/testing@^1.0.17": "1.0.19",
     "jsr:@std/xml@~0.1.3": "0.1.3",
@@ -272,6 +273,9 @@
     },
     "@std/random@0.1.0": {
       "integrity": "70a006be0ffb77d036bab54aa8ae6bd0119ba77ace0f2f56f63273d4262a5667"
+    },
+    "@std/semver@1.0.8": {
+      "integrity": "dc830e8b8b6a380c895d53fbfd1258dc253704ca57bbe1629ac65fd7830179b7"
     },
     "@std/streams@1.1.1": {
       "integrity": "92556d350e537e9dce527a6d08f6f15be3ff65e656079dea69d15252187c7613"
@@ -950,6 +954,7 @@
       "jsr:@std/dotenv@~0.225.6",
       "jsr:@std/http@^1.0.24",
       "jsr:@std/path@^1.1.4",
+      "jsr:@std/semver@^1.0.8",
       "jsr:@std/testing@^1.0.17",
       "jsr:@std/yaml@^1.2.0",
       "npm:@anatine/zod-openapi@^2.2.8",

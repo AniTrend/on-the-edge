@@ -36,7 +36,14 @@ export interface GithubRelease {
   assets: GithubReleaseAsset[];
 }
 
-export type GithubReleaseSelector = 'stable' | 'prerelease';
+/**
+ * Release channel selector. `stable` selects non-prerelease releases;
+ * `prerelease` selects prereleases, optionally narrowed to the
+ * configured semver prerelease identifiers (e.g. beta, rc, alpha).
+ */
+export type GithubReleaseSelector =
+  | { type: 'stable' }
+  | { type: 'prerelease'; identifiers?: string[] };
 
 /**
  * Outcome of a GitHub release lookup. `ok` carries the selected release

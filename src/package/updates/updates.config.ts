@@ -3,7 +3,19 @@ import { parse } from '@std/yaml';
 import { UpdateChannelSchema, UpdateProductSchema } from './updates.schema.ts';
 import type { UpdateChannel, UpdateProduct } from './updates.types.ts';
 
-export const ReleaseSelectorSchema = z.enum(['stable', 'prerelease']);
+/**
+ * Release channel selector. Stable is a plain release; prerelease
+ * optionally narrows to prerelease identifiers (beta, rc, alpha, dev,
+ * experimental). Identifiers are matched against the semver prerelease
+ * components of each release tag.
+ */
+export const ReleaseSelectorSchema = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('stable') }),
+  z.object({
+    type: z.literal('prerelease'),
+    identifiers: z.array(z.string().min(1)).min(1).max(10).optional(),
+  }),
+]);
 
 const REPOSITORY_PATTERN = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
 const PROPERTIES_PATH_PATTERN = /^(?!\/)(?!.*\.\.)[A-Za-z0-9_./-]+$/;
@@ -38,21 +50,8 @@ export const UpdateSourceSchema = z.object({
 
 export type UpdateSource = z.infer<typeof UpdateSourceSchema>;
 
-/**
- * Structured selector in the YAML document. Identifiers are parsed and
- * validated now but not yet used for release selection; that is the
- * responsibility of a later phase.
- */
-const UpdateSelectorConfigSchema = z.discriminatedUnion('type', [
-  z.object({ type: z.literal('stable') }),
-  z.object({
-    type: z.literal('prerelease'),
-    identifiers: z.array(z.string().min(1)).min(1).max(10).optional(),
-  }),
-]);
-
 const UpdateChannelConfigSchema = z.object({
-  selector: UpdateSelectorConfigSchema,
+  selector: ReleaseSelectorSchema,
   rollingWindowDays: z.number().int().min(1).max(3650).optional(),
   assets: z.object({
     preferred: z.array(
@@ -124,9 +123,7 @@ const toSource = (
     product,
     channel,
     repository: productConfig.repository,
-    selector: channelConfig.selector.type === 'stable'
-      ? 'stable'
-      : 'prerelease',
+    selector: channelConfig.selector,
   };
   if (productConfig.version) {
     source.propertiesPath = productConfig.version.propertiesPath;

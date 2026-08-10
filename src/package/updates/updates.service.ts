@@ -3,7 +3,6 @@ import { OnAppBootstrap, OnAppClose } from '@danet/core/hook';
 import {
   type GithubRelease,
   GithubService,
-  parseSemverTag,
   parseVersionProperties,
 } from '@scope/service/github';
 import { SecretService } from '@scope/secret';
@@ -52,6 +51,14 @@ const MIN_REFRESH_INTERVAL_HOURS = 1;
 const MAX_REFRESH_INTERVAL_HOURS = STALE_AFTER_HOURS;
 
 /**
+ * Maximum number of sources refreshed concurrently on the scheduled
+ * path. On-demand refreshes share per-source in-flight work via the
+ * single-flight map, so overlapping refresh() calls do not multiply
+ * upstream calls (spec 11.5).
+ */
+const REFRESH_CONCURRENCY_LIMIT = 3;
+
+/**
  * Minimum time between on-demand (request-path) refresh attempts per
  * (product, channel) source. Bounds request-driven GitHub traffic when
  * the cache is stale/missing and refreshes keep failing; the scheduled
@@ -96,7 +103,15 @@ export class UpdatesService implements OnAppBootstrap, OnAppClose {
     Record<UpdateSourceKey, number>
   >;
   private refreshTimer: ReturnType<typeof setInterval> | undefined;
-  private refreshing = false;
+  /**
+   * Per-source single-flight map: at most one refresh per
+   * (product, channel) is in flight at a time, and concurrent callers
+   * await the same promise (spec 11.3).
+   */
+  private readonly inFlightRefresh: Map<
+    UpdateSourceKey,
+    Promise<UpdateChannelResult>
+  > = new Map();
 
   constructor(
     private readonly github: GithubService,
@@ -177,11 +192,12 @@ export class UpdatesService implements OnAppBootstrap, OnAppClose {
    * A fresh record is served directly from Mongo without any upstream
    * call. A stale or missing record triggers at most one guarded,
    * source-scoped refresh attempt, throttled per source by
-   * ON_DEMAND_REFRESH_COOLDOWN_MS; concurrent requests skip via the
-   * non-overlapping guard, bounding GitHub calls per request. Refresh
-   * errors (network or persistence) are caught and logged, and the
-   * cached record is served as a fallback; a source with no record at
-   * all resolves to NotFound. No cross-product fallback is applied.
+   * ON_DEMAND_REFRESH_COOLDOWN_MS; a refresh already in flight for the
+   * source is always joined so concurrent requests share one upstream
+   * call. Refresh errors (network or persistence) are caught and
+   * logged, and the cached record is served as a fallback; a source
+   * with no record at all resolves to NotFound. No cross-product
+   * fallback is applied.
    */
   async getUpdate(
     product: UpdateProduct,
@@ -240,31 +256,36 @@ export class UpdatesService implements OnAppBootstrap, OnAppClose {
 
   /**
    * Refresh a single (product, channel) source on demand (request
-   * path). Honors the non-overlapping guard and records the attempt
-   * time for the per-source retry cooldown.
+   * path). Per-source single-flight: a refresh already in flight for
+   * the key is returned as-is so both callers await the same upstream
+   * operation. The attempt time is recorded for the per-source retry
+   * cooldown.
    */
   async refreshSource(
     product: UpdateProduct,
     channel: UpdateChannel,
   ): Promise<UpdateChannelResult> {
     const key = `${product}:${channel}`;
-    if (this.refreshing) {
-      return { product, channel, status: 'skipped' };
+    const inFlight = this.inFlightRefresh.get(key);
+    if (inFlight) {
+      return inFlight;
     }
     const source = this.sources.get(key);
     if (!source) {
       return { product, channel, status: 'skipped' };
     }
     this.lastOnDemandRefreshAt[key] = Date.now();
-    this.refreshing = true;
-    try {
-      return await this.refreshSourceUnchecked(source);
-    } finally {
-      this.refreshing = false;
-    }
+    const promise = this.refreshSourceUnchecked(source)
+      .finally(() => this.inFlightRefresh.delete(key));
+    this.inFlightRefresh.set(key, promise);
+    return promise;
   }
 
   private canAttemptOnDemandRefresh(key: UpdateSourceKey): boolean {
+    // A refresh already in flight for this source is always joined,
+    // regardless of the per-source cooldown: joining costs no upstream
+    // call and serves the freshest result.
+    if (this.inFlightRefresh.has(key)) return true;
     const lastAttempt = this.lastOnDemandRefreshAt[key];
     if (lastAttempt === undefined) return true;
     return Date.now() - lastAttempt >= ON_DEMAND_REFRESH_COOLDOWN_MS;
@@ -277,17 +298,11 @@ export class UpdatesService implements OnAppBootstrap, OnAppClose {
     const [owner, repo] = this.splitRepository(source.repository);
     const cached = await this.repository.findByKey(product, channel);
 
-    const outcome = source.selector === 'stable'
-      ? await this.github.fetchLatestRelease(
-        owner,
-        repo,
-        cached?.etag ?? undefined,
-      )
-      : await this.github.fetchReleases(owner, repo, {
-        selector: source.selector,
-        rollingWindowDays: source.rollingWindowDays,
-        ifNoneMatch: cached?.etag ?? undefined,
-      });
+    const outcome = await this.github.fetchReleases(owner, repo, {
+      selector: source.selector,
+      rollingWindowDays: source.rollingWindowDays,
+      ifNoneMatch: cached?.etag ?? undefined,
+    });
     if (!outcome) {
       return { product, channel, status: 'failed' };
     }
@@ -341,10 +356,13 @@ export class UpdatesService implements OnAppBootstrap, OnAppClose {
   }
 
   /**
-   * Resolve version and code for a release: prefer tagged
-   * gradle/version.properties when both values are present, otherwise
-   * fall back to the strict semver tag. Returns undefined when neither
-   * yields a valid pair.
+   * Resolve version and code for a release from the authoritative
+   * tagged gradle/version.properties document. Both `version` and
+   * `code` are required; a missing, unparseable, or incomplete
+   * document resolves to undefined and the candidate release is
+   * rejected, retaining the previously cached record. A source with no
+   * propertiesPath has no authoritative code source and also resolves
+   * to undefined: a version code is never fabricated from the tag.
    */
   private async resolveVersionAndCode(
     source: UpdateSource,
@@ -352,21 +370,23 @@ export class UpdatesService implements OnAppBootstrap, OnAppClose {
     repo: string,
     release: GithubRelease,
   ): Promise<{ version: string; code: number } | undefined> {
-    if (source.propertiesPath) {
-      const text = await this.github.fetchVersionProperties(
-        owner,
-        repo,
-        release.tagName,
-        source.propertiesPath,
-      );
-      if (text !== undefined) {
-        const parsed = parseVersionProperties(text);
-        if (parsed.version !== undefined && parsed.code !== undefined) {
-          return { version: parsed.version, code: parsed.code };
-        }
-      }
+    if (!source.propertiesPath) {
+      return undefined;
     }
-    return parseSemverTag(release.tagName);
+    const text = await this.github.fetchVersionProperties(
+      owner,
+      repo,
+      release.tagName,
+      source.propertiesPath,
+    );
+    if (text === undefined) {
+      return undefined;
+    }
+    const parsed = parseVersionProperties(text);
+    if (parsed.version === undefined || parsed.code === undefined) {
+      return undefined;
+    }
+    return { version: parsed.version, code: parsed.code };
   }
 
   private splitRepository(repository: string): [string, string] {
@@ -376,55 +396,63 @@ export class UpdatesService implements OnAppBootstrap, OnAppClose {
 
   /**
    * Fetch and persist the latest release for every configured source
-   * (scheduled path). Non-overlapping: concurrent calls return a
-   * skipped result while a refresh is in flight. Failures are isolated
-   * per source: a throwing source is recorded as failed and logged, and
-   * the remaining sources still refresh.
+   * (scheduled path). Sources are refreshed with bounded concurrency
+   * and each goes through the per-source single-flight map, so an
+   * overlapping refresh() or on-demand request shares the same
+   * in-flight work instead of multiplying upstream calls. Failures
+   * are isolated per source: a throwing source is recorded as failed
+   * and logged, and the remaining sources still refresh.
    */
   async refresh(): Promise<UpdateRefreshResult> {
-    if (this.refreshing) {
-      this.logger.instance.debug(
-        'Update refresh already in progress; skipping',
-      );
-      return { refreshedAt: Date.now(), skipped: true, results: [] };
-    }
-    this.refreshing = true;
-    try {
-      const results: UpdateChannelResult[] = [];
-      for (const source of this.sources.values()) {
-        try {
-          results.push(await this.refreshSourceUnchecked(source));
-        } catch (error) {
-          this.logger.instance.warn(
-            'Source refresh failed',
-            { product: source.product, channel: source.channel, cause: error },
-          );
-          results.push({
-            product: source.product,
-            channel: source.channel,
-            status: 'failed',
-          });
+    const sources = [...this.sources.values()];
+    const results: UpdateChannelResult[] = new Array(sources.length);
+    let next = 0;
+    const workers = Array.from(
+      { length: Math.min(REFRESH_CONCURRENCY_LIMIT, sources.length) },
+      async () => {
+        while (true) {
+          const index = next++;
+          if (index >= sources.length) return;
+          const source = sources[index];
+          try {
+            results[index] = await this.refreshSource(
+              source.product,
+              source.channel,
+            );
+          } catch (error) {
+            this.logger.instance.warn(
+              'Source refresh failed',
+              {
+                product: source.product,
+                channel: source.channel,
+                cause: error,
+              },
+            );
+            results[index] = {
+              product: source.product,
+              channel: source.channel,
+              status: 'failed',
+            };
+          }
         }
-      }
-      const failedCount = results.filter((result) =>
-        result.status === 'failed'
-      ).length;
-      if (failedCount > 0) {
-        this.logger.instance.warn('Update refresh completed with failures', {
-          failed: failedCount,
-          total: results.length,
-          results,
-        });
-      } else {
-        this.logger.instance.info('Update refresh completed', {
-          total: results.length,
-          results,
-        });
-      }
-      return { refreshedAt: Date.now(), skipped: false, results };
-    } finally {
-      this.refreshing = false;
+      },
+    );
+    await Promise.all(workers);
+    const failedCount =
+      results.filter((result) => result.status === 'failed').length;
+    if (failedCount > 0) {
+      this.logger.instance.warn('Update refresh completed with failures', {
+        failed: failedCount,
+        total: results.length,
+        results,
+      });
+    } else {
+      this.logger.instance.info('Update refresh completed', {
+        total: results.length,
+        results,
+      });
     }
+    return { refreshedAt: Date.now(), skipped: false, results };
   }
 
   /**

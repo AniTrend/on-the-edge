@@ -5,13 +5,10 @@ import { mockFetch, resetFetch } from '@c4spar/mock-fetch';
 import {
   GithubService,
   isHttpsUrl,
-  parseSemverTag,
   parseVersionProperties,
 } from '@scope/service/github';
 import { createMockLogger, createMockSecret } from '@scope/common/testing';
 
-const LATEST_URL =
-  'https://api.github.com/repos/AniTrend/anitrend-app/releases/latest';
 const LIST_URL =
   'https://api.github.com/repos/AniTrend/anitrend-app/releases?per_page=100';
 const PROPERTIES_URL =
@@ -95,21 +92,23 @@ describe('GithubService', () => {
     resetFetch();
   });
 
-  it('fetches and parses the latest release with its ETag', async () => {
+  it('fetches and parses the release list with its ETag', async () => {
     mockFetch(
-      { url: LATEST_URL },
+      { url: LIST_URL },
       {
         status: 200,
         headers: {
           'content-type': 'application/json',
           'etag': '"abc123"',
         },
-        body: JSON.stringify(releasePayload()),
+        body: JSON.stringify([releasePayload()]),
       },
     );
 
     const service = new GithubService(secret, logger);
-    const result = await service.fetchLatestRelease('AniTrend', 'anitrend-app');
+    const result = await service.fetchReleases('AniTrend', 'anitrend-app', {
+      selector: { type: 'stable' },
+    });
 
     assertEquals(result?.status, 'ok');
     if (result?.status === 'ok') {
@@ -128,24 +127,13 @@ describe('GithubService', () => {
     }
   });
 
-  it('resolves to not-modified on a 304 response', async () => {
-    mockFetch({ url: LATEST_URL }, { status: 304 });
-
-    const service = new GithubService(secret, logger);
-    const result = await service.fetchLatestRelease(
-      'AniTrend',
-      'anitrend-app',
-      '"abc123"',
-    );
-
-    assertEquals(result?.status, 'not-modified');
-  });
-
   it('returns undefined and warns when the release lookup fails', async () => {
-    mockFetch({ url: LATEST_URL }, { status: 500, body: 'boom' });
+    mockFetch({ url: LIST_URL }, { status: 500, body: 'boom' });
 
     const service = new GithubService(secret, logger);
-    const result = await service.fetchLatestRelease('AniTrend', 'anitrend-app');
+    const result = await service.fetchReleases('AniTrend', 'anitrend-app', {
+      selector: { type: 'stable' },
+    });
 
     assertEquals(result, undefined);
     assertSpyCalls(spies.warn, 1);
@@ -178,7 +166,7 @@ describe('GithubService', () => {
 
     const service = new GithubService(secret, logger);
     const result = await service.fetchReleases('AniTrend', 'anitrend-app', {
-      selector: 'stable',
+      selector: { type: 'stable' },
     });
 
     assertEquals(result?.status, 'ok');
@@ -217,7 +205,7 @@ describe('GithubService', () => {
 
     const service = new GithubService(secret, logger);
     const result = await service.fetchReleases('AniTrend', 'anitrend-app', {
-      selector: 'prerelease',
+      selector: { type: 'prerelease' },
     });
 
     assertEquals(result?.status, 'ok');
@@ -248,7 +236,7 @@ describe('GithubService', () => {
 
     const service = new GithubService(secret, logger);
     const result = await service.fetchReleases('AniTrend', 'anitrend-app', {
-      selector: 'stable',
+      selector: { type: 'stable' },
     });
 
     assertEquals(result?.status, 'ok');
@@ -281,7 +269,7 @@ describe('GithubService', () => {
 
     const service = new GithubService(secret, logger);
     const result = await service.fetchReleases('AniTrend', 'anitrend-app', {
-      selector: 'stable',
+      selector: { type: 'stable' },
       rollingWindowDays: 90,
     });
 
@@ -309,7 +297,7 @@ describe('GithubService', () => {
 
     const service = new GithubService(secret, logger);
     const result = await service.fetchReleases('AniTrend', 'anitrend-app', {
-      selector: 'stable',
+      selector: { type: 'stable' },
       rollingWindowDays: 90,
     });
 
@@ -324,10 +312,391 @@ describe('GithubService', () => {
 
     const service = new GithubService(secret, logger);
     const result = await service.fetchReleases('AniTrend', 'anitrend-app', {
-      selector: 'prerelease',
+      selector: { type: 'prerelease' },
     });
 
     assertEquals(result?.status, 'not-modified');
+  });
+
+  it('selects the newest stable release and never a prerelease', async () => {
+    mockFetch(
+      { url: LIST_URL },
+      {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify([
+          releasePayload({
+            tag_name: 'v1.3.0-beta.1',
+            published_at: '2026-02-01T00:00:00Z',
+            prerelease: true,
+          }),
+          releasePayload({
+            tag_name: 'v1.2.0',
+            published_at: '2026-01-15T00:00:00Z',
+          }),
+          releasePayload({
+            tag_name: 'v1.1.0',
+            published_at: '2026-01-01T00:00:00Z',
+          }),
+        ]),
+      },
+    );
+
+    const service = new GithubService(secret, logger);
+    const result = await service.fetchReleases('AniTrend', 'anitrend-app', {
+      selector: { type: 'stable' },
+    });
+
+    assertEquals(result?.status, 'ok');
+    if (result?.status === 'ok') {
+      // v1.3.0-beta.1 is a prerelease and never qualifies: v1.2.0 is
+      // the newest stable.
+      assertEquals(result.release?.tagName, 'v1.2.0');
+    }
+  });
+
+  it('selects the newest beta/rc prerelease and never an alpha', async () => {
+    mockFetch(
+      { url: LIST_URL },
+      {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify([
+          releasePayload({
+            tag_name: 'v1.3.0-beta.1',
+            published_at: '2026-03-01T00:00:00Z',
+            prerelease: true,
+          }),
+          releasePayload({
+            tag_name: 'v1.3.0-beta.2',
+            published_at: '2026-03-02T00:00:00Z',
+            prerelease: true,
+          }),
+          releasePayload({
+            tag_name: 'v1.3.0-rc.1',
+            published_at: '2026-03-03T00:00:00Z',
+            prerelease: true,
+          }),
+          releasePayload({
+            tag_name: 'v1.4.0-alpha.1',
+            published_at: '2026-03-04T00:00:00Z',
+            prerelease: true,
+          }),
+        ]),
+      },
+    );
+
+    const service = new GithubService(secret, logger);
+    const result = await service.fetchReleases('AniTrend', 'anitrend-app', {
+      selector: { type: 'prerelease', identifiers: ['beta', 'rc'] },
+    });
+
+    assertEquals(result?.status, 'ok');
+    if (result?.status === 'ok') {
+      // rc > beta by semver precedence; alpha.1 is excluded by the
+      // identifiers filter, otherwise its higher 1.4.0 base would win.
+      assertEquals(result.release?.tagName, 'v1.3.0-rc.1');
+    }
+  });
+
+  it('selects the highest beta build within a base version', async () => {
+    mockFetch(
+      { url: LIST_URL },
+      {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify([
+          releasePayload({
+            tag_name: 'v1.3.0-beta.1',
+            published_at: '2026-03-01T00:00:00Z',
+            prerelease: true,
+          }),
+          releasePayload({
+            tag_name: 'v1.3.0-beta.2',
+            published_at: '2026-03-02T00:00:00Z',
+            prerelease: true,
+          }),
+        ]),
+      },
+    );
+
+    const service = new GithubService(secret, logger);
+    const result = await service.fetchReleases('AniTrend', 'anitrend-app', {
+      selector: { type: 'prerelease', identifiers: ['beta'] },
+    });
+
+    assertEquals(result?.status, 'ok');
+    if (result?.status === 'ok') {
+      assertEquals(result.release?.tagName, 'v1.3.0-beta.2');
+    }
+  });
+
+  it('selects the newest experimental prerelease and never a beta', async () => {
+    mockFetch(
+      { url: LIST_URL },
+      {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify([
+          releasePayload({
+            tag_name: 'v1.4.0-dev.3',
+            published_at: '2026-03-01T00:00:00Z',
+            prerelease: true,
+          }),
+          releasePayload({
+            tag_name: 'v1.4.0-alpha.1',
+            published_at: '2026-03-02T00:00:00Z',
+            prerelease: true,
+          }),
+          releasePayload({
+            tag_name: 'v1.3.0-beta.2',
+            published_at: '2026-03-03T00:00:00Z',
+            prerelease: true,
+          }),
+        ]),
+      },
+    );
+
+    const service = new GithubService(secret, logger);
+    const result = await service.fetchReleases('AniTrend', 'anitrend-app', {
+      selector: {
+        type: 'prerelease',
+        identifiers: ['alpha', 'dev', 'experimental'],
+      },
+    });
+
+    assertEquals(result?.status, 'ok');
+    if (result?.status === 'ok') {
+      // dev > alpha by semver; the beta is excluded by the identifiers.
+      assertEquals(result.release?.tagName, 'v1.4.0-dev.3');
+    }
+  });
+
+  it('never qualifies a draft release for any channel', async () => {
+    mockFetch(
+      { url: LIST_URL },
+      {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify([
+          releasePayload({
+            tag_name: 'v1.2.0',
+            published_at: '2026-02-01T00:00:00Z',
+            draft: true,
+          }),
+          releasePayload({
+            tag_name: 'v1.1.0',
+            published_at: '2026-01-01T00:00:00Z',
+          }),
+        ]),
+      },
+    );
+
+    const service = new GithubService(secret, logger);
+    const stable = await service.fetchReleases('AniTrend', 'anitrend-app', {
+      selector: { type: 'stable' },
+    });
+    assertEquals(stable?.status, 'ok');
+    if (stable?.status === 'ok') {
+      // v1.2.0 is a draft: v1.1.0 wins for stable.
+      assertEquals(stable.release?.tagName, 'v1.1.0');
+    }
+
+    mockFetch(
+      { url: LIST_URL },
+      {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify([
+          releasePayload({
+            tag_name: 'v2.0.0-beta.1',
+            published_at: '2026-02-01T00:00:00Z',
+            prerelease: true,
+            draft: true,
+          }),
+          releasePayload({
+            tag_name: 'v1.9.0-beta.1',
+            published_at: '2026-01-01T00:00:00Z',
+            prerelease: true,
+          }),
+        ]),
+      },
+    );
+    const prerelease = await service.fetchReleases('AniTrend', 'anitrend-app', {
+      selector: { type: 'prerelease', identifiers: ['beta'] },
+    });
+    assertEquals(prerelease?.status, 'ok');
+    if (prerelease?.status === 'ok') {
+      // v2.0.0-beta.1 is a draft: v1.9.0-beta.1 wins for prerelease.
+      assertEquals(prerelease.release?.tagName, 'v1.9.0-beta.1');
+    }
+  });
+
+  it('skips malformed prerelease tags without failing the refresh', async () => {
+    mockFetch(
+      { url: LIST_URL },
+      {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify([
+          releasePayload({
+            tag_name: 'nightly-latest',
+            published_at: '2026-03-02T00:00:00Z',
+            prerelease: true,
+          }),
+          releasePayload({
+            tag_name: 'v1.2.0-beta.1',
+            published_at: '2026-03-01T00:00:00Z',
+            prerelease: true,
+          }),
+        ]),
+      },
+    );
+
+    const service = new GithubService(secret, logger);
+    const result = await service.fetchReleases('AniTrend', 'anitrend-app', {
+      selector: { type: 'prerelease', identifiers: ['beta'] },
+    });
+
+    assertEquals(result?.status, 'ok');
+    if (result?.status === 'ok') {
+      // nightly-latest is not valid semver and is skipped; the valid
+      // sibling still wins.
+      assertEquals(result.release?.tagName, 'v1.2.0-beta.1');
+    }
+  });
+
+  it('selects by semver, not lexicographic tag order', async () => {
+    mockFetch(
+      { url: LIST_URL },
+      {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify([
+          releasePayload({
+            tag_name: 'v1.9.9-beta.9',
+            published_at: '2026-03-02T00:00:00Z',
+            prerelease: true,
+          }),
+          releasePayload({
+            tag_name: 'v1.10.0-beta.1',
+            published_at: '2026-03-01T00:00:00Z',
+            prerelease: true,
+          }),
+        ]),
+      },
+    );
+
+    const service = new GithubService(secret, logger);
+    const result = await service.fetchReleases('AniTrend', 'anitrend-app', {
+      selector: { type: 'prerelease', identifiers: ['beta'] },
+    });
+
+    assertEquals(result?.status, 'ok');
+    if (result?.status === 'ok') {
+      // 1.10.0 > 1.9.9 by semver even though 1.9.9 sorts after
+      // lexicographically.
+      assertEquals(result.release?.tagName, 'v1.10.0-beta.1');
+    }
+  });
+
+  it('orders prereleases by semver, not publication date', async () => {
+    mockFetch(
+      { url: LIST_URL },
+      {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify([
+          releasePayload({
+            tag_name: 'v1.5.0-rc.2',
+            published_at: '2026-03-01T00:00:00Z',
+            prerelease: true,
+          }),
+          releasePayload({
+            tag_name: 'v1.6.0-rc.1',
+            published_at: '2026-01-01T00:00:00Z',
+            prerelease: true,
+          }),
+        ]),
+      },
+    );
+
+    const service = new GithubService(secret, logger);
+    const result = await service.fetchReleases('AniTrend', 'anitrend-app', {
+      selector: { type: 'prerelease', identifiers: ['rc'] },
+    });
+
+    assertEquals(result?.status, 'ok');
+    if (result?.status === 'ok') {
+      // The older-published but higher-semver v1.6.0-rc.1 wins.
+      assertEquals(result.release?.tagName, 'v1.6.0-rc.1');
+    }
+  });
+
+  it('matches any prerelease when no identifiers are configured', async () => {
+    mockFetch(
+      { url: LIST_URL },
+      {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify([
+          releasePayload({
+            tag_name: 'v1.2.0-rc.1',
+            published_at: '2026-03-02T00:00:00Z',
+            prerelease: true,
+          }),
+          releasePayload({
+            tag_name: 'v1.3.0-alpha.1',
+            published_at: '2026-03-01T00:00:00Z',
+            prerelease: true,
+          }),
+        ]),
+      },
+    );
+
+    const service = new GithubService(secret, logger);
+    const result = await service.fetchReleases('AniTrend', 'anitrend-app', {
+      selector: { type: 'prerelease' },
+    });
+
+    assertEquals(result?.status, 'ok');
+    if (result?.status === 'ok') {
+      // No identifiers: any prerelease qualifies; 1.3.0 > 1.2.0.
+      assertEquals(result.release?.tagName, 'v1.3.0-alpha.1');
+    }
+  });
+
+  it('matches identifiers case-insensitively', async () => {
+    mockFetch(
+      { url: LIST_URL },
+      {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify([
+          releasePayload({
+            tag_name: 'v1.2.0-RC.1',
+            published_at: '2026-03-01T00:00:00Z',
+            prerelease: true,
+          }),
+          releasePayload({
+            tag_name: 'v1.1.0-beta.1',
+            published_at: '2026-03-02T00:00:00Z',
+            prerelease: true,
+          }),
+        ]),
+      },
+    );
+
+    const service = new GithubService(secret, logger);
+    const result = await service.fetchReleases('AniTrend', 'anitrend-app', {
+      selector: { type: 'prerelease', identifiers: ['rc'] },
+    });
+
+    assertEquals(result?.status, 'ok');
+    if (result?.status === 'ok') {
+      // 'RC' in the tag matches the 'rc' identifier case-insensitively.
+      assertEquals(result.release?.tagName, 'v1.2.0-RC.1');
+    }
   });
 
   it('fetches tagged version properties as text', async () => {
@@ -362,33 +731,6 @@ describe('GithubService', () => {
     assertSpyCalls(spies.warn, 0);
   });
 
-  it('sends the bearer token and API headers on the latest path when GITHUB_TOKEN is set', async () => {
-    mockFetch(
-      { url: LATEST_URL },
-      {
-        status: 200,
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(releasePayload()),
-      },
-    );
-    const { requests } = captureRequests();
-
-    const service = buildService(logger, 'ghp_test_token');
-    const result = await service.fetchLatestRelease('AniTrend', 'anitrend-app');
-
-    assertEquals(result?.status, 'ok');
-    assertEquals(requests.length, 1);
-    assertEquals(
-      requests[0].headers.get('authorization'),
-      'Bearer ghp_test_token',
-    );
-    assertEquals(
-      requests[0].headers.get('accept'),
-      'application/vnd.github+json',
-    );
-    assertEquals(requests[0].headers.get('x-github-api-version'), '2022-11-28');
-  });
-
   it('sends the bearer token and API headers on the list path when GITHUB_TOKEN is set', async () => {
     mockFetch(
       { url: LIST_URL },
@@ -402,7 +744,7 @@ describe('GithubService', () => {
 
     const service = buildService(logger, 'ghp_list_token');
     const result = await service.fetchReleases('AniTrend', 'anitrend-app', {
-      selector: 'stable',
+      selector: { type: 'stable' },
     });
 
     assertEquals(result?.status, 'ok');
@@ -420,17 +762,19 @@ describe('GithubService', () => {
 
   it('does not send an Authorization header without a token', async () => {
     mockFetch(
-      { url: LATEST_URL },
+      { url: LIST_URL },
       {
         status: 200,
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(releasePayload()),
+        body: JSON.stringify([releasePayload()]),
       },
     );
     const { requests } = captureRequests();
 
     const service = buildService(logger);
-    const result = await service.fetchLatestRelease('AniTrend', 'anitrend-app');
+    const result = await service.fetchReleases('AniTrend', 'anitrend-app', {
+      selector: { type: 'stable' },
+    });
 
     assertEquals(result?.status, 'ok');
     assertEquals(requests[0].headers.has('authorization'), false);
@@ -455,34 +799,6 @@ describe('GithubService', () => {
     assertEquals(requests[0].headers.has('authorization'), false);
   });
 
-  it('parses rate-limit headers on the latest release path', async () => {
-    mockFetch(
-      { url: LATEST_URL },
-      {
-        status: 200,
-        headers: {
-          'content-type': 'application/json',
-          'x-ratelimit-limit': '60',
-          'x-ratelimit-remaining': '42',
-          'x-ratelimit-reset': '1700000000',
-        },
-        body: JSON.stringify(releasePayload()),
-      },
-    );
-
-    const service = buildService(logger);
-    const result = await service.fetchLatestRelease('AniTrend', 'anitrend-app');
-
-    assertEquals(result?.status, 'ok');
-    if (result?.status === 'ok') {
-      assertEquals(result.rateLimit, {
-        limit: 60,
-        remaining: 42,
-        reset: 1700000000,
-      });
-    }
-  });
-
   it('parses rate-limit headers on the release list path', async () => {
     mockFetch(
       { url: LIST_URL },
@@ -500,7 +816,7 @@ describe('GithubService', () => {
 
     const service = buildService(logger);
     const result = await service.fetchReleases('AniTrend', 'anitrend-app', {
-      selector: 'stable',
+      selector: { type: 'stable' },
     });
 
     assertEquals(result?.status, 'ok');
@@ -535,7 +851,9 @@ describe('GithubService', () => {
     });
     const service = new GithubService(timeoutSecret, logger);
 
-    const result = await service.fetchLatestRelease('AniTrend', 'anitrend-app');
+    const result = await service.fetchReleases('AniTrend', 'anitrend-app', {
+      selector: { type: 'stable' },
+    });
 
     assertEquals(result, undefined);
     assertSpyCalls(spies.warn, 1);
@@ -543,7 +861,7 @@ describe('GithubService', () => {
 
   it('returns undefined and warns on a malformed payload', async () => {
     mockFetch(
-      { url: LATEST_URL },
+      { url: LIST_URL },
       {
         status: 200,
         headers: { 'content-type': 'application/json' },
@@ -552,7 +870,9 @@ describe('GithubService', () => {
     );
 
     const service = buildService(logger);
-    const result = await service.fetchLatestRelease('AniTrend', 'anitrend-app');
+    const result = await service.fetchReleases('AniTrend', 'anitrend-app', {
+      selector: { type: 'stable' },
+    });
 
     assertEquals(result, undefined);
     assertSpyCalls(spies.warn, 1);
@@ -560,11 +880,11 @@ describe('GithubService', () => {
 
   it('passes through asset content type and digest when GitHub reports them', async () => {
     mockFetch(
-      { url: LATEST_URL },
+      { url: LIST_URL },
       {
         status: 200,
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(releasePayload({
+        body: JSON.stringify([releasePayload({
           assets: [{
             name: 'app-release.apk',
             browser_download_url:
@@ -573,12 +893,14 @@ describe('GithubService', () => {
             content_type: 'application/vnd.android.package-archive',
             digest: 'sha256:abcdef123456',
           }],
-        })),
+        })]),
       },
     );
 
     const service = buildService(logger);
-    const result = await service.fetchLatestRelease('AniTrend', 'anitrend-app');
+    const result = await service.fetchReleases('AniTrend', 'anitrend-app', {
+      selector: { type: 'stable' },
+    });
 
     assertEquals(result?.status, 'ok');
     if (result?.status === 'ok') {
@@ -592,16 +914,18 @@ describe('GithubService', () => {
 
   it('leaves content type and digest unset when GitHub omits them', async () => {
     mockFetch(
-      { url: LATEST_URL },
+      { url: LIST_URL },
       {
         status: 200,
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(releasePayload()),
+        body: JSON.stringify([releasePayload()]),
       },
     );
 
     const service = buildService(logger);
-    const result = await service.fetchLatestRelease('AniTrend', 'anitrend-app');
+    const result = await service.fetchReleases('AniTrend', 'anitrend-app', {
+      selector: { type: 'stable' },
+    });
 
     assertEquals(result?.status, 'ok');
     if (result?.status === 'ok') {
@@ -657,49 +981,6 @@ describe('parseVersionProperties', () => {
       code: undefined,
       name: undefined,
     });
-  });
-});
-
-describe('parseSemverTag', () => {
-  it('parses bare semver tags with or without the v prefix', () => {
-    assertEquals(parseSemverTag('v2.4.0'), {
-      version: '2.4.0',
-      code: 2_004_000_000,
-    });
-    assertEquals(parseSemverTag('2.4.0'), {
-      version: '2.4.0',
-      code: 2_004_000_000,
-    });
-    assertEquals(parseSemverTag('v0.1.2'), {
-      version: '0.1.2',
-      code: 1_002_000,
-    });
-  });
-
-  it('derives exact version codes per AniTrend convention', () => {
-    assertEquals(parseSemverTag('0.1.0'), {
-      version: '0.1.0',
-      code: 1_000_000,
-    });
-    assertEquals(parseSemverTag('1.12.1'), {
-      version: '1.12.1',
-      code: 1_012_001_000,
-    });
-    assertEquals(parseSemverTag('1.13.0'), {
-      version: '1.13.0',
-      code: 1_013_000_000,
-    });
-    assertEquals(parseSemverTag('v2.4.0'), {
-      version: '2.4.0',
-      code: 2_004_000_000,
-    });
-  });
-
-  it('rejects tags that are not plain semver', () => {
-    assertEquals(parseSemverTag('v2.4.0-rc.1'), undefined);
-    assertEquals(parseSemverTag('release-2'), undefined);
-    assertEquals(parseSemverTag('v2.4'), undefined);
-    assertEquals(parseSemverTag(''), undefined);
   });
 });
 

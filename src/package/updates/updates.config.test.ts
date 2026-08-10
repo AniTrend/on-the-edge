@@ -67,7 +67,7 @@ describe('loadUpdateSources', () => {
           channel: 'STABLE',
           repository: 'AniTrend/anitrend-app',
           propertiesPath: 'gradle/version.properties',
-          selector: 'stable',
+          selector: { type: 'stable' },
           assets: ['app-github-release.apk', 'app-release.apk'],
         },
         {
@@ -75,7 +75,7 @@ describe('loadUpdateSources', () => {
           channel: 'BETA',
           repository: 'AniTrend/anitrend-app',
           propertiesPath: 'gradle/version.properties',
-          selector: 'prerelease',
+          selector: { type: 'prerelease', identifiers: ['beta', 'rc'] },
           rollingWindowDays: 90,
         },
         {
@@ -83,7 +83,7 @@ describe('loadUpdateSources', () => {
           channel: 'EXPERIMENTAL',
           repository: 'AniTrend/anitrend-app',
           propertiesPath: 'gradle/version.properties',
-          selector: 'prerelease',
+          selector: { type: 'prerelease', identifiers: ['alpha', 'dev'] },
           rollingWindowDays: 30,
         },
         {
@@ -91,7 +91,7 @@ describe('loadUpdateSources', () => {
           channel: 'STABLE',
           repository: 'AniTrend/anitrend-v2',
           propertiesPath: 'gradle/version.properties',
-          selector: 'stable',
+          selector: { type: 'stable' },
         },
       ]);
     });
@@ -110,7 +110,7 @@ products:
     withConfig(yaml, (path) => {
       const sources = loadUpdateSources(path);
       assertEquals(sources.length, 1);
-      assertEquals(sources[0].selector, 'prerelease');
+      assertEquals(sources[0].selector, { type: 'prerelease' });
       assertEquals(sources[0].rollingWindowDays, undefined);
     });
   });
