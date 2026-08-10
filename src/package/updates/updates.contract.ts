@@ -29,6 +29,13 @@ export const UpdateChannelContract = z.enum([
   description: 'Release channel of the cached update record',
 });
 
+/**
+ * Downloadable asset of a release. `digest` is the content digest
+ * GitHub reports for the asset: clients may use it to validate the
+ * downloaded bytes, but it does not replace package-signing identity.
+ * Android clients must still verify the package signature before
+ * install.
+ */
 export const UpdateReleaseAssetContract = z.object({
   name: z.string().min(1).openapi({
     description: 'File name of the release asset',
@@ -38,6 +45,13 @@ export const UpdateReleaseAssetContract = z.object({
   }),
   size: z.number().int().nonnegative().nullable().optional().openapi({
     description: 'Asset size in bytes when reported by GitHub',
+  }),
+  contentType: z.string().nullable().optional().openapi({
+    description: 'MIME content type of the asset as reported by GitHub',
+  }),
+  digest: z.string().nullable().optional().openapi({
+    description:
+      'GitHub asset digest; validates the downloaded content and does not replace Android package-signing verification',
   }),
 }).openapi({
   title: 'UpdateReleaseAsset',

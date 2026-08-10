@@ -14,6 +14,15 @@ export interface GithubReleaseAsset {
   name: string;
   url: string;
   size: number | null | undefined;
+  contentType?: string | null;
+  digest?: string | null;
+}
+
+/** Snapshot of the GitHub REST API rate-limit response headers. */
+export interface GithubRateLimit {
+  limit: number;
+  remaining: number;
+  reset: number;
 }
 
 export interface GithubRelease {
@@ -31,14 +40,16 @@ export type GithubReleaseSelector = 'stable' | 'prerelease';
 
 /**
  * Outcome of a GitHub release lookup. `ok` carries the selected release
- * (undefined when no release qualifies) and the response ETag for
- * conditional requests. `not-modified` signals a 304: the previously
- * fetched content is still current.
+ * (undefined when no release qualifies), the response ETag for
+ * conditional requests, and the rate-limit snapshot when GitHub
+ * reports one. `not-modified` signals a 304: the previously fetched
+ * content is still current.
  */
 export type GithubReleaseOutcome =
   | {
     status: 'ok';
     release: GithubRelease | undefined;
     etag: string | undefined;
+    rateLimit?: GithubRateLimit;
   }
   | { status: 'not-modified' };

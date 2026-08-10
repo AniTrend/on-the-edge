@@ -62,6 +62,19 @@ describe('Update contract schemas', () => {
     const assetShape = UpdateReleaseAssetContract.shape;
     assertEquals(assetShape.size.isNullable(), true);
     assertEquals(assetShape.size.isOptional(), true);
+    assertEquals(assetShape.contentType.isNullable(), true);
+    assertEquals(assetShape.contentType.isOptional(), true);
+    assertEquals(assetShape.digest.isNullable(), true);
+    assertEquals(assetShape.digest.isOptional(), true);
+  });
+
+  it('exposes asset content type and digest as optional metadata', () => {
+    const assetShape = UpdateReleaseAssetContract.shape as Record<
+      string,
+      unknown
+    >;
+    assertEquals('contentType' in assetShape, true);
+    assertEquals('digest' in assetShape, true);
   });
 
   it('exposes the product and channel enums', () => {

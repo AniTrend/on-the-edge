@@ -34,6 +34,49 @@ const releasePayload = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
+/** Build a GithubService with an optional GITHUB_TOKEN secret. */
+const buildService = (
+  logger: ReturnType<typeof createMockLogger>['logger'],
+  token?: string,
+): GithubService => {
+  const overrides: Record<string, string> = { CLIENT_REQUEST_TIMEOUT: '5000' };
+  if (token) {
+    overrides.GITHUB_TOKEN = token;
+  }
+  const { service: secret } = createMockSecret(overrides);
+  return new GithubService(secret, logger);
+};
+
+interface RecordedRequest {
+  url: string;
+  headers: Headers;
+}
+
+/**
+ * Wrap the mock-installed fetch so tests can assert on the exact
+ * request headers that were sent.
+ */
+const captureRequests = (): { requests: RecordedRequest[] } => {
+  const requests: RecordedRequest[] = [];
+  const mockedFetch = globalThis.fetch;
+  const recordingFetch: typeof fetch = async (input, init) => {
+    const url = typeof input === 'string'
+      ? input
+      : input instanceof URL
+      ? input.href
+      : input.url;
+    requests.push({ url, headers: new Headers(init?.headers) });
+    return mockedFetch(input, init);
+  };
+  Object.defineProperty(globalThis, 'fetch', {
+    value: recordingFetch,
+    writable: true,
+    enumerable: true,
+    configurable: true,
+  });
+  return { requests };
+};
+
 describe('GithubService', () => {
   const { service: secret } = createMockSecret({
     CLIENT_REQUEST_TIMEOUT: '5000',
@@ -317,6 +360,254 @@ describe('GithubService', () => {
 
     assertEquals(result, undefined);
     assertSpyCalls(spies.warn, 0);
+  });
+
+  it('sends the bearer token and API headers on the latest path when GITHUB_TOKEN is set', async () => {
+    mockFetch(
+      { url: LATEST_URL },
+      {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(releasePayload()),
+      },
+    );
+    const { requests } = captureRequests();
+
+    const service = buildService(logger, 'ghp_test_token');
+    const result = await service.fetchLatestRelease('AniTrend', 'anitrend-app');
+
+    assertEquals(result?.status, 'ok');
+    assertEquals(requests.length, 1);
+    assertEquals(
+      requests[0].headers.get('authorization'),
+      'Bearer ghp_test_token',
+    );
+    assertEquals(
+      requests[0].headers.get('accept'),
+      'application/vnd.github+json',
+    );
+    assertEquals(requests[0].headers.get('x-github-api-version'), '2022-11-28');
+  });
+
+  it('sends the bearer token and API headers on the list path when GITHUB_TOKEN is set', async () => {
+    mockFetch(
+      { url: LIST_URL },
+      {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify([releasePayload()]),
+      },
+    );
+    const { requests } = captureRequests();
+
+    const service = buildService(logger, 'ghp_list_token');
+    const result = await service.fetchReleases('AniTrend', 'anitrend-app', {
+      selector: 'stable',
+    });
+
+    assertEquals(result?.status, 'ok');
+    assertEquals(requests.length, 1);
+    assertEquals(
+      requests[0].headers.get('authorization'),
+      'Bearer ghp_list_token',
+    );
+    assertEquals(
+      requests[0].headers.get('accept'),
+      'application/vnd.github+json',
+    );
+    assertEquals(requests[0].headers.get('x-github-api-version'), '2022-11-28');
+  });
+
+  it('does not send an Authorization header without a token', async () => {
+    mockFetch(
+      { url: LATEST_URL },
+      {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(releasePayload()),
+      },
+    );
+    const { requests } = captureRequests();
+
+    const service = buildService(logger);
+    const result = await service.fetchLatestRelease('AniTrend', 'anitrend-app');
+
+    assertEquals(result?.status, 'ok');
+    assertEquals(requests[0].headers.has('authorization'), false);
+  });
+
+  it('does not send the token to raw.githubusercontent.com', async () => {
+    mockFetch(
+      { url: PROPERTIES_URL },
+      { status: 200, body: 'VERSION_NAME=2.4.0\nVERSION_CODE=20400\n' },
+    );
+    const { requests } = captureRequests();
+
+    const service = buildService(logger, 'ghp_test_token');
+    await service.fetchVersionProperties(
+      'AniTrend',
+      'anitrend-app',
+      'v2.4.0',
+      'gradle/version.properties',
+    );
+
+    assertEquals(requests.length, 1);
+    assertEquals(requests[0].headers.has('authorization'), false);
+  });
+
+  it('parses rate-limit headers on the latest release path', async () => {
+    mockFetch(
+      { url: LATEST_URL },
+      {
+        status: 200,
+        headers: {
+          'content-type': 'application/json',
+          'x-ratelimit-limit': '60',
+          'x-ratelimit-remaining': '42',
+          'x-ratelimit-reset': '1700000000',
+        },
+        body: JSON.stringify(releasePayload()),
+      },
+    );
+
+    const service = buildService(logger);
+    const result = await service.fetchLatestRelease('AniTrend', 'anitrend-app');
+
+    assertEquals(result?.status, 'ok');
+    if (result?.status === 'ok') {
+      assertEquals(result.rateLimit, {
+        limit: 60,
+        remaining: 42,
+        reset: 1700000000,
+      });
+    }
+  });
+
+  it('parses rate-limit headers on the release list path', async () => {
+    mockFetch(
+      { url: LIST_URL },
+      {
+        status: 200,
+        headers: {
+          'content-type': 'application/json',
+          'x-ratelimit-limit': '60',
+          'x-ratelimit-remaining': '1',
+          'x-ratelimit-reset': '1700000060',
+        },
+        body: JSON.stringify([releasePayload()]),
+      },
+    );
+
+    const service = buildService(logger);
+    const result = await service.fetchReleases('AniTrend', 'anitrend-app', {
+      selector: 'stable',
+    });
+
+    assertEquals(result?.status, 'ok');
+    if (result?.status === 'ok') {
+      assertEquals(result.rateLimit, {
+        limit: 60,
+        remaining: 1,
+        reset: 1700000060,
+      });
+    }
+  });
+
+  it('returns undefined and warns when the GitHub request times out', async () => {
+    const abortingFetch = async (
+      _input: RequestInfo | URL,
+      init?: RequestInit,
+    ): Promise<Response> => {
+      return await new Promise<Response>((_resolve, reject) => {
+        init?.signal?.addEventListener('abort', () => {
+          reject(new DOMException('Aborted', 'AbortError'));
+        });
+      });
+    };
+    Object.defineProperty(globalThis, 'fetch', {
+      value: abortingFetch,
+      writable: true,
+      enumerable: true,
+      configurable: true,
+    });
+    const { service: timeoutSecret } = createMockSecret({
+      CLIENT_REQUEST_TIMEOUT: '10',
+    });
+    const service = new GithubService(timeoutSecret, logger);
+
+    const result = await service.fetchLatestRelease('AniTrend', 'anitrend-app');
+
+    assertEquals(result, undefined);
+    assertSpyCalls(spies.warn, 1);
+  });
+
+  it('returns undefined and warns on a malformed payload', async () => {
+    mockFetch(
+      { url: LATEST_URL },
+      {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+        body: 'not-json',
+      },
+    );
+
+    const service = buildService(logger);
+    const result = await service.fetchLatestRelease('AniTrend', 'anitrend-app');
+
+    assertEquals(result, undefined);
+    assertSpyCalls(spies.warn, 1);
+  });
+
+  it('passes through asset content type and digest when GitHub reports them', async () => {
+    mockFetch(
+      { url: LATEST_URL },
+      {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(releasePayload({
+          assets: [{
+            name: 'app-release.apk',
+            browser_download_url:
+              'https://github.com/AniTrend/anitrend-app/releases/download/v2.4.0/app-release.apk',
+            size: 1024,
+            content_type: 'application/vnd.android.package-archive',
+            digest: 'sha256:abcdef123456',
+          }],
+        })),
+      },
+    );
+
+    const service = buildService(logger);
+    const result = await service.fetchLatestRelease('AniTrend', 'anitrend-app');
+
+    assertEquals(result?.status, 'ok');
+    if (result?.status === 'ok') {
+      assertEquals(
+        result.release?.assets[0].contentType,
+        'application/vnd.android.package-archive',
+      );
+      assertEquals(result.release?.assets[0].digest, 'sha256:abcdef123456');
+    }
+  });
+
+  it('leaves content type and digest unset when GitHub omits them', async () => {
+    mockFetch(
+      { url: LATEST_URL },
+      {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(releasePayload()),
+      },
+    );
+
+    const service = buildService(logger);
+    const result = await service.fetchLatestRelease('AniTrend', 'anitrend-app');
+
+    assertEquals(result?.status, 'ok');
+    if (result?.status === 'ok') {
+      assertEquals(result.release?.assets[0].contentType, undefined);
+      assertEquals(result.release?.assets[0].digest, undefined);
+    }
   });
 });
 

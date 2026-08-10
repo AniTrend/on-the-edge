@@ -9,6 +9,7 @@ import { LoggerService } from '@scope/logger';
 import { DEFAULT_HEADERS } from '../constants.ts';
 import { GithubReleasePayloadSchema } from './github.schema.ts';
 import type {
+  GithubRateLimit,
   GithubRelease,
   GithubReleaseOutcome,
   GithubReleasePayload,
@@ -21,6 +22,38 @@ import {
 
 const GITHUB_API_BASE = 'https://api.github.com';
 const GITHUB_RAW_BASE = 'https://raw.githubusercontent.com';
+const GITHUB_API_ACCEPT = 'application/vnd.github+json';
+const GITHUB_API_VERSION = '2022-11-28';
+const GITHUB_TOKEN_SECRET = 'GITHUB_TOKEN';
+
+/**
+ * Parse the GitHub REST API rate-limit response headers into a numeric
+ * snapshot. Returns undefined when any header is absent or non-numeric;
+ * rate limiting is best-effort telemetry for the edge, never a failure.
+ */
+export const parseRateLimit = (
+  headers: Headers,
+): GithubRateLimit | undefined => {
+  const limit = headers.get('x-ratelimit-limit');
+  const remaining = headers.get('x-ratelimit-remaining');
+  const reset = headers.get('x-ratelimit-reset');
+  if (limit === null || remaining === null || reset === null) {
+    return undefined;
+  }
+  const parsed = {
+    limit: Number(limit),
+    remaining: Number(remaining),
+    reset: Number(reset),
+  };
+  if (
+    !Number.isFinite(parsed.limit) ||
+    !Number.isFinite(parsed.remaining) ||
+    !Number.isFinite(parsed.reset)
+  ) {
+    return undefined;
+  }
+  return parsed;
+};
 
 /** Accept only https URLs; anything else is rejected before use. */
 export const isHttpsUrl = (value: string): boolean => {
@@ -109,6 +142,45 @@ export class GithubService {
     return client;
   }
 
+  /** Read an optional secret; undefined when it is not configured. */
+  private optionalSecret(key: string): string | undefined {
+    try {
+      return this.secret.get<string>(key);
+    } catch {
+      return undefined;
+    }
+  }
+
+  /**
+   * Headers for api.github.com requests: the pinned REST API version
+   * and GitHub JSON media type, plus an optional bearer token. These
+   * are passed per-request so raw.githubusercontent.com fetches stay
+   * on DEFAULT_HEADERS and never carry the token.
+   */
+  private apiHeaders(ifNoneMatch?: string): Record<string, string> {
+    const headers: Record<string, string> = {
+      'Accept': GITHUB_API_ACCEPT,
+      'X-GitHub-Api-Version': GITHUB_API_VERSION,
+    };
+    const token = this.optionalSecret(GITHUB_TOKEN_SECRET);
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    if (ifNoneMatch) {
+      headers['If-None-Match'] = ifNoneMatch;
+    }
+    return headers;
+  }
+
+  /** Snapshot rate-limit headers into the outcome and debug-log them. */
+  private captureRateLimit(headers: Headers): GithubRateLimit | undefined {
+    const rateLimit = parseRateLimit(headers);
+    if (rateLimit) {
+      this.logger.instance.debug('GitHub rate limit', rateLimit);
+    }
+    return rateLimit;
+  }
+
   /**
    * Fetch the latest stable release (non-prerelease, non-draft) via
    * /releases/latest. Honors If-None-Match: a 304 resolves to
@@ -125,7 +197,7 @@ export class GithubService {
     try {
       const { data, status, headers } = await this.createClient(GITHUB_API_BASE)
         .get<string>(path, {
-          headers: ifNoneMatch ? { 'If-None-Match': ifNoneMatch } : {},
+          headers: this.apiHeaders(ifNoneMatch),
           responseType: 'text',
           validateStatus: (s) => s === 304 || (s >= 200 && s < 300),
         });
@@ -138,8 +210,11 @@ export class GithubService {
           GithubReleasePayloadSchema.parse(JSON.parse(data)),
         ),
         etag: headers.get('etag') ?? undefined,
+        rateLimit: this.captureRateLimit(headers),
       };
     } catch (error) {
+      // Non-fatal by design: callers keep the stale cached release on
+      // any GitHub failure (network, timeout, malformed payload).
       this.logger.instance.warn(
         'Unable to fetch latest GitHub release',
         { owner, repo, cause: error },
@@ -168,9 +243,7 @@ export class GithubService {
       const { data, status, headers } = await this.createClient(GITHUB_API_BASE)
         .get<string>(path, {
           params: { per_page: 100 },
-          headers: options.ifNoneMatch
-            ? { 'If-None-Match': options.ifNoneMatch }
-            : {},
+          headers: this.apiHeaders(options.ifNoneMatch),
           responseType: 'text',
           validateStatus: (s) => s === 304 || (s >= 200 && s < 300),
         });
@@ -195,8 +268,11 @@ export class GithubService {
           options.rollingWindowDays,
         ),
         etag: headers.get('etag') ?? undefined,
+        rateLimit: this.captureRateLimit(headers),
       };
     } catch (error) {
+      // Non-fatal by design: callers keep the stale cached release on
+      // any GitHub failure (network, timeout, malformed payload).
       this.logger.instance.warn(
         'Unable to fetch GitHub releases',
         { owner, repo, cause: error },
@@ -255,6 +331,8 @@ export class GithubService {
         name: asset.name,
         url: asset.browser_download_url,
         size: asset.size,
+        contentType: asset.content_type,
+        digest: asset.digest,
       })),
     };
   }

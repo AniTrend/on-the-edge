@@ -7,6 +7,8 @@ export const UpdateReleaseAssetSchema = z.object({
   name: z.string().min(1),
   url: z.string().url(),
   size: z.number().int().nonnegative().nullish(),
+  contentType: z.string().nullish(),
+  digest: z.string().nullish(),
 });
 
 /**

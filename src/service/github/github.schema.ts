@@ -9,6 +9,8 @@ export const GithubReleaseAssetPayloadSchema = z.object({
   name: z.string().min(1),
   browser_download_url: z.string().url(),
   size: z.number().int().nonnegative().nullish(),
+  content_type: z.string().nullish(),
+  digest: z.string().nullish(),
 });
 
 /**
