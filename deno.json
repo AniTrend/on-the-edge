@@ -57,7 +57,7 @@
     "@opentelemetry/sdk-metrics": "npm:@opentelemetry/sdk-metrics@^2.5.1",
     "@std/yaml": "jsr:@std/yaml@^1.2.0",
     "mongodb": "npm:mongodb@^6.21.0",
-    "zod": "npm:zod@3.25.76"
+    "zod": "npm:zod@4.5.4"
   },
   "tasks": {
     "cache": "deno cache bootstrap.ts",
