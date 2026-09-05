@@ -29,7 +29,7 @@
     "@danet/zod": "jsr:@danet/zod@^0.0.9",
     "@anatine/zod-openapi": "npm:@anatine/zod-openapi@^2.2.8",
     "@c4spar/mock-fetch": "jsr:@c4spar/mock-fetch@^1.0.0",
-    "@db/redis": "jsr:@db/redis@^0.40.0",
+    "@db/redis": "jsr:@db/redis@^0.41.0",
     "@std/http": "jsr:@std/http@^1.0.24",
     "@std/dotenv": "jsr:@std/dotenv@^0.225.6",
     "@std/semver": "jsr:@std/semver@^1.0.8",
