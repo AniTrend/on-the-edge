@@ -14,7 +14,7 @@
     "jsr:@danet/zod@0.0.7": "0.0.7",
     "jsr:@danet/zod@0.0.9": "0.0.9",
     "jsr:@danet/zod@^0.0.9": "0.0.9",
-    "jsr:@db/redis@0.41": "0.41.2",
+    "jsr:@db/redis@0.42": "0.42.0",
     "jsr:@dx/reflect@0.2.14": "0.2.14",
     "jsr:@growthbook/growthbook@^1.2.2": "1.2.2",
     "jsr:@hono/hono@4.6.3": "4.6.3",
@@ -138,8 +138,8 @@
         "npm:zod@3.23.8"
       ]
     },
-    "@db/redis@0.41.2": {
-      "integrity": "d96d10020c589830f0e4b59222260b75ffb423ff44b795b4b4436adca9352a6a",
+    "@db/redis@0.42.0": {
+      "integrity": "755efea98da6803ffcd1f8993b493a886b17e30ffa9266b5c6006f385ed404ea",
       "dependencies": [
         "jsr:@std/async@1",
         "jsr:@std/bytes@1",
@@ -946,7 +946,7 @@
       "jsr:@danet/core@^2.11.0",
       "jsr:@danet/swagger@^2.3.2",
       "jsr:@danet/zod@^0.0.9",
-      "jsr:@db/redis@0.41",
+      "jsr:@db/redis@0.42",
       "jsr:@growthbook/growthbook@^1.2.2",
       "jsr:@libs/xml@8",
       "jsr:@negrel/webpush@0.5",
