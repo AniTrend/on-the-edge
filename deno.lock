@@ -77,7 +77,7 @@
     "npm:mongodb@^6.21.0": "6.21.0",
     "npm:path-to-regexp@6.2.1": "6.2.1",
     "npm:zod@3.23.8": "3.23.8",
-    "npm:zod@3.25.76": "3.25.76"
+    "npm:zod@4.6.5": "4.6.5"
   },
   "jsr": {
     "@anitrend/request-client@0.1.4": {
@@ -937,6 +937,9 @@
     },
     "zod@3.25.76": {
       "integrity": "sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ=="
+    },
+    "zod@4.6.5": {
+      "integrity": "sha512-v5l/aFXZQeai4awLbOpSoHecE9UiMrnfx75tEXLjNonXVARxQ5mOeipTjROUchszUNCqnE+hqAMujRsRHsut2Q=="
     }
   },
   "workspace": {
@@ -972,7 +975,7 @@
       "npm:@opentelemetry/sdk-node@0.219",
       "npm:@opentelemetry/semantic-conventions@^1.39.0",
       "npm:mongodb@^6.21.0",
-      "npm:zod@3.25.76"
+      "npm:zod@4.6.5"
     ]
   }
 }
