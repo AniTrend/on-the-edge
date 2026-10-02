@@ -53,7 +53,7 @@ export class InMemoryCollection<T extends Document> implements Collection<T> {
    * Generate a unique ID for documents
    */
   private generateId(): ObjectId {
-    return new ObjectId(this.idCounter++);
+    return new ObjectId((this.idCounter++).toString(16).padStart(24, '0'));
   }
 
   /**
