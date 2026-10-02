@@ -24,7 +24,7 @@ class MockMongoCollection {
     private readonly memoryCollection: InMemoryCollection<NewsDocument>,
   ) {}
 
-  find(filter: Filter<NewsDocument>, options?: FindOptions<NewsDocument>) {
+  find(filter: Filter<NewsDocument>, options?: FindOptions) {
     return {
       toArray: () => this.memoryCollection.find(filter, options),
     };
@@ -32,7 +32,7 @@ class MockMongoCollection {
 
   findOne<T>(
     filter: Filter<NewsDocument>,
-    options?: FindOptions<NewsDocument>,
+    options?: FindOptions,
   ): Promise<T | null> {
     return this.memoryCollection.findOne(filter, options) as Promise<T | null>;
   }
