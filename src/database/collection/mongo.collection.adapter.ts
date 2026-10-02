@@ -38,7 +38,7 @@ export class MongoCollectionAdapter<T extends Document>
 
   async find(
     filter: Filter<T>,
-    options?: FindOptions<T> | undefined,
+    options?: FindOptions | undefined,
   ): Promise<WithId<T>[]> {
     const cursor = this.collection.find(filter, options);
     const result = await cursor.toArray();
