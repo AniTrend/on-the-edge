@@ -27,12 +27,12 @@ export interface Collection<T extends Document> {
 
   find(
     filter: Filter<T>,
-    options?: FindOptions<T>,
+    options?: FindOptions,
   ): Promise<WithId<T>[]>;
 
   findOne(
     filter: Filter<T>,
-    options?: FindOptions<T>,
+    options?: FindOptions,
   ): Promise<WithId<T> | null>;
 
   findOneAndReplace(
