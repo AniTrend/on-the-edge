@@ -26,7 +26,7 @@ class MockMongoCollection {
 
   find(
     filter: Filter<PushDeliveryAttemptDocument>,
-    options?: FindOptions<PushDeliveryAttemptDocument>,
+    options?: FindOptions,
   ) {
     return {
       toArray: () => this.memoryCollection.find(filter, options),

@@ -30,7 +30,7 @@ class MockMongoCollection {
 
   find(
     filter: Filter<PushInstallationDocument>,
-    options?: FindOptions<PushInstallationDocument>,
+    options?: FindOptions,
   ) {
     return {
       toArray: () => this.memoryCollection.find(filter, options),
@@ -39,7 +39,7 @@ class MockMongoCollection {
 
   findOne<T>(
     filter: Filter<PushInstallationDocument>,
-    options?: FindOptions<PushInstallationDocument>,
+    options?: FindOptions,
   ): Promise<T | null> {
     return this.memoryCollection.findOne(filter, options) as Promise<T | null>;
   }

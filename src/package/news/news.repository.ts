@@ -186,7 +186,7 @@ export class NewsRepository {
     }
 
     const sort: Sorting<NewsDocumentWithId> = { updatedAt: 'desc' };
-    const options: FindOptions<NewsDocumentWithId> = {
+    const options: FindOptions = {
       sort,
       limit: 15,
     };
