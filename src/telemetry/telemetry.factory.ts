@@ -30,15 +30,13 @@ export class TelemetryFactory {
       'service.instance.id': `deno-${Date.now()}`,
       'deployment.environment': secret.environment(),
     });
-    this.batchLogProcessor = new BatchLogRecordProcessor(
-      this.logExporter,
-      {
-        exportTimeoutMillis: 30000,
-        maxExportBatchSize: 512,
-        maxQueueSize: 2048,
-        scheduledDelayMillis: 5000,
-      },
-    );
+    this.batchLogProcessor = new BatchLogRecordProcessor({
+      exporter: this.logExporter,
+      exportTimeoutMillis: 30000,
+      maxExportBatchSize: 512,
+      maxQueueSize: 2048,
+      scheduledDelayMillis: 5000,
+    });
     this.loggerProvider = new LoggerProvider({
       resource: this.resource,
       processors: [this.batchLogProcessor],
