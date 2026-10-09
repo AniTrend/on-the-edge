@@ -65,7 +65,7 @@
     "npm:@opentelemetry/exporter-metrics-otlp-http@0.223": "0.223.0_@opentelemetry+api@1.9.0",
     "npm:@opentelemetry/exporter-trace-otlp-http@0.223": "0.223.0_@opentelemetry+api@1.9.0",
     "npm:@opentelemetry/instrumentation-http@0.223": "0.223.0_@opentelemetry+api@1.9.0",
-    "npm:@opentelemetry/instrumentation-mongodb@0.75": "0.75.0_@opentelemetry+api@1.9.0",
+    "npm:@opentelemetry/instrumentation-mongodb@0.76": "0.76.0_@opentelemetry+api@1.9.0",
     "npm:@opentelemetry/resources@^2.5.1": "2.12.0_@opentelemetry+api@1.9.0",
     "npm:@opentelemetry/sdk-logs@0.223": "0.223.0_@opentelemetry+api@1.9.0",
     "npm:@opentelemetry/sdk-metrics@^2.5.1": "2.12.0_@opentelemetry+api@1.9.0",
@@ -342,12 +342,6 @@
         "sparse-bitfield"
       ]
     },
-    "@opentelemetry/api-logs@0.222.0": {
-      "integrity": "sha512-9mb1If+IF6u0ZVXkHQ6ogEae5HwA6ajIVUgpSDQyRASxft6BSXHvBvPooRle3yFN/fKnCdSOnuu0OC3PLcF6+g==",
-      "dependencies": [
-        "@opentelemetry/api"
-      ]
-    },
     "@opentelemetry/api-logs@0.223.0": {
       "integrity": "sha512-Oepm6etVPFCn0VWB1t833iOTgz1eYBDUPxcrOR/XvwzD1+Ag9VzSPSrrKAFNJ/haatj+8CXbG47pZXvdNQKDJw==",
       "dependencies": [
@@ -488,33 +482,24 @@
       "dependencies": [
         "@opentelemetry/api",
         "@opentelemetry/core",
-        "@opentelemetry/instrumentation@0.223.0_@opentelemetry+api@1.9.0",
+        "@opentelemetry/instrumentation",
         "@opentelemetry/semantic-conventions",
         "forwarded-parse"
       ]
     },
-    "@opentelemetry/instrumentation-mongodb@0.75.0_@opentelemetry+api@1.9.0": {
-      "integrity": "sha512-Bf9Az6zdOsnRFUew1CToTKpfhcFkAJ4SgmnGpxID/vuzVHI31oZhAwuKBTHny/Eq7ydXfncDbET8jV6d3L8REw==",
+    "@opentelemetry/instrumentation-mongodb@0.76.0_@opentelemetry+api@1.9.0": {
+      "integrity": "sha512-HD1vcxGnQX//rvNWYvMhukBb2Taj4xwfz77WwEKoDkKQLIzkQokflu7oZ8x/MLrsiROtiIibufM4KlRwrZb1lg==",
       "dependencies": [
         "@opentelemetry/api",
-        "@opentelemetry/instrumentation@0.222.0_@opentelemetry+api@1.9.0",
+        "@opentelemetry/instrumentation",
         "@opentelemetry/semantic-conventions"
-      ]
-    },
-    "@opentelemetry/instrumentation@0.222.0_@opentelemetry+api@1.9.0": {
-      "integrity": "sha512-fhbRDuAgzPKpq1k5+hX3uS+3QAYNca0on0Ngot/R8dDsQtuFaADeZnG2uSgxABuvcI7S2phAaRhbct9jieeKZw==",
-      "dependencies": [
-        "@opentelemetry/api",
-        "@opentelemetry/api-logs@0.222.0",
-        "import-in-the-middle",
-        "require-in-the-middle"
       ]
     },
     "@opentelemetry/instrumentation@0.223.0_@opentelemetry+api@1.9.0": {
       "integrity": "sha512-tttBo88TbwK1zpsH6VeJoxLQopxOjW3cnrP50fsQJRZftkSKDDwjolXXBvow2jy0LKXlNRkDQh0NT6yI/q+BEQ==",
       "dependencies": [
         "@opentelemetry/api",
-        "@opentelemetry/api-logs@0.223.0",
+        "@opentelemetry/api-logs",
         "import-in-the-middle",
         "require-in-the-middle"
       ]
@@ -541,7 +526,7 @@
       "integrity": "sha512-oxmmPL5/MbSsO8K588V9n/XLIe7FZTK30Fo+/U/lAnt0ZIK/hoPM03n2WpSTZVbUBGTUE7aLyxnAzh7nE2PD4Q==",
       "dependencies": [
         "@opentelemetry/api",
-        "@opentelemetry/api-logs@0.223.0",
+        "@opentelemetry/api-logs",
         "@opentelemetry/core",
         "@opentelemetry/resources",
         "@opentelemetry/sdk-logs",
@@ -575,7 +560,7 @@
       "integrity": "sha512-ApiAfUiUh6fmJt1GbsBuoeDn8D8IL42UvGyPUr8o1Z89ZeIiOCE1rZ78KkIUjEX3OV8Oorl9ez5Qjo43ZynDyw==",
       "dependencies": [
         "@opentelemetry/api",
-        "@opentelemetry/api-logs@0.223.0",
+        "@opentelemetry/api-logs",
         "@opentelemetry/core",
         "@opentelemetry/resources",
         "@opentelemetry/semantic-conventions"
@@ -593,7 +578,7 @@
       "integrity": "sha512-PPfkgVBB9XVdANmSYeGfp1tG6RdsRFo9m9R6/ZnjvE9+TYTEXO2KYarsdtXQTdHhLSw7yzhSHqsNyUQ6c6W3eg==",
       "dependencies": [
         "@opentelemetry/api",
-        "@opentelemetry/api-logs@0.223.0",
+        "@opentelemetry/api-logs",
         "@opentelemetry/configuration",
         "@opentelemetry/context-async-hooks",
         "@opentelemetry/core",
@@ -608,7 +593,7 @@
         "@opentelemetry/exporter-trace-otlp-http",
         "@opentelemetry/exporter-trace-otlp-proto",
         "@opentelemetry/exporter-zipkin",
-        "@opentelemetry/instrumentation@0.223.0_@opentelemetry+api@1.9.0",
+        "@opentelemetry/instrumentation",
         "@opentelemetry/otlp-exporter-base",
         "@opentelemetry/otlp-grpc-exporter-base",
         "@opentelemetry/propagator-b3",
@@ -953,7 +938,7 @@
       "npm:@opentelemetry/exporter-metrics-otlp-http@0.223",
       "npm:@opentelemetry/exporter-trace-otlp-http@0.223",
       "npm:@opentelemetry/instrumentation-http@0.223",
-      "npm:@opentelemetry/instrumentation-mongodb@0.75",
+      "npm:@opentelemetry/instrumentation-mongodb@0.76",
       "npm:@opentelemetry/resources@^2.5.1",
       "npm:@opentelemetry/sdk-logs@0.223",
       "npm:@opentelemetry/sdk-metrics@^2.5.1",
