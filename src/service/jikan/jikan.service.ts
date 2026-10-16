@@ -2,7 +2,11 @@ import { Injectable } from '@danet/core';
 import { SecretService } from '@scope/secret';
 import { LoggerService } from '@scope/logger';
 import { DEFAULT_HEADERS } from '@scope/common/core';
-import { createClient, RequestClient } from '@anitrend/request-client';
+import {
+  createClient,
+  RequestClient,
+  RequestError,
+} from '@anitrend/request-client';
 import { ZodError } from 'zod';
 import {
   AnimeEpisodePageSchema,
@@ -45,6 +49,30 @@ import {
   responseInterceptor,
 } from '../interceptor/client.interceptor.ts';
 
+/**
+ * Classifies failures from the public Jikan API: schema violations,
+ * rate limiting, and transport errors surface as distinct log
+ * messages so degraded metadata stays diagnosable in production.
+ */
+const classifyFailure = (
+  error: unknown,
+  messages: {
+    malformed: string;
+    rateLimited: string;
+    failed: string;
+  },
+): string => {
+  if (error instanceof ZodError) {
+    return messages.malformed;
+  }
+  if (
+    error instanceof RequestError && error.response?.status === 429
+  ) {
+    return messages.rateLimited;
+  }
+  return messages.failed;
+};
+
 @Injectable()
 export class JikanService {
   private readonly client: RequestClient;
@@ -69,6 +97,14 @@ export class JikanService {
     try {
       const [resource, moreinfo] = await Promise.all([
         this.fetchAnimeFull(malId).catch((error) => {
+          // Don't retry while rate limited: the base endpoint call
+          // would spend more of the public API budget and 429 again.
+          if (
+            error instanceof RequestError &&
+            error.response?.status === 429
+          ) {
+            throw error;
+          }
           this.logger.instance.warn(
             'Falling back to base anime endpoint due to failure',
             error,
@@ -114,9 +150,12 @@ export class JikanService {
         : anime;
     } catch (error) {
       this.logger.instance.warn(
-        error instanceof ZodError
-          ? 'Malformed Jikan anime payload from remote'
-          : 'Unable to get jikan show from remote',
+        classifyFailure(error, {
+          malformed: 'Malformed Jikan anime payload from remote',
+          rateLimited:
+            'Rate limited by Jikan API while fetching show from remote',
+          failed: 'Unable to get jikan show from remote',
+        }),
         error,
       );
       return undefined;
@@ -132,6 +171,13 @@ export class JikanService {
     try {
       const [resource, moreinfo] = await Promise.all([
         this.fetchMangaFull(malId).catch((error) => {
+          // Don't retry while rate limited.
+          if (
+            error instanceof RequestError &&
+            error.response?.status === 429
+          ) {
+            throw error;
+          }
           this.logger.instance.warn(
             'Falling back to base manga endpoint due to failure',
             error,
@@ -144,9 +190,12 @@ export class JikanService {
       return mangaTransform({ ...resource, moreinfo });
     } catch (error) {
       this.logger.instance.warn(
-        error instanceof ZodError
-          ? 'Malformed Jikan manga payload from remote'
-          : 'Unable to get jikan manga from remote',
+        classifyFailure(error, {
+          malformed: 'Malformed Jikan manga payload from remote',
+          rateLimited:
+            'Rate limited by Jikan API while fetching manga from remote',
+          failed: 'Unable to get jikan manga from remote',
+        }),
         error,
       );
       return undefined;
@@ -322,9 +371,11 @@ export class JikanService {
       return await this.fetchProducer(malId);
     } catch (error) {
       this.logger.instance.warn(
-        error instanceof ZodError
-          ? `Malformed Jikan producer payload id=${malId}`
-          : `Unable to get jikan producer id=${malId}`,
+        classifyFailure(error, {
+          malformed: `Malformed Jikan producer payload id=${malId}`,
+          rateLimited: `Rate limited by Jikan API for producer id=${malId}`,
+          failed: `Unable to get jikan producer id=${malId}`,
+        }),
         { cause: error },
       );
       return undefined;
@@ -339,9 +390,13 @@ export class JikanService {
       return results[0];
     } catch (error) {
       this.logger.instance.warn(
-        error instanceof ZodError
-          ? `Malformed Jikan producers search payload query="${query}"`
-          : `Unable to search jikan producers query="${query}"`,
+        classifyFailure(error, {
+          malformed:
+            `Malformed Jikan producers search payload query="${query}"`,
+          rateLimited:
+            `Rate limited by Jikan API for producers search query="${query}"`,
+          failed: `Unable to search jikan producers query="${query}"`,
+        }),
         { cause: error },
       );
       return undefined;
@@ -353,9 +408,11 @@ export class JikanService {
       return await this.fetchPerson(malId);
     } catch (error) {
       this.logger.instance.warn(
-        error instanceof ZodError
-          ? `Malformed Jikan person payload id=${malId}`
-          : `Unable to get jikan person id=${malId}`,
+        classifyFailure(error, {
+          malformed: `Malformed Jikan person payload id=${malId}`,
+          rateLimited: `Rate limited by Jikan API for person id=${malId}`,
+          failed: `Unable to get jikan person id=${malId}`,
+        }),
         { cause: error },
       );
       return undefined;
@@ -368,9 +425,12 @@ export class JikanService {
       return results[0];
     } catch (error) {
       this.logger.instance.warn(
-        error instanceof ZodError
-          ? `Malformed Jikan people search payload query="${query}"`
-          : `Unable to search jikan people query="${query}"`,
+        classifyFailure(error, {
+          malformed: `Malformed Jikan people search payload query="${query}"`,
+          rateLimited:
+            `Rate limited by Jikan API for people search query="${query}"`,
+          failed: `Unable to search jikan people query="${query}"`,
+        }),
         { cause: error },
       );
       return undefined;
@@ -380,6 +440,13 @@ export class JikanService {
   async getCharacter(malId: number): Promise<JikanCharacter | undefined> {
     try {
       const resource = await this.fetchCharacterFull(malId).catch((error) => {
+        // Don't retry while rate limited.
+        if (
+          error instanceof RequestError &&
+          error.response?.status === 429
+        ) {
+          throw error;
+        }
         this.logger.instance.warn(
           'Falling back to base character endpoint due to failure',
           error,
@@ -390,9 +457,11 @@ export class JikanService {
       return characterTransform(resource);
     } catch (error) {
       this.logger.instance.warn(
-        error instanceof ZodError
-          ? `Malformed Jikan character payload id=${malId}`
-          : `Unable to get jikan character id=${malId}`,
+        classifyFailure(error, {
+          malformed: `Malformed Jikan character payload id=${malId}`,
+          rateLimited: `Rate limited by Jikan API for character id=${malId}`,
+          failed: `Unable to get jikan character id=${malId}`,
+        }),
         { cause: error },
       );
       return undefined;
@@ -408,9 +477,13 @@ export class JikanService {
       return character ? characterTransform(character) : undefined;
     } catch (error) {
       this.logger.instance.warn(
-        error instanceof ZodError
-          ? `Malformed Jikan characters search payload query="${query}"`
-          : `Unable to search jikan characters query="${query}"`,
+        classifyFailure(error, {
+          malformed:
+            `Malformed Jikan characters search payload query="${query}"`,
+          rateLimited:
+            `Rate limited by Jikan API for characters search query="${query}"`,
+          failed: `Unable to search jikan characters query="${query}"`,
+        }),
         { cause: error },
       );
       return undefined;
