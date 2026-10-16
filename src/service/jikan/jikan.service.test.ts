@@ -234,6 +234,82 @@ describe('JikanService', () => {
     );
   });
 
+  it('does not retry the base endpoint when rate limited', async () => {
+    mockFetch('https://mal.test/v4/anime/800/full', {
+      status: 429,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ error: 'rate limit' }),
+    });
+    mockFetch('https://mal.test/v4/anime/800/moreinfo', {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ data: { moreinfo: null } }),
+    });
+
+    const { logger, spies } = createMockLogger();
+    const service = new JikanService(config, logger);
+    const result = await service.getAnime(800);
+
+    assertEquals(result, undefined);
+    const messages = spies.warn.calls.map((call) => call.args[0]);
+    assert(
+      messages.includes(
+        'Rate limited by Jikan API while fetching show from remote',
+      ),
+      `expected rate-limit classification, got: ${JSON.stringify(messages)}`,
+    );
+    assert(
+      !messages.includes('Falling back to base anime endpoint due to failure'),
+      `expected no fallback retry while rate limited, got: ${
+        JSON.stringify(messages)
+      }`,
+    );
+  });
+
+  it('falls back gracefully when the public API exceeds the request timeout', async () => {
+    const originalFetch = globalThis.fetch;
+    Object.defineProperty(globalThis, 'fetch', {
+      value: (
+        _input: RequestInfo | URL,
+        init?: RequestInit,
+      ): Promise<Response> =>
+        new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener('abort', () => {
+            reject(new DOMException('Aborted', 'AbortError'));
+          });
+        }),
+      writable: true,
+      enumerable: true,
+      configurable: true,
+    });
+
+    try {
+      const secret = createMockSecret({
+        MAL: 'https://mal.test',
+        CLIENT_REQUEST_TIMEOUT: '10',
+      }).service;
+      const { logger, spies } = createMockLogger();
+      const service = new JikanService(secret, logger);
+      const result = await service.getAnime(900);
+
+      assertEquals(result, undefined);
+      const messages = spies.warn.calls.map((call) => call.args[0]);
+      assert(
+        messages.includes('Unable to get jikan show from remote'),
+        `expected transport-failure classification, got: ${
+          JSON.stringify(messages)
+        }`,
+      );
+    } finally {
+      Object.defineProperty(globalThis, 'fetch', {
+        value: originalFetch,
+        writable: true,
+        enumerable: true,
+        configurable: true,
+      });
+    }
+  });
+
   it('fetches manga and applies moreinfo', async () => {
     const manga = {
       data: {

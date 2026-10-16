@@ -2,6 +2,9 @@ import { Injectable } from '@danet/core';
 import { MissingKeyError, NoVariablesFoundError } from './secret.errors.ts';
 import { Environment } from './secret.types.ts';
 
+const DEFAULT_REQUEST_TIMEOUT = 5000;
+const MAX_REQUEST_TIMEOUT = 30_000;
+
 export interface ISecretService {
   get<T>(key: string): T;
   requestTimeout(): number;
@@ -24,9 +27,19 @@ export class SecretService implements ISecretService {
     return value;
   };
 
+  /**
+   * Upstream request timeout in milliseconds. Invalid or non
+   * positive values fall back to 5000; values above 30000 are
+   * clamped so deployment misconfiguration cannot turn slow public
+   * upstreams into multi-minute request stalls.
+   */
   requestTimeout = (): number => {
     const timeout = this.get<string>('CLIENT_REQUEST_TIMEOUT');
-    return Number.parseInt(timeout, 10);
+    const parsed = Number.parseInt(timeout, 10);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      return DEFAULT_REQUEST_TIMEOUT;
+    }
+    return Math.min(parsed, MAX_REQUEST_TIMEOUT);
   };
 
   environment = (): Environment => this.get('DENO_ENV');
