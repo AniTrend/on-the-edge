@@ -93,4 +93,27 @@ describe('series.manga.transform', () => {
     assertEquals((media as MangaMetadata)?.chapters, 10);
     assertEquals((media as MangaMetadata)?.volumes, 2);
   });
+
+  it('should degrade to null manga metadata when jikan data is unavailable', () => {
+    const relation = {
+      myanimelist: 100,
+      anilist: 200,
+    } as SeriesRelationId;
+
+    const media = seriesTransform(
+      relation,
+      undefined, // skyhook
+      undefined, // tmdb
+      undefined, // themes
+      undefined, // notify
+      undefined, // jikan (unavailable upstream)
+      undefined, // trakt
+    ) as MediaUnion;
+
+    assertEquals(media.kind, 'MANGA');
+    assertEquals((media as MangaMetadata)?.chapters, null);
+    assertEquals((media as MangaMetadata)?.volumes, null);
+    assertEquals((media as MangaMetadata)?.publishedFrom, null);
+    assertEquals((media as MangaMetadata)?.publishedTo, null);
+  });
 });

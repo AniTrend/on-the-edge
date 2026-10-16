@@ -466,6 +466,25 @@ describe('UpdatesService', () => {
     assertSpyCalls(repository.upsert, 0);
   });
 
+  it('reports unavailable instead of failed when no release qualifies', async () => {
+    const { service, repository } = createHarness({
+      sources: [source()],
+      fetchReleasesImpl: async () => ({
+        status: 'ok',
+        release: undefined,
+        etag: undefined,
+      }),
+    });
+
+    const result = await service.refresh();
+
+    assertEquals(result.results, [
+      { product: 'ANITREND_APP', channel: 'STABLE', status: 'unavailable' },
+    ]);
+    assertSpyCalls(repository.touchFreshness, 0);
+    assertSpyCalls(repository.upsert, 0);
+  });
+
   it('replaces an aged-out cached selection with a newly eligible release after a rejected 304', async () => {
     const prereleaseSource = source({
       selector: { type: 'prerelease' },

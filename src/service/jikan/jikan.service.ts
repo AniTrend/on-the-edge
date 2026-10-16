@@ -3,6 +3,7 @@ import { SecretService } from '@scope/secret';
 import { LoggerService } from '@scope/logger';
 import { DEFAULT_HEADERS } from '@scope/common/core';
 import { createClient, RequestClient } from '@anitrend/request-client';
+import { ZodError } from 'zod';
 import {
   AnimeEpisodePageSchema,
   AnimeResourceResponseSchema,
@@ -113,7 +114,9 @@ export class JikanService {
         : anime;
     } catch (error) {
       this.logger.instance.warn(
-        'Unable to get jikan show from remote',
+        error instanceof ZodError
+          ? 'Malformed Jikan anime payload from remote'
+          : 'Unable to get jikan show from remote',
         error,
       );
       return undefined;
@@ -141,7 +144,9 @@ export class JikanService {
       return mangaTransform({ ...resource, moreinfo });
     } catch (error) {
       this.logger.instance.warn(
-        'Unable to get jikan manga from remote',
+        error instanceof ZodError
+          ? 'Malformed Jikan manga payload from remote'
+          : 'Unable to get jikan manga from remote',
         error,
       );
       return undefined;
@@ -317,7 +322,9 @@ export class JikanService {
       return await this.fetchProducer(malId);
     } catch (error) {
       this.logger.instance.warn(
-        `Unable to get jikan producer id=${malId}`,
+        error instanceof ZodError
+          ? `Malformed Jikan producer payload id=${malId}`
+          : `Unable to get jikan producer id=${malId}`,
         { cause: error },
       );
       return undefined;
@@ -332,7 +339,9 @@ export class JikanService {
       return results[0];
     } catch (error) {
       this.logger.instance.warn(
-        `Unable to search jikan producers query="${query}"`,
+        error instanceof ZodError
+          ? `Malformed Jikan producers search payload query="${query}"`
+          : `Unable to search jikan producers query="${query}"`,
         { cause: error },
       );
       return undefined;
@@ -344,7 +353,9 @@ export class JikanService {
       return await this.fetchPerson(malId);
     } catch (error) {
       this.logger.instance.warn(
-        `Unable to get jikan person id=${malId}`,
+        error instanceof ZodError
+          ? `Malformed Jikan person payload id=${malId}`
+          : `Unable to get jikan person id=${malId}`,
         { cause: error },
       );
       return undefined;
@@ -357,7 +368,9 @@ export class JikanService {
       return results[0];
     } catch (error) {
       this.logger.instance.warn(
-        `Unable to search jikan people query="${query}"`,
+        error instanceof ZodError
+          ? `Malformed Jikan people search payload query="${query}"`
+          : `Unable to search jikan people query="${query}"`,
         { cause: error },
       );
       return undefined;
@@ -377,7 +390,9 @@ export class JikanService {
       return characterTransform(resource);
     } catch (error) {
       this.logger.instance.warn(
-        `Unable to get jikan character id=${malId}`,
+        error instanceof ZodError
+          ? `Malformed Jikan character payload id=${malId}`
+          : `Unable to get jikan character id=${malId}`,
         { cause: error },
       );
       return undefined;
@@ -393,7 +408,9 @@ export class JikanService {
       return character ? characterTransform(character) : undefined;
     } catch (error) {
       this.logger.instance.warn(
-        `Unable to search jikan characters query="${query}"`,
+        error instanceof ZodError
+          ? `Malformed Jikan characters search payload query="${query}"`
+          : `Unable to search jikan characters query="${query}"`,
         { cause: error },
       );
       return undefined;

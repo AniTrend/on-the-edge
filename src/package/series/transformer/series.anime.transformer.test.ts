@@ -4,7 +4,8 @@ import { seriesTransform } from './series.transformer.ts';
 import { SeriesRelationId } from '@scope/service/arm';
 import { JikanAnime } from '@scope/service/jikan';
 import type { AnimeThemesLookupModel } from '@scope/service/animethemes';
-import { MediaUnion } from '../series.types.ts';
+import type { NotifyAnime } from '@scope/service/notify';
+import { AnimeMetadata, MediaUnion } from '../series.types.ts';
 
 describe('series.anime.transform', () => {
   it('should set kind=ANIME and omit manga block for anime resources', () => {
@@ -103,6 +104,34 @@ describe('series.anime.transform', () => {
     }
     assertEquals(media.mediaId.myanimelist, 300);
     assertEquals(media.title.canonical, 'Primary Anime Title');
+  });
+
+  it('should degrade to null broadcast and duration when jikan data is unavailable', () => {
+    const relation = {
+      myanimelist: 300,
+      anilist: 400,
+    } as SeriesRelationId;
+
+    // A notify record marks the series as anime, so the ANIME branch
+    // runs while jikan (the usual source) is unavailable. Notify
+    // fields are optional in the transform, so an empty record must
+    // degrade to null metadata instead of throwing.
+    const notify = {} as unknown as NotifyAnime;
+
+    const media = seriesTransform(
+      relation,
+      undefined,
+      undefined,
+      undefined,
+      notify,
+      undefined,
+      undefined,
+    ) as MediaUnion;
+
+    assertEquals(media.kind, 'ANIME');
+    assertEquals((media as AnimeMetadata)?.broadcast, null);
+    assertEquals((media as AnimeMetadata)?.duration, null);
+    assertEquals((media as AnimeMetadata)?.isAdult, null);
   });
 
   it('should expose raw animethemes and use AnimeThemes metadata as fallback enrichment', () => {

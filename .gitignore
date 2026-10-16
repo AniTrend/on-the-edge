@@ -3,6 +3,7 @@
 
 ### Deno ###
 /node_modules
+/build/
 
 .env
 *.orig

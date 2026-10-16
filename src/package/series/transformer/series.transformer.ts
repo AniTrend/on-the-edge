@@ -94,7 +94,7 @@ const seriesTitle = (
   harigana: notify?.title?.harigana ?? null,
   japanese: jikan?.title_japanese ?? notify?.title?.native ??
     tmdb?.original_name ?? null,
-  romaji: notify?.title.romaji ??
+  romaji: notify?.title?.romaji ??
     firstAnimeThemesValue(animeThemes, (resource) => resource.name) ?? null,
   // Prefer Jikan synonyms (works for anime & manga). If empty array, fallback to notify synonyms.
   synonyms:
@@ -366,18 +366,18 @@ export const seriesTransform = (
   };
 
   if (kind === 'MANGA') {
-    const jikanManga = jikan as JikanManga;
+    const jikanManga = jikan as JikanManga | undefined;
     const manga: MangaMetadata = {
-      chapters: typeof jikanManga.chapters === 'number'
+      chapters: typeof jikanManga?.chapters === 'number'
         ? jikanManga.chapters
         : null,
-      volumes: typeof jikanManga.volumes === 'number'
+      volumes: typeof jikanManga?.volumes === 'number'
         ? jikanManga.volumes
         : null,
-      publishedFrom: jikanManga.published?.from
+      publishedFrom: jikanManga?.published?.from
         ? toInstant(jikanManga.published.from)
         : null,
-      publishedTo: jikanManga.published?.to
+      publishedTo: jikanManga?.published?.to
         ? toInstant(jikanManga.published.to)
         : null,
     };
@@ -386,20 +386,22 @@ export const seriesTransform = (
   }
 
   if (kind === 'ANIME') {
-    const { broadcast, duration, type } = jikan as JikanAnime;
-    const isMovie = type === 'Movie';
+    const jikanAnime = jikan as JikanAnime | undefined;
+    const isMovie = jikanAnime?.type === 'Movie';
     const anime: AnimeMetadata = {
       animethemes: animeThemesResources(animeThemes).flatMap((resource) =>
         resource.animethemes ?? []
       ),
       schedule: seriesSchedule(isMovie, tmdb),
       trailers: seriesTrailers(notify),
-      broadcast: broadcast?.string ?? null,
+      broadcast: jikanAnime?.broadcast?.string ?? null,
       airedEpisodes: trakt?.aired_episodes ?? null,
       networks: seriesNetworks(skyhook, trakt, tmdb),
       isAdult: tmdb?.adult ?? null,
       homepage: trakt?.homepage ?? tmdb?.homepage ?? null,
-      duration: duration ? parseDuration(duration) : null,
+      duration: jikanAnime?.duration
+        ? parseDuration(jikanAnime.duration)
+        : null,
     };
     return { ...base, ...anime } as MediaUnion;
   }
