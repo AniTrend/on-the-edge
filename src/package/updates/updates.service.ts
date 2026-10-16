@@ -28,6 +28,7 @@ export type UpdateChannelStatus =
   | 'updated'
   | 'unchanged'
   | 'skipped'
+  | 'unavailable'
   | 'failed';
 
 export interface UpdateChannelResult {
@@ -369,7 +370,7 @@ export class UpdatesService implements OnAppBootstrap, OnAppClose {
         'No qualifying GitHub release for source',
         { product, channel },
       );
-      return { product, channel, status: 'failed' };
+      return { product, channel, status: 'unavailable' };
     }
     if (cached && cached.tag === release.tagName) {
       // Same release still selected; refresh freshness and ETag.
@@ -578,9 +579,12 @@ export class UpdatesService implements OnAppBootstrap, OnAppClose {
     await Promise.all(workers);
     const failedCount =
       results.filter((result) => result.status === 'failed').length;
+    const unavailableCount =
+      results.filter((result) => result.status === 'unavailable').length;
     if (failedCount > 0) {
       this.logger.instance.warn('Update refresh completed with failures', {
         failed: failedCount,
+        unavailable: unavailableCount,
         total: results.length,
         results,
       });

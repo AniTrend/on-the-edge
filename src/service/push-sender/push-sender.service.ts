@@ -1,7 +1,5 @@
 import {
   ApplicationServer,
-  exportVapidKeys,
-  generateVapidKeys,
   importVapidKeys,
   PushMessageError,
   type PushSubscriber,
@@ -11,6 +9,7 @@ import { OnAppBootstrap } from '@danet/core/hook';
 import { SecretService } from '@scope/secret';
 import { LoggerService } from '@scope/logger';
 import { between } from '@onjara/optic/profileMeasure';
+import { ExportedVapidKeysSchema } from './push-sender.schema.ts';
 import type {
   PushDeliveryResult,
   PushNotificationPayload,
@@ -39,15 +38,55 @@ export class PushSenderService implements OnAppBootstrap {
     this.logger.instance.mark('push-sender-init-start');
 
     try {
-      const encoded = this.secret.get<string>('PUSH_VAPID_KEYS');
-      const decoded = JSON.parse(atob(encoded));
+      let encoded: string;
+      try {
+        encoded = this.secret.get<string>('PUSH_VAPID_KEYS');
+      } catch (error) {
+        this.warnNotInitialized(
+          'PUSH_VAPID_KEYS is missing or could not be read',
+          error,
+        );
+        return;
+      }
+
+      let decoded: unknown;
+      try {
+        decoded = JSON.parse(atob(encoded));
+      } catch (error) {
+        this.warnNotInitialized(
+          'PUSH_VAPID_KEYS is not valid base64-encoded JSON',
+          error,
+        );
+        return;
+      }
+
+      const parsed = ExportedVapidKeysSchema.safeParse(decoded);
+      if (!parsed.success) {
+        this.warnNotInitialized(
+          'PUSH_VAPID_KEYS does not contain a valid VAPID key pair',
+          parsed.error,
+        );
+        return;
+      }
+
+      let contactInformation: string;
+      try {
+        contactInformation = this.secret.get<string>('PUSH_VAPID_SUBJECT');
+      } catch (error) {
+        this.warnNotInitialized(
+          'PUSH_VAPID_SUBJECT is missing or could not be read',
+          error,
+        );
+        return;
+      }
+
       const vapidKeys = await importVapidKeys(
-        decoded,
+        parsed.data,
         { extractable: false },
       );
 
       this.applicationServer = await ApplicationServer.new({
-        contactInformation: this.secret.get<string>('PUSH_VAPID_SUBJECT'),
+        contactInformation,
         vapidKeys,
       });
 
@@ -55,17 +94,28 @@ export class PushSenderService implements OnAppBootstrap {
         'Push sender ApplicationServer initialized',
       );
     } catch (error) {
-      this.logger.instance.warn(
-        'Push sender not initialized — PUSH_VAPID_KEYS missing or invalid. Push delivery will be unavailable until configured.',
-        { cause: error },
+      this.warnNotInitialized(
+        'the Web Push library rejected the VAPID keys',
+        error,
       );
-      // Do not throw — allow the application to start without push sending
     } finally {
       this.logger.instance.mark('push-sender-init-end');
       this.logger.instance.measure(
         between('push-sender-init-start', 'push-sender-init-end'),
       );
     }
+  }
+
+  /**
+   * Logs a classified initialization failure. Never throws: the
+   * application starts without push delivery when configuration is
+   * missing or malformed.
+   */
+  private warnNotInitialized(reason: string, cause: unknown): void {
+    this.logger.instance.warn(
+      `Push sender not initialized: ${reason}. Push delivery will be unavailable until configured.`,
+      { cause },
+    );
   }
 
   /**
@@ -196,9 +246,20 @@ export class PushSenderService implements OnAppBootstrap {
     encoded: string;
     publicKey: string;
   }> {
-    const keys = await generateVapidKeys();
-    const exported = await exportVapidKeys(keys);
-    const encoded = btoa(JSON.stringify(exported));
+    // VAPID uses ECDSA P-256 keys (RFC 8292). Extractable keys are
+    // required so the pair can be exported into the PUSH_VAPID_KEYS
+    // format; the parse step keeps only the format members, producing
+    // a blob the service can import back.
+    const pair = await crypto.subtle.generateKey(
+      { name: 'ECDSA', namedCurve: 'P-256' },
+      true,
+      ['sign', 'verify'],
+    );
+    const keys = ExportedVapidKeysSchema.parse({
+      publicKey: await crypto.subtle.exportKey('jwk', pair.publicKey),
+      privateKey: await crypto.subtle.exportKey('jwk', pair.privateKey),
+    });
+    const encoded = btoa(JSON.stringify(keys));
     return { encoded, publicKey: '' };
   }
 }

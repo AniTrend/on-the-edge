@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, it } from '@std/testing/bdd';
-import { assertEquals, assertExists } from '@std/assert';
+import { assert, assertEquals, assertExists } from '@std/assert';
 import { mockFetch, resetFetch } from '@c4spar/mock-fetch';
 import { JikanService } from '@scope/service/jikan';
 import { createMockLogger, createMockSecret } from '@scope/common/testing';
@@ -141,6 +141,97 @@ describe('JikanService', () => {
     assertEquals(result?.mal_id, 100);
     assertEquals(result?.episodes_list?.length, 1);
     assertEquals(result?.moreinfo, 'Additional info');
+  });
+
+  it('classifies malformed anime payloads as schema failures', async () => {
+    const malformed = JSON.stringify({ data: { unexpected: true } });
+    mockFetch('https://mal.test/v4/anime/500/full', {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+      body: malformed,
+    });
+    mockFetch('https://mal.test/v4/anime/500', {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+      body: malformed,
+    });
+    mockFetch('https://mal.test/v4/anime/500/moreinfo', {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ data: { moreinfo: null } }),
+    });
+
+    const { logger, spies } = createMockLogger();
+    const service = new JikanService(config, logger);
+    const result = await service.getAnime(500);
+
+    assertEquals(result, undefined);
+    const messages = spies.warn.calls.map((call) => call.args[0]);
+    assert(
+      messages.includes('Malformed Jikan anime payload from remote'),
+      `expected schema-failure classification, got: ${
+        JSON.stringify(messages)
+      }`,
+    );
+  });
+
+  it('classifies malformed manga payloads as schema failures', async () => {
+    const malformed = JSON.stringify({ data: { unexpected: true } });
+    mockFetch('https://mal.test/v4/manga/600/full', {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+      body: malformed,
+    });
+    mockFetch('https://mal.test/v4/manga/600', {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+      body: malformed,
+    });
+    mockFetch('https://mal.test/v4/manga/600/moreinfo', {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ data: { moreinfo: null } }),
+    });
+
+    const { logger, spies } = createMockLogger();
+    const service = new JikanService(config, logger);
+    const result = await service.getManga(600);
+
+    assertEquals(result, undefined);
+    const messages = spies.warn.calls.map((call) => call.args[0]);
+    assert(
+      messages.includes('Malformed Jikan manga payload from remote'),
+      `expected schema-failure classification, got: ${
+        JSON.stringify(messages)
+      }`,
+    );
+  });
+
+  it('classifies malformed character payloads as schema failures', async () => {
+    const malformed = JSON.stringify({ data: { unexpected: true } });
+    mockFetch('https://mal.test/v4/characters/700/full', {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+      body: malformed,
+    });
+    mockFetch('https://mal.test/v4/characters/700', {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+      body: malformed,
+    });
+
+    const { logger, spies } = createMockLogger();
+    const service = new JikanService(config, logger);
+    const result = await service.getCharacter(700);
+
+    assertEquals(result, undefined);
+    const messages = spies.warn.calls.map((call) => call.args[0]);
+    assert(
+      messages.includes('Malformed Jikan character payload id=700'),
+      `expected schema-failure classification, got: ${
+        JSON.stringify(messages)
+      }`,
+    );
   });
 
   it('fetches manga and applies moreinfo', async () => {

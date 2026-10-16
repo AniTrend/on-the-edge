@@ -9,22 +9,13 @@
  * JSON Web Key representation for ECDH keys.
  * Mirrors the JWK format used by @negrel/webpush internally.
  */
-export interface JsonWebKey {
-  kty: string;
-  crv: string;
-  x: string;
-  y: string;
-  d?: string;
-}
+export type { JsonWebKey } from './push-sender.schema.ts';
 
 /**
  * Exported VAPID key pair in JWK format, as produced
  * and consumed by @negrel/webpush.
  */
-export interface ExportedVapidKeys {
-  publicKey: JsonWebKey;
-  privateKey: JsonWebKey;
-}
+export type { ExportedVapidKeys } from './push-sender.schema.ts';
 
 /**
  * A Web Push subscription as received from the client
