@@ -1,7 +1,7 @@
 export interface TheXem {
   scene: TheXemScene;
   tvdb: TheXemScene;
-  anidb: TheXemScene;
+  anidb?: TheXemScene;
 }
 
 export interface TheXemScene {

@@ -52,6 +52,9 @@ const mapHSLToHex = (
   s: number,
   l: number,
 ): string => {
+  h *= 360;
+  s *= 100;
+  l *= 100;
   l /= 100;
   const a = s * Math.min(l, 1 - l) / 100;
   const f = (n: number) => {
@@ -60,6 +63,19 @@ const mapHSLToHex = (
     return Math.round(255 * color).toString(16).padStart(2, '0');
   };
   return `#${f(0)}${f(8)}${f(4)}`;
+};
+
+const toFiniteInstant = (value: string | null | undefined): number | null => {
+  if (value == null || value.trim() === '') return null;
+  const instant = toInstant(value);
+  return Number.isFinite(instant) ? instant : null;
+};
+
+const toOptionalFiniteInstant = (
+  value: string | null | undefined,
+): number | undefined => {
+  const instant = toFiniteInstant(value);
+  return instant === null ? undefined : instant;
 };
 
 const mapPoster = (image: NotifyAnimeRemote['image']): Poster => ({
@@ -118,12 +134,8 @@ const mapEpisode = (episode: NotifyEpisodeRemote): TransformedEpisode => ({
   id: episode.id,
   number: episode.number,
   title: resolveTitle(episode),
-  startAirDate: episode.airingDate?.start
-    ? toInstant(episode.airingDate.start)
-    : undefined,
-  endAirDate: episode.airingDate?.end
-    ? toInstant(episode.airingDate.end)
-    : undefined,
+  startAirDate: toOptionalFiniteInstant(episode.airingDate?.start),
+  endAirDate: toOptionalFiniteInstant(episode.airingDate?.end),
 });
 
 export const transform: Transform<EnrichedAnimeData, Anime> = (sourceData) => {
@@ -144,10 +156,8 @@ export const transform: Transform<EnrichedAnimeData, Anime> = (sourceData) => {
     format: mapFormat(anime.type ?? ''),
     summary: anime.summary ?? '',
     status: mapStatus(anime.status ?? ''),
-    startDate: toInstant(anime.startDate ?? new Date().toISOString()),
-    endDate: toInstant(
-      anime.endDate ?? anime.startDate ?? new Date().toISOString(),
-    ),
+    startDate: toFiniteInstant(anime.startDate),
+    endDate: toFiniteInstant(anime.endDate),
     episodeCount: Number(anime.episodeCount ?? 0),
     episodeLength: Number(anime.episodeLength ?? 0),
     episodes: anime.episodes.map(mapEpisode),

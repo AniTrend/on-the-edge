@@ -4,6 +4,65 @@ import { mockFetch, resetFetch } from '@c4spar/mock-fetch';
 import { JikanService } from '@scope/service/jikan';
 import { createMockLogger, createMockSecret } from '@scope/common/testing';
 
+function minimalAnimeResource(malId: number, episodes?: number) {
+  return {
+    mal_id: malId,
+    url: `https://mal.test/anime/${malId}`,
+    approved: true,
+    titles: [],
+    images: { jpg: {}, webp: {} },
+    title_synonyms: [],
+    type: null,
+    status: null,
+    airing: false,
+    aired: {
+      from: null,
+      to: null,
+      prop: {
+        from: { day: null, month: null, year: null },
+        to: { day: null, month: null, year: null },
+        string: null,
+      },
+    },
+    broadcast: { day: null, time: null, timezone: null, string: null },
+    episodes,
+  };
+}
+
+function minimalMangaResource(malId: number) {
+  return {
+    mal_id: malId,
+    url: `https://mal.test/manga/${malId}`,
+    approved: true,
+    titles: [],
+    images: { jpg: {}, webp: {} },
+    type: 'OEL',
+    status: 'Finished',
+    publishing: false,
+    published: {
+      from: null,
+      to: null,
+      prop: {
+        from: { day: null, month: null, year: null },
+        to: { day: null, month: null, year: null },
+        string: null,
+      },
+    },
+    themes: [{ mal_id: 1, type: 'manga-theme', name: 'Theme', url: '' }],
+  };
+}
+
+function episodePayload(malId: number) {
+  return {
+    mal_id: malId,
+    title: `Episode ${malId}`,
+    aired: '2024-01-01T00:00:00Z',
+    duration: 120,
+    filler: false,
+    recap: false,
+  };
+}
+
 describe('JikanService', () => {
   const config = createMockSecret({
     MAL: 'https://mal.test',
@@ -42,7 +101,7 @@ describe('JikanService', () => {
         title_english: 'Series',
         title_japanese: 'シリーズ',
         title_synonyms: [],
-        type: 'TV',
+        type: null,
         score: 8.5,
         scored_by: 1,
         rank: 1,
@@ -54,9 +113,9 @@ describe('JikanService', () => {
         rating: 'PG',
         moreinfo: null,
         trailer: null,
-        source: 'Manga',
+        source: 'Unlisted source',
         episodes: 1,
-        status: 'Finished Airing',
+        status: null,
         airing: false,
         aired: {
           from: '2023-01-01T00:00:00Z',
@@ -71,10 +130,10 @@ describe('JikanService', () => {
         season: 'winter',
         year: 2023,
         broadcast: {
-          day: 'Mondays',
-          time: '18:00',
-          timezone: 'JST',
-          string: 'Mondays at 18:00 (JST)',
+          day: null,
+          time: null,
+          timezone: null,
+          string: null,
         },
         theme: { openings: [], endings: [] },
         producers: [],
@@ -139,8 +198,132 @@ describe('JikanService', () => {
     const result = await service.getAnime(100, { episodes: true });
 
     assertEquals(result?.mal_id, 100);
+    assertEquals(result?.type, null);
+    assertEquals(result?.status, null);
+    assertEquals(result?.source, 'Unlisted source');
+    assertEquals(result?.broadcast, {
+      day: null,
+      time: null,
+      timezone: null,
+      string: null,
+    });
     assertEquals(result?.episodes_list?.length, 1);
     assertEquals(result?.moreinfo, 'Additional info');
+  });
+
+  it('falls back to base after a non-rate-limited full failure and degrades optional data', async () => {
+    mockFetch('https://mal.test/v4/anime/101/full', {
+      status: 503,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ error: 'temporarily unavailable' }),
+    });
+    mockFetch('https://mal.test/v4/anime/101', {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        data: { ...minimalAnimeResource(101), source: 'unlisted-source' },
+      }),
+    });
+    mockFetch('https://mal.test/v4/anime/101/moreinfo', {
+      status: 503,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ error: 'unavailable' }),
+    });
+    mockFetch('https://mal.test/v4/anime/101/staff', {
+      status: 503,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ error: 'unavailable' }),
+    });
+
+    const service = new JikanService(config, logger);
+    const result = await service.getAnime(101, { staff: true });
+
+    assertEquals(result?.mal_id, 101);
+    assertEquals(result?.type, null);
+    assertEquals(result?.status, null);
+    assertEquals(result?.source, 'unlisted-source');
+    assertEquals(result?.broadcast, {
+      day: null,
+      time: null,
+      timezone: null,
+      string: null,
+    });
+    assertEquals(result?.moreinfo, null);
+    assertEquals(result?.staff_list, []);
+  });
+
+  it('applies episode windows and limits, and preserves earlier pages after a later failure', async () => {
+    mockFetch('https://mal.test/v4/anime/901/full', {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ data: minimalAnimeResource(901, 4) }),
+    });
+    mockFetch('https://mal.test/v4/anime/901/moreinfo', {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ data: { moreinfo: null } }),
+    });
+    mockFetch('https://mal.test/v4/anime/901/episodes?page=1', {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        data: [episodePayload(1), episodePayload(2)],
+        pagination: { has_next_page: true },
+      }),
+    });
+    mockFetch('https://mal.test/v4/anime/901/episodes?page=2', {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        data: [episodePayload(3), episodePayload(4)],
+        pagination: { has_next_page: true },
+      }),
+    });
+
+    const service = new JikanService(config, logger);
+    const limited = await service.getAnime(901, {
+      episodes: true,
+      maxEpisodes: 2,
+      episodeWindow: { from: 2, to: 3 },
+    });
+
+    assertEquals(limited?.episodes_list?.map((episode) => episode.mal_id), [
+      2,
+      3,
+    ]);
+    assertEquals(limited?.episodes_truncated, true);
+
+    mockFetch('https://mal.test/v4/anime/902/full', {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ data: minimalAnimeResource(902, 10) }),
+    });
+    mockFetch('https://mal.test/v4/anime/902/moreinfo', {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ data: { moreinfo: null } }),
+    });
+    mockFetch('https://mal.test/v4/anime/902/episodes?page=1', {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        data: [episodePayload(1)],
+        pagination: { has_next_page: true },
+      }),
+    });
+    mockFetch('https://mal.test/v4/anime/902/episodes?page=2', {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ pagination: { has_next_page: false } }),
+    });
+
+    const partial = await service.getAnime(902, {
+      episodes: true,
+      maxEpisodes: 10,
+    });
+
+    assertEquals(partial?.episodes_list?.map((episode) => episode.mal_id), [1]);
+    assertEquals(partial?.episodes_truncated, false);
   });
 
   it('classifies malformed anime payloads as schema failures', async () => {
@@ -332,8 +515,7 @@ describe('JikanService', () => {
         title: 'Manga',
         title_english: 'Manga',
         title_japanese: 'マンガ',
-        title_synonyms: [],
-        type: 'Manga',
+        type: 'OEL',
         score: 9,
         scored_by: 1,
         rank: 1,
@@ -361,11 +543,15 @@ describe('JikanService', () => {
         serializations: [],
         genres: [],
         explicit_genres: [],
-        themes: [],
+        themes: [{
+          mal_id: 1,
+          type: 'manga-theme',
+          name: 'Theme',
+          url: 'https://mal.test/manga/200/theme',
+        }],
         demographics: [],
         relations: [],
         external: [],
-        source: 'Manga',
       },
     };
 
@@ -391,7 +577,35 @@ describe('JikanService', () => {
     const result = await service.getManga(200);
 
     assertEquals(result?.mal_id, 200);
+    assertEquals(result?.type, 'OEL');
+    assertEquals(result?.title_synonyms, []);
+    assertEquals(result?.themes?.[0]?.name, 'Theme');
     assertEquals(result?.moreinfo, 'Manga details');
+  });
+
+  it('falls back to manga with omitted synonyms and retained themes', async () => {
+    mockFetch('https://mal.test/v4/manga/201/full', {
+      status: 503,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ error: 'temporarily unavailable' }),
+    });
+    mockFetch('https://mal.test/v4/manga/201', {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ data: minimalMangaResource(201) }),
+    });
+    mockFetch('https://mal.test/v4/manga/201/moreinfo', {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ data: { moreinfo: null } }),
+    });
+
+    const service = new JikanService(config, logger);
+    const result = await service.getManga(201);
+
+    assertEquals(result?.type, 'OEL');
+    assertEquals(result?.title_synonyms, []);
+    assertEquals(result?.themes?.[0]?.name, 'Theme');
   });
 
   it('getProducer fetches producer by MAL id', async () => {
@@ -401,10 +615,10 @@ describe('JikanService', () => {
         url: 'https://mal.test/anime/producer/1',
         titles: [{ type: 'Default', title: 'Toei Animation' }],
         images: { jpg: { image_url: 'https://cdn.test/p1.jpg' } },
-        favorites: 1000,
+        favorites: null,
         established: '1948-01-23T00:00:00+00:00',
         about: 'A major anime studio.',
-        count: 300,
+        count: null,
       },
     };
 
@@ -419,7 +633,8 @@ describe('JikanService', () => {
 
     assertEquals(result?.mal_id, 1);
     assertEquals(result?.titles[0].title, 'Toei Animation');
-    assertEquals(result?.count, 300);
+    assertEquals(result?.count, 0);
+    assertEquals(result?.favorites, 0);
   });
 
   it('getProducerByKeyword returns first match from search', async () => {
@@ -463,8 +678,8 @@ describe('JikanService', () => {
         given_name: 'Hayao',
         family_name: 'Miyazaki',
         alternate_names: [],
-        birthday: '1941-01-05T00:00:00+00:00',
-        favorites: 20000,
+        birthday: 'invalid date',
+        favorites: null,
         about: 'Director and co-founder of Studio Ghibli.',
       },
     };
@@ -481,6 +696,8 @@ describe('JikanService', () => {
     assertEquals(result?.mal_id, 10);
     assertEquals(result?.name, 'Hayao Miyazaki');
     assertEquals(result?.given_name, 'Hayao');
+    assertEquals(result?.birthday, null);
+    assertEquals(result?.favorites, 0);
   });
 
   it('getPersonByKeyword returns first match from search', async () => {
@@ -536,7 +753,7 @@ describe('JikanService', () => {
         name: 'Spike Spiegel',
         name_kanji: 'スパイク・スピーゲル',
         nicknames: ['Spike'],
-        favorites: 48836,
+        favorites: null,
         about: 'Bounty hunter aboard the Bebop.',
         anime: [
           {
@@ -610,6 +827,7 @@ describe('JikanService', () => {
     assertExists(result);
     assertEquals(result?.mal_id, 1);
     assertEquals(result?.name, 'Spike Spiegel');
+    assertEquals(result?.favorites, 0);
     assertEquals(result.anime?.length ?? 0, 1);
     assertEquals(result.voices?.[0]?.language ?? null, 'Japanese');
   });
@@ -636,7 +854,7 @@ describe('JikanService', () => {
           name: 'Faye Valentine',
           name_kanji: null,
           nicknames: [],
-          favorites: 32000,
+          favorites: null,
           about: 'A bounty hunter with a mysterious past.',
         },
       ],
@@ -655,6 +873,7 @@ describe('JikanService', () => {
     assertEquals(result?.mal_id, 2);
     assertEquals(result?.name, 'Faye Valentine');
     assertEquals(result.anime?.length ?? 0, 0);
+    assertEquals(result.favorites, 0);
   });
 
   it('getAnime with staff:true includes staff_list', async () => {

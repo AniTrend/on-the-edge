@@ -38,7 +38,7 @@ describe('series.anime.transform', () => {
       title_english: 'Primary Anime Title EN',
       title_japanese: 'アニメ',
       title_synonyms: ['Alt Anime Title'],
-      type: 'TV',
+      type: null,
       score: 0,
       scored_by: 0,
       rank: 0,
@@ -53,7 +53,7 @@ describe('series.anime.transform', () => {
       duration: '24 min per ep',
       trailer: null,
       source: 'Original',
-      status: 'Finished Airing',
+      status: null,
       airing: false,
       aired: {
         from: null,
@@ -77,10 +77,10 @@ describe('series.anime.transform', () => {
       external: [],
       streaming: [],
       broadcast: {
-        day: 'Mondays',
-        time: '00:00',
-        timezone: 'JST',
-        string: 'Mondays at 00:00 (JST)',
+        day: null,
+        time: null,
+        timezone: null,
+        string: null,
       },
       theme: null,
       episodes_list: [],
@@ -98,12 +98,14 @@ describe('series.anime.transform', () => {
     ) as MediaUnion;
 
     assertEquals(media.kind, 'ANIME');
+    assertEquals(media.classification, null);
     // ensure AnimeMetadata-like fields exist
     if (!('trailers' in media) || !('schedule' in media)) {
       throw new Error('expected AnimeMetadata fields on media union');
     }
     assertEquals(media.mediaId.myanimelist, 300);
     assertEquals(media.title.canonical, 'Primary Anime Title');
+    assertEquals('broadcast' in media ? media.broadcast : null, null);
   });
 
   it('should degrade to null broadcast and duration when jikan data is unavailable', () => {

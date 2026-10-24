@@ -51,7 +51,7 @@ const jikanAnime: JikanAnime = {
   title_english: null,
   title_japanese: null,
   title_synonyms: [],
-  type: 'TV',
+  type: null,
   score: 0,
   scored_by: 0,
   rank: 0,
@@ -66,7 +66,7 @@ const jikanAnime: JikanAnime = {
   duration: '24 min per ep',
   trailer: null,
   source: 'Original',
-  status: 'Finished Airing',
+  status: null,
   airing: false,
   aired: {
     from: null,
@@ -90,10 +90,10 @@ const jikanAnime: JikanAnime = {
   external: [],
   streaming: [],
   broadcast: {
-    day: 'Mondays',
-    time: '00:00',
-    timezone: 'JST',
-    string: 'Mondays at 00:00 (JST)',
+    day: null,
+    time: null,
+    timezone: null,
+    string: null,
   },
   theme: null,
   episodes_list: [],
@@ -119,28 +119,27 @@ const animeThemesLookup: AnimeThemesLookupModel = {
   }],
 };
 
-function createResolver() {
+function createResolver(resolvedRelation: SeriesRelationId = relation) {
   const { logger } = createMockLogger();
   const experiment = createMockExperiment({});
   const getThemesForAnime = spy(async () => animeThemesLookup);
+  const getShow = spy(async () => undefined);
+  const getMovie = spy(async () => undefined);
 
   const resolver = new SeriesResolver(
     { getShow: async () => undefined } as unknown as TraktService,
-    {
-      getShow: async () => undefined,
-      getMovie: async () => undefined,
-    } as unknown as TmdbService,
+    { getShow, getMovie } as unknown as TmdbService,
     { getShowByTvdb: async () => undefined } as unknown as SkyhookService,
     { getAnime: async () => undefined } as unknown as NotifyService,
     { getAnime: async () => jikanAnime } as unknown as JikanService,
-    { getRelationsById: async () => relation } as unknown as ArmService,
+    { getRelationsById: async () => resolvedRelation } as unknown as ArmService,
     { getMappingsByTvdb: async () => undefined } as unknown as TheXemService,
     { getThemesForAnime } as unknown as AnimeThemesService,
     experiment,
     logger,
   );
 
-  return { resolver, getThemesForAnime };
+  return { resolver, getThemesForAnime, getShow, getMovie };
 }
 
 describe('SeriesResolver', () => {
@@ -154,6 +153,19 @@ describe('SeriesResolver', () => {
       'animethemes' in result ? result.animethemes : [],
       animeThemesLookup.anime[0].animethemes,
     );
+  });
+
+  it('keeps nullable anime classifications on the TV enrichment path', async () => {
+    const { resolver, getThemesForAnime, getShow, getMovie } = createResolver({
+      ...relation,
+      themoviedb: 123,
+    });
+
+    await resolver.resolve({ anilist: 400 });
+
+    assertSpyCalls(getThemesForAnime, 1);
+    assertSpyCalls(getShow, 1);
+    assertSpyCalls(getMovie, 0);
   });
 
   it('throws SeriesNotFoundError when no relation can be resolved', async () => {

@@ -63,11 +63,11 @@ describe('series.manga.transform', () => {
       authors: [],
       serializations: [],
       genres: [],
+      themes: [],
       explicit_genres: [],
       demographics: [],
       relations: [],
       external: [],
-      source: 'Manga',
     };
 
     const media = seriesTransform(

@@ -1,16 +1,16 @@
-import { Jikan } from '@scope/service/jikan';
+import type { Jikan, JikanAnime, JikanManga } from '@scope/service/jikan';
 import { MediaKind } from '../../series.types.ts';
 
-export const isManga = (type?: Jikan['type']): boolean =>
-  ['Manga', 'Novel', 'Light Novel', 'One-shot', 'Doujinshi', 'Manhwa', 'Manhua']
-    .some((classification) => classification === type);
+export const isJikanAnime = (
+  resource?: Jikan | null,
+): resource is JikanAnime => resource != null && 'airing' in resource;
 
-export const isAnime = (type?: Jikan['type']): boolean =>
-  ['TV', 'Movie', 'OVA', 'Special', 'ONA', 'Music', 'CM', 'PV', 'TV Special']
-    .some((classification) => classification === type);
+export const isJikanManga = (
+  resource?: Jikan | null,
+): resource is JikanManga => resource != null && 'publishing' in resource;
 
-export const inferMediaKind = (type?: Jikan['type']): MediaKind | null => {
-  if (isAnime(type)) return 'ANIME';
-  if (isManga(type)) return 'MANGA';
+export const inferMediaKind = (resource?: Jikan | null): MediaKind | null => {
+  if (isJikanAnime(resource)) return 'ANIME';
+  if (isJikanManga(resource)) return 'MANGA';
   return null;
 };

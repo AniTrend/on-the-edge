@@ -9,13 +9,13 @@ export const TheXemSceneSchema = z.object({
 export const TheXemEntrySchema = z.object({
   scene: TheXemSceneSchema,
   tvdb: TheXemSceneSchema,
-  anidb: TheXemSceneSchema,
+  anidb: TheXemSceneSchema.optional(),
 });
 
 export const TheXemResponseSchema = z.object({
   result: z.string().optional(),
   message: z.string().optional(),
-  data: z.array(TheXemEntrySchema).default([]),
+  data: z.array(TheXemEntrySchema).optional(),
 });
 
 export type TheXemRemoteEntry = z.infer<typeof TheXemEntrySchema>;

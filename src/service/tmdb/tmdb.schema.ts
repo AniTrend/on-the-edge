@@ -70,17 +70,7 @@ export const CrewSchema = z.object({
   adult: z.boolean().nullish(),
   gender: z.number().nullish(),
   id: z.number(),
-  known_for_department: z.enum([
-    'Acting',
-    'Art',
-    'Crew',
-    'Directing',
-    'Production',
-    'Visual Effects',
-    'Writing',
-    'Editing',
-    'Unknown',
-  ]).catch('Unknown').nullish(),
+  known_for_department: z.string().nullish(),
   name: z.string(),
   original_name: z.string().nullish(),
   popularity: z.number().nullish(),
@@ -139,7 +129,6 @@ export const BaseSchema = z.object({
   homepage: z.string().nullish(),
   id: z.number(),
   languages: z.array(z.string()).nullish(),
-  name: z.string(),
   networks: z.array(NetworkSchema).nullish().default([]),
   origin_country: z.array(z.string()).nullish(),
   original_language: z.string().nullish(),
@@ -157,6 +146,7 @@ export const BaseSchema = z.object({
 });
 
 export const ShowSchema = BaseSchema.extend({
+  name: z.string(),
   episode_run_time: z.array(z.number()).nullish(),
   first_air_date: z.string().nullish(),
   in_production: z.boolean().nullish(),

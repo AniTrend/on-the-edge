@@ -5,6 +5,10 @@ const publishedAtFromIso = z.preprocess(
   z.number().finite(),
 );
 
+export const GithubReleaseDraftPayloadSchema = z.object({
+  draft: z.boolean(),
+}).passthrough();
+
 export const GithubReleaseAssetPayloadSchema = z.object({
   name: z.string().min(1),
   browser_download_url: z.string().url(),

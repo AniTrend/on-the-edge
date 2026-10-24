@@ -176,8 +176,8 @@ describe('TmdbService', () => {
       'https://image.tmdb.org/t/p/original/backdrop.jpg',
     );
     assertEquals(
-      result?.images.backdrops?.[0]?.file_path?.includes('image.tmdb.org'),
-      true,
+      result?.images.backdrops?.[0]?.file_path,
+      'https://image.tmdb.org/t/p/original/backdrop-detail.jpg',
     );
     assertSpyCalls(mockCache.spies.set, 2);
     assertEquals(mockCache.spies.set.calls[0]?.args, [
@@ -304,10 +304,66 @@ describe('TmdbService', () => {
 
     assertEquals(result?.id, 200);
     assertEquals(result?.season_number, 1);
+    assertEquals(
+      result?.poster_path,
+      'https://image.tmdb.org/t/p/original/season.jpg',
+    );
     assertEquals(mockCache.spies.set.calls.at(-1)?.args, [
       'edge:tmdb:season:100:1',
       result,
       { ttl: 60 * 60 * 4 },
     ]);
+  });
+
+  it('fetches a movie without a name and transforms its images', async () => {
+    const movie = {
+      id: 301,
+      title: 'Sample Movie',
+      backdrop_path: '/movie-backdrop.jpg',
+      poster_path: '/movie-poster.jpg',
+      images: {
+        backdrops: [{
+          aspect_ratio: 1,
+          height: 720,
+          iso_639_1: null,
+          file_path: '/movie-image-backdrop.jpg',
+          vote_average: 5,
+          vote_count: 1,
+          width: 1280,
+        }],
+        logos: [],
+        posters: [{
+          aspect_ratio: 1,
+          height: 1000,
+          iso_639_1: null,
+          file_path: '/movie-image-poster.jpg',
+          vote_average: 5,
+          vote_count: 1,
+          width: 500,
+        }],
+      },
+    };
+
+    mockFetch(
+      'https://tmdb.test/3/movie/301?api_key=key-123&append_to_response=images',
+      {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(movie),
+      },
+    );
+
+    const result = await new TmdbService(config, logger, cache).getMovie(301);
+
+    assertEquals(result?.title, 'Sample Movie');
+    assertEquals('name' in (result ?? {}), false);
+    assertEquals(
+      result?.backdrop_path,
+      'https://image.tmdb.org/t/p/original/movie-backdrop.jpg',
+    );
+    assertEquals(
+      result?.images.posters?.[0]?.file_path,
+      'https://image.tmdb.org/t/p/original/movie-image-poster.jpg',
+    );
   });
 });

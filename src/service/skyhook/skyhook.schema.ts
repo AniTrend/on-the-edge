@@ -3,10 +3,20 @@ import { toInstant } from '@scope/common/utils';
 
 const dateValue = z.union([z.string(), z.date()]).nullish().transform(
   (value) => {
-    if (value instanceof Date) return value.toISOString();
-    return value;
+    if (value instanceof Date) {
+      return Number.isFinite(value.getTime()) ? value.toISOString() : null;
+    }
+    if (value == null) return value;
+    if (value.trim() === '') return null;
+    return Number.isFinite(new Date(value).getTime()) ? value : null;
   },
 );
+
+const toFiniteInstant = (value: string | null | undefined): number | null => {
+  if (value == null || value.trim() === '') return null;
+  const instant = toInstant(value);
+  return Number.isFinite(instant) ? instant : null;
+};
 
 export const SkyhookActorSchema = z.object({
   name: z.string(),
@@ -91,8 +101,8 @@ export const SkyhookModelSchema = z.object({
   episodes: z.array(SkyhookEpisodeSchema).default([]),
 }).transform((model) => ({
   ...model,
-  firstAired: model.firstAired ? toInstant(model.firstAired) : null,
-  lastUpdated: model.lastUpdated ? toInstant(model.lastUpdated) : null,
+  firstAired: toFiniteInstant(model.firstAired),
+  lastUpdated: toFiniteInstant(model.lastUpdated),
   banner: model.images.find((item) => item.coverType === 'Banner')?.url,
   poster: model.images.find((item) => item.coverType === 'Poster')?.url,
   fanart: model.images.find((item) => item.coverType === 'Fanart')?.url,
