@@ -2,7 +2,7 @@ import { TraktService, TraktShow } from '@scope/service/trakt';
 import { TmdbMovie, TmdbService, TmdbShow } from '@scope/service/tmdb';
 import { SkyhookService, SkyhookShow } from '@scope/service/skyhook';
 import { NotifyAnime, NotifyService } from '@scope/service/notify';
-import { JikanAnime, JikanManga, JikanService } from '@scope/service/jikan';
+import { JikanAnime, JikanService } from '@scope/service/jikan';
 import { ArmService, SeriesRelationId } from '@scope/service/arm';
 import { TheXem, TheXemService } from '@scope/service/thexem';
 import { AnimeThemesService } from '@scope/service/animethemes';
@@ -10,7 +10,7 @@ import { ExperimentService } from '@scope/experiment';
 import { LoggerService } from '@scope/logger';
 import { Injectable } from '@danet/core';
 import { MediaUnion, SeriesQuery } from '../series.types.ts';
-import { isAnime } from './helpers/qualifier.ts';
+import { isJikanAnime } from './helpers/qualifier.ts';
 import { seriesTransform } from '../transformer/series.transformer.ts';
 import { SeriesArmLookupError, SeriesNotFoundError } from './series.errors.ts';
 
@@ -105,7 +105,7 @@ export class SeriesResolver {
 
   private resolveJikan = async (
     malId?: number | null,
-  ): Promise<JikanAnime | JikanManga | undefined> => {
+  ): Promise<JikanAnime | undefined> => {
     if (!malId) {
       return undefined;
     }
@@ -200,7 +200,7 @@ export class SeriesResolver {
       skyhook: SkyhookShow | undefined,
       trakt: TraktShow | undefined,
       tmdb: TmdbShow | TmdbMovie | undefined;
-    if (isAnime(mal?.type)) {
+    if (isJikanAnime(mal)) {
       [animeThemes, skyhook] = await Promise.all([
         this.resolveAnimeThemes(relation?.myanimelist),
         this.resolveSkyhook(relation?.thetvdb),

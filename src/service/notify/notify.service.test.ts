@@ -37,7 +37,7 @@ describe('NotifyService', () => {
       source: 'manga',
       image: {
         extension: '.jpg',
-        averageColor: { hue: 0, saturation: 50, lightness: 50 },
+        averageColor: { hue: 0.5, saturation: 0.5, lightness: 0.5 },
       },
       rating: {
         overall: 10,
@@ -107,5 +107,6 @@ describe('NotifyService', () => {
     assertEquals(result?.episodes.length, 1);
     assertEquals(result?.episodes[0].number, 1);
     assertEquals(result?.mediaId.anilist, '1');
+    assertEquals(result?.poster.color, '#40bfbf');
   });
 });

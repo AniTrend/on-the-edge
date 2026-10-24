@@ -18,6 +18,12 @@ import {
 import type { EpisodeCanonical } from '../episodes.types.ts';
 import { toInstant } from '@scope/common/utils';
 
+const toFiniteInstant = (value: string | null | undefined): number | null => {
+  if (typeof value !== 'string' || value.trim() === '') return null;
+  const instant = toInstant(value);
+  return Number.isFinite(instant) ? instant : null;
+};
+
 /**
  * Episodes resolver orchestrating multi-source episode data aggregation.
  *
@@ -266,9 +272,8 @@ export class EpisodesResolver {
             ? { english: ep.title, romanji: null, native: null }
             : null,
           synopsis: ep.overview ?? null,
-          aired: ep.airDateUtc
-            ? toInstant(ep.airDateUtc)
-            : (ep.airDate ? toInstant(ep.airDate) : null),
+          aired: toFiniteInstant(ep.airDateUtc) ??
+            toFiniteInstant(ep.airDate),
           score: null,
           kind: ep.seasonNumber === 0 ? 'SPECIAL' : 'MAIN',
           duration: ep.runtime ?? null,
@@ -335,7 +340,7 @@ export class EpisodesResolver {
         const seasonPoster = season?.poster_path ?? show.poster_path ?? null;
         const mapped: EpisodeCanonical[] = (season?.episodes ?? []).map(
           (ep) => {
-            const air = ep.air_date ? toInstant(ep.air_date) : null;
+            const air = toFiniteInstant(ep.air_date);
             return {
               id: ep.id,
               number: ep.episode_number ?? ep.id,

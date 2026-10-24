@@ -36,12 +36,10 @@ export function toCanonicalEpisode(source: AnimeEpisode): EpisodeCanonical {
       romanji: source.title_romanji ?? null,
     },
     synopsis: source.synopsis ?? null,
-    aired: source.aired
-      ? Math.floor(new Date(source.aired).getTime() / 1000)
-      : null,
+    aired: source.aired == null ? null : Math.floor(source.aired),
     score: source.score ?? null,
     kind,
-    duration: source.duration ? source.duration / 60 : null, // Convert seconds to minutes
+    duration: source.duration == null ? null : source.duration / 60,
     url: source.url ?? null,
     tvdbShowId: null,
     tvdbId: null,

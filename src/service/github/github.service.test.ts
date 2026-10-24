@@ -62,7 +62,10 @@ const captureRequests = (): { requests: RecordedRequest[] } => {
       : input instanceof URL
       ? input.href
       : input.url;
-    requests.push({ url, headers: new Headers(init?.headers) });
+    const headers = init !== undefined && 'headers' in init
+      ? new Headers(init.headers as HeadersInit)
+      : new Headers();
+    requests.push({ url, headers });
     return mockedFetch(input, init);
   };
   Object.defineProperty(globalThis, 'fetch', {
@@ -876,6 +879,120 @@ describe('GithubService', () => {
 
     assertEquals(result, undefined);
     assertSpyCalls(spies.warn, 1);
+  });
+
+  it('drops draft records before validating their publication metadata', async () => {
+    mockFetch(
+      { url: LIST_URL },
+      {
+        status: 200,
+        headers: {
+          'content-type': 'application/json',
+          'etag': '"draft-safe"',
+        },
+        body: JSON.stringify([
+          { draft: true, published_at: null },
+          releasePayload({ tag_name: 'v2.5.0' }),
+        ]),
+      },
+    );
+
+    const service = buildService(logger);
+    const result = await service.fetchReleases('AniTrend', 'anitrend-app', {
+      selector: { type: 'stable' },
+    });
+
+    assertEquals(result?.status, 'ok');
+    if (result?.status === 'ok') {
+      assertEquals(result.release?.tagName, 'v2.5.0');
+      assertEquals(result.etag, '"draft-safe"');
+    }
+  });
+
+  it('accepts all-draft lists with missing publication metadata', async () => {
+    mockFetch(
+      { url: LIST_URL },
+      {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify([
+          { draft: true, published_at: null },
+          { draft: true },
+        ]),
+      },
+    );
+
+    const service = buildService(logger);
+    const result = await service.fetchReleases('AniTrend', 'anitrend-app', {
+      selector: { type: 'stable' },
+    });
+
+    assertEquals(result?.status, 'ok');
+    if (result?.status === 'ok') assertEquals(result.release, undefined);
+  });
+
+  it('rejects invalid draft discriminators and malformed nondraft candidates', async () => {
+    const payloads: unknown[] = [
+      [releasePayload({ draft: 'true', published_at: null })],
+      [releasePayload({ published_at: null })],
+      [releasePayload({ published_at: 'not-a-date' })],
+      [releasePayload({ assets: null })],
+      { releases: [releasePayload()] },
+    ];
+
+    for (const payload of payloads) {
+      resetFetch();
+      mockFetch(
+        { url: LIST_URL },
+        {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(payload),
+        },
+      );
+
+      const service = buildService(logger);
+      assertEquals(
+        await service.fetchReleases('AniTrend', 'anitrend-app', {
+          selector: { type: 'stable' },
+        }),
+        undefined,
+      );
+    }
+  });
+
+  it('keeps nullable body and asset members while rejecting a null assets collection', async () => {
+    mockFetch(
+      { url: LIST_URL },
+      {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify([releasePayload({
+          body: null,
+          assets: [{
+            name: 'app-release.apk',
+            browser_download_url:
+              'https://github.com/AniTrend/anitrend-app/releases/download/v2.4.0/app-release.apk',
+            size: null,
+            content_type: null,
+            digest: null,
+          }],
+        })]),
+      },
+    );
+
+    const service = buildService(logger);
+    const result = await service.fetchReleases('AniTrend', 'anitrend-app', {
+      selector: { type: 'stable' },
+    });
+
+    assertEquals(result?.status, 'ok');
+    if (result?.status === 'ok') {
+      assertEquals(result.release?.body, null);
+      assertEquals(result.release?.assets[0].size, null);
+      assertEquals(result.release?.assets[0].contentType, null);
+      assertEquals(result.release?.assets[0].digest, null);
+    }
   });
 
   it('passes through asset content type and digest when GitHub reports them', async () => {

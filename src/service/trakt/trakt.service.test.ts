@@ -8,6 +8,7 @@ import {
   createMockLogger,
   createMockSecret,
 } from '@scope/common/testing';
+import { ShowModelSchema } from './trakt.schema.ts';
 
 describe('TraktService', () => {
   const config = createMockSecret({
@@ -81,6 +82,22 @@ describe('TraktService', () => {
       result,
       { ttl: 60 * 60 * 4 },
     ]);
+  });
+
+  it('returns cached show data without replacing it', async () => {
+    const cached = ShowModelSchema.parse({
+      title: 'Cached Show',
+      ids: { trakt: 101 },
+    });
+    const key = 'edge:trakt:show:cached-show';
+    cache.set(key, { value: cached, expiresAt: Number.POSITIVE_INFINITY });
+    const writesBefore = mockCache.spies.set.calls.length;
+
+    const trakt = new TraktService(config, logger, service);
+    const result = await trakt.getShow('cached-show');
+
+    assertEquals(result, cached);
+    assertEquals(mockCache.spies.set.calls.length, writesBefore);
   });
 
   it('parses seasons when episodes provide null numeric fields', async () => {

@@ -45,11 +45,11 @@ describe('jikan manga transformer', () => {
       authors: [],
       serializations: [],
       genres: [],
+      themes: [],
       explicit_genres: [],
       demographics: [],
       relations: [],
       external: [],
-      source: 'Original',
     };
 
     const transformed = mangaTransform(resource);

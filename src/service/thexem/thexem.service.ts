@@ -46,21 +46,39 @@ export class TheXemService {
       return cached;
     }
 
-    const mappings = await this.client
-      .get('/map/all', { params: { origin: 'tvdb', id: tvdbId } })
-      .then(({ data }) => TheXemResponseSchema.parse(data))
-      .then((payload) => payload.data.map((entry) => this.mapEntry(entry)))
-      .catch((error) => {
-        this.logger.instance.warn(
-          'Unable to get TheXem mappings from remote',
-          error,
-        );
-        return [] as TheXem[];
+    let mappings: TheXem[];
+    try {
+      const { data } = await this.client.get('/map/all', {
+        params: { origin: 'tvdb', id: tvdbId },
       });
+      const payload = TheXemResponseSchema.parse(data);
+      if (payload.result !== 'success' || !Array.isArray(payload.data)) {
+        this.logger.instance.warn(
+          'TheXem response did not contain successful mapping data',
+          { result: payload.result },
+        );
+        return [];
+      }
+      mappings = payload.data.map((entry) => this.mapEntry(entry));
+    } catch (error) {
+      this.logger.instance.warn(
+        'Unable to get TheXem mappings from remote',
+        error,
+      );
+      return [];
+    }
 
-    this.cache.set<TheXem[]>(`edge:thexem:mappings:${tvdbId}`, mappings, {
-      ttl: this.cacheTtlSeconds,
-    });
+    try {
+      await this.cache.set<TheXem[]>(
+        `edge:thexem:mappings:${tvdbId}`,
+        mappings,
+        {
+          ttl: this.cacheTtlSeconds,
+        },
+      );
+    } catch (error) {
+      this.logger.instance.warn('Unable to cache TheXem mappings', error);
+    }
     return mappings;
   }
 
@@ -69,7 +87,7 @@ export class TheXemService {
     for (const row of rows) {
       const tvdbAbs = Number(row.tvdb.absolute);
       const absolute = Number(
-        row.scene.absolute || row.anidb.absolute || row.tvdb.absolute,
+        row.scene.absolute || row.anidb?.absolute || row.tvdb.absolute,
       );
       if (
         Number.isFinite(tvdbAbs) && Number.isFinite(absolute) && tvdbAbs > 0 &&
@@ -89,7 +107,7 @@ export class TheXemService {
       const season = Number(row.tvdb.season);
       const episode = Number(row.tvdb.episode);
       const absolute = Number(
-        row.scene.absolute || row.anidb.absolute || row.tvdb.absolute,
+        row.scene.absolute || row.anidb?.absolute || row.tvdb.absolute,
       );
       if (
         Number.isFinite(season) && Number.isFinite(episode) &&
@@ -109,7 +127,9 @@ export class TheXemService {
     return {
       scene: this.mapScene(entry.scene),
       tvdb: this.mapScene(entry.tvdb),
-      anidb: this.mapScene(entry.anidb),
+      ...(entry.anidb === undefined
+        ? {}
+        : { anidb: this.mapScene(entry.anidb) }),
     };
   }
 

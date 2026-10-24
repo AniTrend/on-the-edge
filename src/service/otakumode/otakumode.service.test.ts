@@ -5,6 +5,38 @@ import { assertSpyCalls } from '@std/testing/mock';
 import { OtakumodeService } from '@scope/service/otakumode';
 import { createMockLogger, createMockSecret } from '@scope/common/testing';
 
+const itemXml = (
+  guid: string,
+  pubDate: string,
+  extra = '',
+) =>
+  `<item>
+  <title>${guid}</title>
+  <link>https://otakumode.com/news/${guid}</link>
+  <description>News ${guid}</description>
+  <content:encoded>Content ${guid}</content:encoded>
+  <pubDate>${pubDate}</pubDate>
+  <guid>${guid}</guid>
+  <mainId>${guid}</mainId>
+  ${extra}
+</item>`;
+
+const feedXml = (items: string) =>
+  `<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:content="http://purl.org/rss/1.0/modules/content/"
+  xmlns:media="http://search.yahoo.com/mrss/">
+  <channel>
+    <title>Tokyo Otaku Mode News</title>
+    <link>https://otakumode.com/</link>
+    <description>Test description</description>
+    <author>Tokyo Otaku Mode</author>
+    <language>en-us</language>
+    <atom:link xmlns:atom="http://www.w3.org/2005/Atom" rel="self"
+      href="https://otakumode.com/news/feed" type="application/rss+xml" />
+    ${items}
+  </channel>
+</rss>`;
+
 describe('OtakumodeService', () => {
   let config: ReturnType<typeof createMockSecret>['service'];
   let logger: ReturnType<typeof createMockLogger>['logger'];
@@ -85,6 +117,75 @@ describe('OtakumodeService', () => {
       timeout: 5000,
       itemCount: 2,
     });
+  });
+
+  it('normalizes actual XML feeds with zero, one, or multiple items', async () => {
+    for (const count of [0, 1, 2]) {
+      resetFetch();
+      const items = Array.from({ length: count }, (_, index) =>
+        itemXml(
+          `item-${index + 1}`,
+          'Sun, 05 Oct 2025 09:06:11 GMT',
+        )).join('\n');
+      mockFetch(
+        'https://feed.test/news/feed',
+        {
+          status: 200,
+          headers: { 'content-type': 'text/xml' },
+          body: feedXml(items),
+        },
+      );
+
+      const result = await new OtakumodeService(config, logger).rss('en');
+      assertEquals(result?.length, count);
+    }
+  });
+
+  it('preserves invalid dates as null and finite epoch zero with valid siblings', async () => {
+    const invalidDimensions =
+      '<media:content url="https://otakumode.com/a.png" width="  " height="Infinity" />';
+    const validDimensions =
+      '<media:content url="https://otakumode.com/b.png" width="1280" height="720" />';
+    mockFetch(
+      'https://feed.test/news/feed',
+      {
+        status: 200,
+        headers: { 'content-type': 'text/xml' },
+        body: feedXml(
+          itemXml('invalid-date', 'not a date', invalidDimensions) +
+            itemXml('epoch', 'Thu, 01 Jan 1970 00:00:00 GMT', validDimensions),
+        ),
+      },
+    );
+
+    const result = await new OtakumodeService(config, logger).rss('en');
+
+    assertEquals(result?.length, 2);
+    assertEquals(result?.[0].pubDate, null);
+    assertEquals(result?.[0]['media:content']?.width, undefined);
+    assertEquals(result?.[0]['media:content']?.height, undefined);
+    assertEquals(result?.[1].pubDate, 0);
+    assertEquals(result?.[1]['media:content']?.width, 1280);
+    assertEquals(result?.[1]['media:content']?.height, 720);
+  });
+
+  it('rejects malformed primitive and item containers', async () => {
+    mockFetch(
+      'https://feed.test/news/feed',
+      {
+        status: 200,
+        headers: { 'content-type': 'text/xml' },
+        body: feedXml('<item>primitive</item>'),
+      },
+    );
+
+    const result = await new OtakumodeService(config, logger).rss('en');
+
+    assertEquals(result, undefined);
+    assertEquals(
+      spies.warn.calls.at(-1)?.args[0],
+      'OtakuMode RSS schema validation failed',
+    );
   });
 
   it('warns with request context when feed payload validation fails', async () => {

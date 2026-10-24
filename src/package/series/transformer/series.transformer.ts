@@ -1,16 +1,14 @@
 import { currentDate, toInstant } from '@scope/common/utils';
 import { SeriesRelationId } from '@scope/service/arm';
 import type { AnimeThemesLookupModel } from '@scope/service/animethemes';
-import { Jikan, JikanAnime, JikanManga } from '@scope/service/jikan';
+import type { Jikan } from '@scope/service/jikan';
 import { Format, NotifyAnime } from '@scope/service/notify';
 import { SkyhookShow } from '@scope/service/skyhook';
 import type {
   Tmdb,
   TmdbEpisodeToAir,
   TmdbImages,
-  TmdbMovie,
   TmdbNetwork,
-  TmdbShow,
 } from '@scope/service/tmdb';
 import { TraktShow } from '@scope/service/trakt';
 import {
@@ -28,7 +26,11 @@ import {
   SeriesTitle,
   SeriesTrailer,
 } from '../series.types.ts';
-import { inferMediaKind } from '../repository/helpers/qualifier.ts';
+import {
+  inferMediaKind,
+  isJikanAnime,
+  isJikanManga,
+} from '../repository/helpers/qualifier.ts';
 
 const animeThemesResources = (lookup?: AnimeThemesLookupModel) =>
   lookup?.anime ?? [];
@@ -49,6 +51,18 @@ const firstAnimeThemesValue = <T>(
   }
 
   return null;
+};
+
+const toFiniteInstant = (value: string | null | undefined): number | null => {
+  if (typeof value !== 'string' || value.trim() === '') return null;
+  const instant = toInstant(value);
+  return Number.isFinite(instant) ? instant : null;
+};
+
+const toFiniteShoboiId = (value: string | null | undefined): number | null => {
+  if (typeof value !== 'string' || value.trim() === '') return null;
+  const id = Number(value);
+  return Number.isFinite(id) ? id : null;
 };
 
 const seriesId = (
@@ -75,7 +89,7 @@ const seriesId = (
   tvrage: trakt?.ids?.tvrage ?? null,
   slug: relation?.animePlanet ?? trakt?.ids?.slug ?? skyhook?.slug ??
     firstAnimeThemesValue(animeThemes, (resource) => resource.slug) ?? null,
-  shoboi: notify?.mediaId?.shoboi ? Number(notify.mediaId.shoboi) : null,
+  shoboi: toFiniteShoboiId(notify?.mediaId?.shoboi),
   trakt: trakt?.ids?.trakt ?? null,
 });
 
@@ -154,7 +168,7 @@ const seriesScheduleEpisode = (
     id,
     name,
     overview: overview ?? null,
-    airDate: air_date ? toInstant(air_date) : null,
+    airDate: toFiniteInstant(air_date),
     episodeNumber: episode_number ?? null,
     runtime: runtime ?? null,
     seasonNumber: season_number ?? null,
@@ -171,36 +185,39 @@ const seriesSchedule = (
   if (!tmdb) return null;
 
   if (isMovie) {
-    const {
-      release_date,
-    } = tmdb as TmdbMovie;
+    const releaseDate = 'release_date' in tmdb ? tmdb.release_date : null;
     return {
-      firstAirDate: release_date ? toInstant(release_date) : null,
-      lastAirDate: release_date ? toInstant(release_date) : null,
+      firstAirDate: toFiniteInstant(releaseDate),
+      lastAirDate: toFiniteInstant(releaseDate),
       lastAiredEpisode: null,
       nextEpisodeToAir: null,
     };
   }
 
-  const {
-    first_air_date,
-    last_air_date,
-    last_episode_to_air,
-    next_episode_to_air,
-  } = tmdb as TmdbShow;
+  if ('name' in tmdb) {
+    const {
+      first_air_date,
+      last_air_date,
+      last_episode_to_air,
+      next_episode_to_air,
+    } = tmdb;
+    return {
+      firstAirDate: toFiniteInstant(first_air_date),
+      lastAirDate: toFiniteInstant(last_air_date),
+      lastAiredEpisode: last_episode_to_air
+        ? seriesScheduleEpisode(last_episode_to_air)
+        : null,
+      nextEpisodeToAir: next_episode_to_air
+        ? seriesScheduleEpisode(next_episode_to_air)
+        : null,
+    };
+  }
+
   return {
-    firstAirDate: first_air_date ? toInstant(first_air_date) : null,
-    lastAirDate: last_air_date ? toInstant(last_air_date) : null,
-    lastAiredEpisode: last_episode_to_air
-      ? seriesScheduleEpisode(
-        last_episode_to_air,
-      )
-      : null,
-    nextEpisodeToAir: next_episode_to_air
-      ? seriesScheduleEpisode(
-        next_episode_to_air,
-      )
-      : null,
+    firstAirDate: null,
+    lastAirDate: null,
+    lastAiredEpisode: null,
+    nextEpisodeToAir: null,
   };
 };
 
@@ -336,7 +353,9 @@ export const seriesTransform = (
   jikan?: Jikan,
   trakt?: TraktShow,
 ): MediaUnion => {
-  const kind: MediaKind = inferMediaKind(jikan?.type) ??
+  const jikanAnime = isJikanAnime(jikan) ? jikan : undefined;
+  const jikanManga = isJikanManga(jikan) ? jikan : undefined;
+  const kind: MediaKind = inferMediaKind(jikan) ??
     ((notify || skyhook || animeThemes || trakt) ? 'ANIME' : 'MANGA');
 
   const base: Partial<MediaUnion> = {
@@ -366,7 +385,6 @@ export const seriesTransform = (
   };
 
   if (kind === 'MANGA') {
-    const jikanManga = jikan as JikanManga | undefined;
     const manga: MangaMetadata = {
       chapters: typeof jikanManga?.chapters === 'number'
         ? jikanManga.chapters
@@ -386,7 +404,6 @@ export const seriesTransform = (
   }
 
   if (kind === 'ANIME') {
-    const jikanAnime = jikan as JikanAnime | undefined;
     const isMovie = jikanAnime?.type === 'Movie';
     const anime: AnimeMetadata = {
       animethemes: animeThemesResources(animeThemes).flatMap((resource) =>

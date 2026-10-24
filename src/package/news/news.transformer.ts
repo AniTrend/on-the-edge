@@ -6,7 +6,7 @@ export const transform: Transform<OtakumodeFeed, NewsDocument[]> = (
   source,
 ): NewsDocument[] => {
   return source?.flatMap((item) => {
-    if (!Number.isFinite(item.pubDate)) {
+    if (item.pubDate === null || !Number.isFinite(item.pubDate)) {
       return [];
     }
 

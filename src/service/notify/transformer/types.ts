@@ -52,8 +52,8 @@ export interface Anime {
   format: Format;
   summary: string;
   status: Status;
-  startDate: Instant;
-  endDate: Instant;
+  startDate: Instant | null;
+  endDate: Instant | null;
   episodeCount: number;
   episodeLength: number;
   episodes: TransformedEpisode[];

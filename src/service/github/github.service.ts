@@ -8,7 +8,10 @@ import {
 import { SecretService } from '@scope/secret';
 import { LoggerService } from '@scope/logger';
 import { DEFAULT_HEADERS } from '../constants.ts';
-import { GithubReleasePayloadSchema } from './github.schema.ts';
+import {
+  GithubReleaseDraftPayloadSchema,
+  GithubReleasePayloadSchema,
+} from './github.schema.ts';
 import type {
   GithubRateLimit,
   GithubRelease,
@@ -190,9 +193,18 @@ export class GithubService {
       if (status === 304) {
         return { status: 'not-modified' };
       }
-      const parsed = GithubReleasePayloadSchema.array().safeParse(
+      const draftPayloads = GithubReleaseDraftPayloadSchema.array().safeParse(
         JSON.parse(data),
       );
+      if (!draftPayloads.success) {
+        this.logger.instance.warn(
+          'Malformed GitHub releases payload',
+          { owner, repo, cause: draftPayloads.error },
+        );
+        return undefined;
+      }
+      const candidates = draftPayloads.data.filter((payload) => !payload.draft);
+      const parsed = GithubReleasePayloadSchema.array().safeParse(candidates);
       if (!parsed.success) {
         this.logger.instance.warn(
           'Malformed GitHub releases payload',

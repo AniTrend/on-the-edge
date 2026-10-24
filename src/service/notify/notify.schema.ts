@@ -17,9 +17,9 @@ export const NotifyImageSchema = z.object({
   width: z.number().nullish(),
   height: z.number().nullish(),
   averageColor: z.object({
-    hue: z.number(),
-    saturation: z.number(),
-    lightness: z.number(),
+    hue: z.number().finite(),
+    saturation: z.number().finite(),
+    lightness: z.number().finite(),
   }),
 });
 
