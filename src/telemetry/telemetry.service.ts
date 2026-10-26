@@ -34,12 +34,14 @@ export class TelemetryService implements OnAppBootstrap, OnAppClose {
       traceExporter: new OTLPTraceExporter({
         url: secret.get('OTEL_EXPORTER_OTLP_TRACES_ENDPOINT'),
       }),
-      metricReader: new PeriodicExportingMetricReader({
-        exporter: new OTLPMetricExporter({
-          url: secret.get('OTEL_EXPORTER_OTLP_METRICS_ENDPOINT'),
+      metricReaders: [
+        new PeriodicExportingMetricReader({
+          exporter: new OTLPMetricExporter({
+            url: secret.get('OTEL_EXPORTER_OTLP_METRICS_ENDPOINT'),
+          }),
+          exportIntervalMillis: 60000 * 5, // Export metrics every 5 minutes
         }),
-        exportIntervalMillis: 60000 * 5, // Export metrics every 5 minutes
-      }),
+      ],
       instrumentations: [
         new HttpInstrumentation(),
         new MongoDBInstrumentation(),
